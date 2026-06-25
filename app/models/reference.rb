@@ -1,6 +1,9 @@
 class Reference < ApplicationRecord
   include HasFaction
 
+  has_many :list_entries, dependent: :destroy
+  has_many :lists, through: :list_entries
+
   validates :name, presence: true
   validates :identifier, presence: true, uniqueness: true
   validates :faction, presence: true
