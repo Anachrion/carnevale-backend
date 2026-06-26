@@ -1,3 +1,11 @@
+FactoryBot.define do
+  factory :list_entry do
+    association :list
+    association :reference
+    sequence(:position)
+  end
+end
+
 # == Schema Information
 #
 # Table name: list_entries
@@ -21,10 +29,3 @@
 #  fk_rails_...  (list_id => lists.id)
 #  fk_rails_...  (reference_id => references.id)
 #
-FactoryBot.define do
-  factory :list_entry do
-    association :list
-    association :reference
-    sequence(:position)
-  end
-end

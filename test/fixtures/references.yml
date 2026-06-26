@@ -1,4 +1,11 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+one:
+  name: MyString
+  identifier: MyString
+
+two:
+  name: MyString
+  identifier: MyString
 
 # == Schema Information
 #
@@ -16,10 +23,3 @@
 #
 #  index_references_on_identifier  (identifier) UNIQUE
 #
-one:
-  name: MyString
-  identifier: MyString
-
-two:
-  name: MyString
-  identifier: MyString

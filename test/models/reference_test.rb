@@ -1,4 +1,9 @@
 require "test_helper"
+class ReferenceTest < ActiveSupport::TestCase
+  # test "the truth" do
+  #   assert true
+  # end
+end
 
 # == Schema Information
 #
@@ -16,8 +21,3 @@ require "test_helper"
 #
 #  index_references_on_identifier  (identifier) UNIQUE
 #
-class ReferenceTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
-end

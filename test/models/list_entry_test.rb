@@ -1,4 +1,9 @@
 require "test_helper"
+class ListEntryTest < ActiveSupport::TestCase
+  # test "the truth" do
+  #   assert true
+  # end
+end
 
 # == Schema Information
 #
@@ -23,8 +28,3 @@ require "test_helper"
 #  fk_rails_...  (list_id => lists.id)
 #  fk_rails_...  (reference_id => references.id)
 #
-class ListEntryTest < ActiveSupport::TestCase
-  # test "the truth" do
-  #   assert true
-  # end
-end

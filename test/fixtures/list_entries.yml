@@ -1,4 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+one:
+  list: one
+  reference: one
+  position: 1
+
+two:
+  list: two
+  reference: two
+  position: 1
 
 # == Schema Information
 #
@@ -23,12 +32,3 @@
 #  fk_rails_...  (list_id => lists.id)
 #  fk_rails_...  (reference_id => references.id)
 #
-one:
-  list: one
-  reference: one
-  position: 1
-
-two:
-  list: two
-  reference: two
-  position: 1

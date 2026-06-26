@@ -1,3 +1,15 @@
+class Reference < ApplicationRecord
+  include HasFaction
+
+  has_many :list_entries, dependent: :destroy
+  has_many :lists, through: :list_entries
+
+  validates :name, presence: true
+  validates :identifier, presence: true, uniqueness: true
+  validates :faction, presence: true
+  validates :cost, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+end
+
 # == Schema Information
 #
 # Table name: references
@@ -14,14 +26,3 @@
 #
 #  index_references_on_identifier  (identifier) UNIQUE
 #
-class Reference < ApplicationRecord
-  include HasFaction
-
-  has_many :list_entries, dependent: :destroy
-  has_many :lists, through: :list_entries
-
-  validates :name, presence: true
-  validates :identifier, presence: true, uniqueness: true
-  validates :faction, presence: true
-  validates :cost, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
-end

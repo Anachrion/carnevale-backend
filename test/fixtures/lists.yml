@@ -1,4 +1,13 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+one:
+  name: MyString
+  points: 1
+  faction: MyString
+
+two:
+  name: MyString
+  points: 1
+  faction: MyString
 
 # == Schema Information
 #
@@ -11,12 +20,3 @@
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #
-one:
-  name: MyString
-  points: 1
-  faction: MyString
-
-two:
-  name: MyString
-  points: 1
-  faction: MyString
