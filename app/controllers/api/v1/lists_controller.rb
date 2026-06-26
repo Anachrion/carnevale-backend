@@ -4,11 +4,12 @@ module Api
       before_action :set_list, only: %i[show update destroy]
 
       def index
-        render json: List.all.map { |list| list_json(list) }
+        lists = List.all.includes(list_entries: :reference)
+        render json: lists.map { |list| list_json(list) }
       end
 
       def show
-        render json: list_json(@list, with_entries: true)
+        render json: list_json(@list.tap { |l| l.list_entries.includes(:reference).load }, with_entries: true)
       end
 
       def create
@@ -41,16 +42,6 @@ module Api
 
       def list_params
         params.require(:list).permit(:name, :faction, :points)
-      end
-
-      def list_json(list, with_entries: false)
-        json = { id: list.id, name: list.name, faction: list.faction, points: list.points }
-        if with_entries
-          json[:entries] = list.list_entries.order(:position).map do |entry|
-            { position: entry.position, reference_id: entry.reference_id, name: entry.reference.name, cost: entry.reference.cost }
-          end
-        end
-        json
       end
     end
   end
