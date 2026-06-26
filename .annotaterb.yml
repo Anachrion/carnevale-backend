@@ -1,5 +1,5 @@
 ---
-:position: before
+:position: after
 :position_in_additional_file_patterns: before
 :position_in_class: before
 :position_in_factory: before
