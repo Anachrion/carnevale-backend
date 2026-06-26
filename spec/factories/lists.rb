@@ -1,3 +1,11 @@
+FactoryBot.define do
+  factory :list do
+    sequence(:name) { |n| "Gang #{n}" }
+    faction { :guild }
+    points { 100 }
+  end
+end
+
 # == Schema Information
 #
 # Table name: lists
@@ -9,10 +17,3 @@
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
 #
-FactoryBot.define do
-  factory :list do
-    sequence(:name) { |n| "Gang #{n}" }
-    faction { :guild }
-    points { 100 }
-  end
-end
