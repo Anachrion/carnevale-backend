@@ -13,11 +13,15 @@ RSpec.describe "Api::V1::Lists", type: :request do
       expect(JSON.parse(response.body).size).to eq(3)
     end
 
-    it "returns the correct fields" do
+    it "returns the correct fields including entries" do
       list = create(:list, name: "Test Gang", faction: "guild", points: 150)
+      ref = create(:reference, name: "Capodecina", cost: 20)
+      create(:list_entry, list: list, reference: ref, position: 1)
+
       get "/api/v1/lists"
       body = JSON.parse(response.body).first
       expect(body).to include("id" => list.id, "name" => "Test Gang", "faction" => "guild", "points" => 150)
+      expect(body["entries"].first).to include("position" => 1, "name" => "Capodecina", "cost" => 20)
     end
   end
 
