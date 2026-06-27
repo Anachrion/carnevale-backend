@@ -16,3 +16,25 @@ if File.exist?(json_path)
 end
 
 puts "Total: #{CardReference.count} card references, #{Profile.count} profiles, #{Weapon.count} weapons, #{SpecialRule.count} special rules"
+
+# ── Sample List ────────────────────────────────────────────────────────────────
+list = List.find_or_create_by!(name: "Guild Sample List", faction: "guild") do |l|
+  l.points = 150
+end
+
+identifiers = %w[
+  guild-capodecina
+  guild-king-for-a-day
+  guild-madame
+  guild-black-lamp
+  guild-prince-of-thieves
+]
+
+card_refs = CardReference.where(identifier: identifiers).index_by(&:identifier)
+identifiers.each_with_index do |id, position|
+  cr = card_refs[id]
+  next unless cr
+  list.list_entries.find_or_create_by!(card_reference: cr) { |e| e.position = position + 1 }
+end
+
+puts "Seeded sample list '#{list.name}' with #{list.list_entries.count} entries."
