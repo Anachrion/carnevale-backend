@@ -5,7 +5,7 @@ module Api
 
       def index
         lists = List.all.includes(list_entries: :reference)
-        render json: lists.map { |list| list_json(list) }
+        render json: lists.map { |list| list_json(list, with_entries: true) }
       end
 
       def show
