@@ -66,9 +66,9 @@ records = card_ref_data.map do |attrs|
                  when /-b$/ then "#{attrs[:name]} (B)"
                  else attrs[:name]
                  end
-  { name: display_name, identifier: attrs[:identifier], faction: "rashaar", cost: attrs[:cost], created_at: now, updated_at: now }
+  { name: display_name, identifier: attrs[:identifier], created_at: now, updated_at: now }
 end
-CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name])
 
 # Rashaar faction seeds — first half (24 of 47 profiles).
 # Idempotent — safe to run multiple times. Load from db/seeds.rb.
@@ -882,12 +882,13 @@ end
 end
 
 # ── Link CardReferences to Profiles ───────────────────────────────────────────
+identifiers = card_ref_data.map { |a| a[:identifier] }
 profile_map = Profile.where(faction: "rashaar").each_with_object({}) { |p, h| h[p.name] = p.id }
-CardReference.where(faction: "rashaar").find_each do |cr|
+CardReference.where(identifier: identifiers).find_each do |cr|
   base_name = cr.name.sub(/ \([AB]\)\z/, "")
   profile_id = profile_map[base_name]
   cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
 end
-cr_count = CardReference.where(faction: "rashaar").count
+cr_count = CardReference.where(identifier: identifiers).count
 p_count  = Profile.where(faction: "rashaar").count
 puts "Seeded Rashaar: #{cr_count} card references, #{p_count} profiles."
