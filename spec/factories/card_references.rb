@@ -10,12 +10,15 @@ end
 #
 # Table name: card_references
 #
-#  id         :bigint           not null, primary key
-#  identifier :string           not null
-#  name       :string
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  profile_id :bigint           not null
+#  id                :bigint           not null, primary key
+#  card_back         :string
+#  card_front        :string
+#  identifier        :string           not null
+#  illustration_path :string
+#  name              :string
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  profile_id        :bigint           not null
 #
 # Indexes
 #
