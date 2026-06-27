@@ -403,3 +403,8 @@ end
 Reference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
 
 puts "Seeded #{Reference.count} references"
+
+# ── Profiles (weapons, special rules, illustrations) ─────────────────────────
+Dir[File.join(__dir__, "seeds", "*.rb")].sort.each { |f| load f }
+
+puts "Seeded #{Profile.count} profiles, #{Weapon.count} weapons, #{SpecialRule.count} special rules"

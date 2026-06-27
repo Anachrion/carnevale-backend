@@ -10,9 +10,23 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_25_222033) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_134659) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "illustrations", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "flipped", default: false, null: false
+    t.integer "number", default: 1, null: false
+    t.integer "offset_x", default: 0, null: false
+    t.integer "offset_y", default: 0, null: false
+    t.string "path", null: false
+    t.bigint "profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "zoom", default: 100, null: false
+    t.index ["profile_id", "number"], name: "index_illustrations_on_profile_id_and_number", unique: true
+    t.index ["profile_id"], name: "index_illustrations_on_profile_id"
+  end
 
   create_table "list_entries", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -34,6 +48,47 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_222033) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "profile_special_rules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "profile_id", null: false
+    t.bigint "special_rule_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_profile_special_rules_on_profile_id"
+    t.index ["special_rule_id"], name: "index_profile_special_rules_on_special_rule_id"
+  end
+
+  create_table "profile_weapons", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "weapon_id", null: false
+    t.index ["profile_id"], name: "index_profile_weapons_on_profile_id"
+    t.index ["weapon_id"], name: "index_profile_weapons_on_weapon_id"
+  end
+
+  create_table "profiles", force: :cascade do |t|
+    t.json "abilities", default: [], null: false
+    t.integer "action_points", default: 0, null: false
+    t.integer "attack", default: 0, null: false
+    t.integer "command_points", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "dexterity", default: 0, null: false
+    t.integer "ducats", default: 0, null: false
+    t.string "faction", default: "", null: false
+    t.json "keywords", default: [], null: false
+    t.integer "life_points", default: 0, null: false
+    t.integer "mind", default: 0, null: false
+    t.integer "movement", default: 0, null: false
+    t.string "name", default: "", null: false
+    t.integer "protection", default: 0, null: false
+    t.integer "size", default: 0, null: false
+    t.datetime "updated_at", null: false
+    t.string "version", default: "2.2.0", null: false
+    t.integer "will_points", default: 0, null: false
+  end
+
   create_table "references", force: :cascade do |t|
     t.integer "cost", default: 0, null: false
     t.datetime "created_at", null: false
@@ -44,6 +99,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_25_222033) do
     t.index ["identifier"], name: "index_references_on_identifier", unique: true
   end
 
+  create_table "special_rules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
+    t.string "name", null: false
+    t.integer "spell_cost"
+    t.text "spell_description"
+    t.integer "spell_difficulty"
+    t.string "spell_name"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "weapons", force: :cascade do |t|
+    t.json "abilities", default: [], null: false
+    t.datetime "created_at", null: false
+    t.integer "damage", default: 0, null: false
+    t.integer "evasion", default: 0, null: false
+    t.string "name", null: false
+    t.integer "penetration", default: 0, null: false
+    t.integer "range", default: 0, null: false
+    t.datetime "updated_at", null: false
+  end
+
+  add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "lists"
   add_foreign_key "list_entries", "references"
+  add_foreign_key "profile_special_rules", "profiles"
+  add_foreign_key "profile_special_rules", "special_rules"
+  add_foreign_key "profile_weapons", "profiles"
+  add_foreign_key "profile_weapons", "weapons"
 end
