@@ -1,6 +1,8 @@
 class Profile < ApplicationRecord
   include HasFaction
 
+  has_many :card_references
+
   has_many :illustrations, -> { order(:number) }
 
   has_many :profile_weapons, -> { order(:position) }

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_163010) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_164450) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,8 +20,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_163010) do
     t.string "faction", null: false
     t.string "identifier", null: false
     t.string "name"
+    t.bigint "profile_id"
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
+    t.index ["profile_id"], name: "index_card_references_on_profile_id"
   end
 
   create_table "illustrations", force: :cascade do |t|
@@ -121,6 +123,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_163010) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "card_references", "profiles"
   add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "card_references"
   add_foreign_key "list_entries", "lists"
