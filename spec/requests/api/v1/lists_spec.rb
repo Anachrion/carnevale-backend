@@ -15,8 +15,8 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
     it "returns the correct fields including entries" do
       list = create(:list, name: "Test Gang", faction: "guild", points: 150)
-      ref = create(:reference, name: "Capodecina", cost: 20)
-      create(:list_entry, list: list, reference: ref, position: 1)
+      ref = create(:card_reference, name: "Capodecina", cost: 20)
+      create(:list_entry, list: list, card_reference: ref, position: 1)
 
       get "/api/v1/lists"
       body = JSON.parse(response.body).first
@@ -28,8 +28,8 @@ RSpec.describe "Api::V1::Lists", type: :request do
   describe "GET /api/v1/lists/:id" do
     it "returns the list with entries" do
       list = create(:list)
-      ref = create(:reference, name: "Capodecina", cost: 20)
-      create(:list_entry, list: list, reference: ref, position: 1)
+      ref = create(:card_reference, name: "Capodecina", cost: 20)
+      create(:list_entry, list: list, card_reference: ref, position: 1)
 
       get "/api/v1/lists/#{list.id}"
       expect(response).to have_http_status(:ok)
@@ -40,10 +40,10 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
     it "returns entries ordered by position" do
       list = create(:list)
-      ref_a = create(:reference)
-      ref_b = create(:reference)
-      create(:list_entry, list: list, reference: ref_b, position: 2)
-      create(:list_entry, list: list, reference: ref_a, position: 1)
+      ref_a = create(:card_reference)
+      ref_b = create(:card_reference)
+      create(:list_entry, list: list, card_reference: ref_b, position: 2)
+      create(:list_entry, list: list, card_reference: ref_a, position: 1)
 
       get "/api/v1/lists/#{list.id}"
       positions = JSON.parse(response.body)["entries"].map { |e| e["position"] }

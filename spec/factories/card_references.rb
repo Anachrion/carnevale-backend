@@ -1,8 +1,23 @@
 FactoryBot.define do
-  factory :card_reference do
+  factory :card_reference, aliases: [:reference] do
     sequence(:name) { |n| "Reference #{n}" }
     sequence(:identifier) { |n| "guild-reference-#{n}" }
     association :profile
+
+    transient do
+      cost { nil }
+    end
+
+    after(:build) do |card_reference, evaluator|
+      card_reference.profile.ducats = evaluator.cost if evaluator.cost
+    end
+
+    after(:create) do |card_reference, evaluator|
+      if evaluator.cost
+        card_reference.profile.update!(ducats: evaluator.cost)
+        card_reference.association(:profile).reset
+      end
+    end
   end
 end
 

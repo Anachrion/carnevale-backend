@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :list_entry do
     association :list
-    association :reference
+    association :card_reference, factory: :reference
     sequence(:position)
   end
 end
@@ -19,10 +19,9 @@ end
 #
 # Indexes
 #
-#  index_list_entries_on_card_reference_id              (card_reference_id)
-#  index_list_entries_on_list_id                        (list_id)
-#  index_list_entries_on_list_id_and_card_reference_id  (list_id,card_reference_id) UNIQUE
-#  index_list_entries_on_list_id_and_position           (list_id,position) UNIQUE
+#  index_list_entries_on_card_reference_id     (card_reference_id)
+#  index_list_entries_on_list_id               (list_id)
+#  index_list_entries_on_list_id_and_position  (list_id,position) UNIQUE
 #
 # Foreign Keys
 #
