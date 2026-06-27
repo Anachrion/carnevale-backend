@@ -407,4 +407,15 @@ puts "Seeded #{CardReference.count} references"
 # ── Profiles (weapons, special rules, illustrations) ─────────────────────────
 Dir[File.join(__dir__, "seeds", "*.rb")].sort.each { |f| load f }
 
+# ── Link CardReferences to Profiles ──────────────────────────────────────────
+profile_map = Profile.all.each_with_object({}) { |p, h| h[[p.name, p.faction]] = p.id }
+
+CardReference.find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[[base_name, cr.faction]]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+
+puts "Linked #{CardReference.where.not(profile_id: nil).count}/#{CardReference.count} card references to profiles"
+
 puts "Seeded #{Profile.count} profiles, #{Weapon.count} weapons, #{SpecialRule.count} special rules"
