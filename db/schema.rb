@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_174437) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_191830) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,7 +47,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_174437) do
     t.integer "position", null: false
     t.datetime "updated_at", null: false
     t.index ["card_reference_id"], name: "index_list_entries_on_card_reference_id"
-    t.index ["list_id", "card_reference_id"], name: "index_list_entries_on_list_id_and_card_reference_id", unique: true
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
     t.index ["list_id"], name: "index_list_entries_on_list_id"
   end

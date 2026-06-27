@@ -1,0 +1,416 @@
+openapi: 3.0.3
+
+info:
+  title: Carnevale API
+  version: "1"
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+  - url: https://your-production-domain.com/api/v1
+    description: Production
+
+paths:
+  /lists:
+    get:
+      operationId: getLists
+      summary: List all lists
+      tags: [Lists]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/List"
+
+    post:
+      operationId: createList
+      summary: Create a list
+      tags: [Lists]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /lists/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    get:
+      operationId: getList
+      summary: Get a list
+      tags: [Lists]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateList
+      summary: Update a list
+      tags: [Lists]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "404":
+          description: Not found
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+    delete:
+      operationId: deleteList
+      summary: Delete a list
+      tags: [Lists]
+      responses:
+        "204":
+          description: No content
+        "404":
+          description: Not found
+
+  /list_entries:
+    post:
+      operationId: createListEntry
+      summary: Add a card to a list
+      tags: [ListEntries]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryInput"
+      responses:
+        "201":
+          description: Created — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "404":
+          description: List not found
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /list_entries/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    delete:
+      operationId: deleteListEntry
+      summary: Remove a card from a list
+      tags: [ListEntries]
+      responses:
+        "200":
+          description: OK — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "404":
+          description: Not found
+
+  /profiles:
+    get:
+      operationId: getProfiles
+      summary: List all profiles
+      tags: [Profiles]
+      parameters:
+        - name: faction
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Profile"
+
+  /profiles/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    get:
+      operationId: getProfile
+      summary: Get a profile
+      tags: [Profiles]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "404":
+          description: Not found
+
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  schemas:
+    # ── Requests ────────────────────────────────────────────────────────────────
+
+    ListInput:
+      type: object
+      required: [list]
+      properties:
+        list:
+          type: object
+          required: [faction]
+          properties:
+            name:
+              type: string
+              nullable: true
+            faction:
+              type: string
+            points:
+              type: integer
+              default: 100
+
+    EntryInput:
+      type: object
+      required: [entry]
+      properties:
+        entry:
+          type: object
+          required: [list_id, card_reference_id]
+          properties:
+            list_id:
+              type: integer
+            card_reference_id:
+              type: integer
+
+    # ── Responses ───────────────────────────────────────────────────────────────
+
+    List:
+      type: object
+      required: [id, faction, points, total_cost, entries]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        faction:
+          type: string
+        points:
+          type: integer
+        total_cost:
+          type: integer
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListEntry"
+
+    ListEntry:
+      type: object
+      required: [id, position, card_reference_id, name, cost]
+      properties:
+        id:
+          type: integer
+        position:
+          type: integer
+        card_reference_id:
+          type: integer
+        name:
+          type: string
+        cost:
+          type: integer
+
+    Profile:
+      type: object
+      required:
+        - id
+        - name
+        - faction
+        - ducats
+        - movement
+        - attack
+        - dexterity
+        - life_points
+        - mind
+        - will_points
+        - protection
+        - action_points
+        - command_points
+        - size
+        - abilities
+        - keywords
+        - version
+        - weapons
+        - special_rules
+        - card_references
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        faction:
+          type: string
+        ducats:
+          type: integer
+        movement:
+          type: integer
+        attack:
+          type: integer
+        dexterity:
+          type: integer
+        life_points:
+          type: integer
+        mind:
+          type: integer
+        will_points:
+          type: integer
+        protection:
+          type: integer
+        action_points:
+          type: integer
+        command_points:
+          type: integer
+        size:
+          type: integer
+        abilities:
+          type: array
+          items:
+            type: string
+        keywords:
+          type: array
+          items:
+            type: string
+        version:
+          type: string
+        weapons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Weapon"
+        special_rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpecialRule"
+        card_references:
+          type: array
+          items:
+            $ref: "#/components/schemas/CardReference"
+
+    Weapon:
+      type: object
+      required: [id, name, damage, range, penetration, evasion, abilities]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        damage:
+          type: integer
+        range:
+          type: integer
+        penetration:
+          type: integer
+        evasion:
+          type: integer
+        abilities:
+          type: array
+          items:
+            type: string
+
+    SpecialRule:
+      type: object
+      required: [id, name, description]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        spell_name:
+          type: string
+          nullable: true
+        spell_cost:
+          type: integer
+          nullable: true
+        spell_difficulty:
+          type: integer
+          nullable: true
+        spell_description:
+          type: string
+          nullable: true
+
+    CardReference:
+      type: object
+      required: [id, identifier]
+      properties:
+        id:
+          type: integer
+        identifier:
+          type: string
+        name:
+          type: string
+          nullable: true
+        card_front:
+          type: string
+          nullable: true
+        card_back:
+          type: string
+          nullable: true
+
+    ValidationErrors:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string

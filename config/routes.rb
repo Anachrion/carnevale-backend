@@ -7,9 +7,8 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :lists do
-        resources :entries, only: %i[create destroy]
-      end
+      resources :lists
+      resources :list_entries, only: %i[create destroy]
       resources :profiles, only: %i[index show]
     end
   end
