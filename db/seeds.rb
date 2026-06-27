@@ -400,9 +400,9 @@ records = references.map do |attrs|
   { name: name, identifier: attrs[:identifier], faction: attrs[:faction], cost: attrs[:cost], created_at: now, updated_at: now }
 end
 
-Reference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
 
-puts "Seeded #{Reference.count} references"
+puts "Seeded #{CardReference.count} references"
 
 # ── Profiles (weapons, special rules, illustrations) ─────────────────────────
 Dir[File.join(__dir__, "seeds", "*.rb")].sort.each { |f| load f }
