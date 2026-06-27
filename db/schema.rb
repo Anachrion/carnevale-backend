@@ -19,7 +19,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_172536) do
     t.string "card_front"
     t.datetime "created_at", null: false
     t.string "identifier", null: false
-    t.string "illustration_path"
     t.string "name"
     t.bigint "profile_id", null: false
     t.datetime "updated_at", null: false
