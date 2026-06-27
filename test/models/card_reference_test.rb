@@ -14,7 +14,7 @@ end
 #  name       :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
-#  profile_id :bigint
+#  profile_id :bigint           not null
 #
 # Indexes
 #

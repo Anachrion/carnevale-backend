@@ -1,5 +1,5 @@
 class CardReference < ApplicationRecord
-  belongs_to :profile, optional: true
+  belongs_to :profile
 
   has_many :list_entries, dependent: :destroy
   has_many :lists, through: :list_entries
@@ -23,7 +23,7 @@ end
 #  name       :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
-#  profile_id :bigint
+#  profile_id :bigint           not null
 #
 # Indexes
 #
