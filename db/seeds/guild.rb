@@ -1,3 +1,77 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Capodecina",        identifier: "guild-capodecina",        cost: 20 },
+  { name: "Harbourmaster",     identifier: "guild-harbourmaster",     cost: 21 },
+  { name: "King For a Day",    identifier: "guild-king-for-a-day",   cost: 16 },
+  { name: "Madame",            identifier: "guild-madame",            cost: 20 },
+  { name: "Ostrich King?!",    identifier: "guild-ostrich-king",      cost: 19 },
+  { name: "Prince of Thieves", identifier: "guild-prince-of-thieves", cost: 23 },
+  { name: "Baba-Yaga",         identifier: "guild-baba-yaga",         cost: 19 },
+  { name: "Black Lamp",        identifier: "guild-black-lamp",        cost: 17 },
+  { name: "Ebenezer Chummage", identifier: "guild-ebenezer-chummage", cost: 18 },
+  { name: "Ostrich Chariot?!", identifier: "guild-ostrich-chariot",   cost: 34 },
+  { name: "Rialto Assassin",   identifier: "guild-rialto-assassin",   cost: 16 },
+  { name: "Bloodletter",       identifier: "guild-bloodletter",       cost: 16 },
+  { name: "Blood Matron",      identifier: "guild-blood-matron",      cost: 15 },
+  { name: "Barber",            identifier: "guild-barber",            cost: 12 },
+  { name: "Baroni",            identifier: "guild-baroni",            cost: 15 },
+  { name: "Brewer",            identifier: "guild-brewer",            cost: 15 },
+  { name: "Brute",             identifier: "guild-brute",             cost: 13 },
+  { name: "Butcher",           identifier: "guild-butcher",           cost: 13 },
+  { name: "Dancer",            identifier: "guild-dancer",            cost: 14 },
+  { name: "Death Duellist",    identifier: "guild-death-duellist",    cost: 14 },
+  { name: "Fisherman",         identifier: "guild-fisherman",         cost: 14 },
+  { name: "Recruiter",         identifier: "guild-recruiter",         cost: 14 },
+  { name: "Seamstress",        identifier: "guild-seamstress",        cost: 14 },
+  { name: "Shadow Assassin",   identifier: "guild-shadow-assassin",   cost: 14 },
+  { name: "Smuggler",          identifier: "guild-smuggler",          cost: 13 },
+  { name: "Thief",             identifier: "guild-thief",             cost: 14 },
+  { name: "Very Loud Ostrich", identifier: "guild-very-loud-ostrich", cost: 16 },
+  { name: "Whaler",            identifier: "guild-whaler",            cost: 17 },
+  { name: "Witch",             identifier: "guild-witch",             cost: 16 },
+  { name: "Arbalest",          identifier: "guild-arbalest-a",        cost: 10 },
+  { name: "Arbalest",          identifier: "guild-arbalest-b",        cost: 10 },
+  { name: "Beggar",            identifier: "guild-beggar-a",          cost:  5 },
+  { name: "Beggar",            identifier: "guild-beggar-b",          cost:  5 },
+  { name: "Blooded",           identifier: "guild-blooded-a",         cost:  5 },
+  { name: "Blooded",           identifier: "guild-blooded-b",         cost:  5 },
+  { name: "Blood Courier",     identifier: "guild-blood-courier",     cost: 13 },
+  { name: "Poacher",           identifier: "guild-poacher-a",         cost: 11 },
+  { name: "Poacher",           identifier: "guild-poacher-b",         cost: 11 },
+  { name: "Pulcinella",        identifier: "guild-pulcinella-a",      cost:  8 },
+  { name: "Pulcinella",        identifier: "guild-pulcinella-b",      cost:  8 },
+  { name: "Shipwright",        identifier: "guild-shipwright",        cost: 12 },
+  { name: "Escort",            identifier: "guild-escort",            cost: 12 },
+  { name: "Firebreather",      identifier: "guild-firebreather",      cost: 10 },
+  { name: "Gondolier",         identifier: "guild-gondolier-a",       cost: 11 },
+  { name: "Gondolier",         identifier: "guild-gondolier-b",       cost: 11 },
+  { name: "Harlot",            identifier: "guild-harlot-a",          cost: 10 },
+  { name: "Harlot",            identifier: "guild-harlot-b",          cost: 10 },
+  { name: "Indebted",          identifier: "guild-indebted-a",        cost: 11 },
+  { name: "Indebted",          identifier: "guild-indebted-b",        cost: 11 },
+  { name: "Mariner",           identifier: "guild-mariner-a",         cost: 10 },
+  { name: "Mariner",           identifier: "guild-mariner-b",         cost: 10 },
+  { name: "Ostrich Rider",     identifier: "guild-ostrich-rider",     cost: 12 },
+  { name: "Pilferer",          identifier: "guild-pilferer-a",        cost: 10 },
+  { name: "Pilferer",          identifier: "guild-pilferer-b",        cost: 10 },
+  { name: "Citizen",           identifier: "guild-citizen-a",         cost:  9 },
+  { name: "Citizen",           identifier: "guild-citizen-b",         cost:  9 },
+  { name: "Dog Keeper",        identifier: "guild-dog-keeper",        cost: 12 },
+  { name: "Dog",               identifier: "guild-dog-a",             cost:  5 },
+  { name: "Dog",               identifier: "guild-dog-b",             cost:  5 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "guild", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # ── Special Rules ──────────────────────────────────────────────────────────────
 
 start_the_horrorshow = SpecialRule.find_or_create_by!(name: "Start the Horrorshow!") do |r|
@@ -786,3 +860,14 @@ end
     path: path, offset_x: ox, offset_y: oy, zoom: zoom, flipped: flipped
   )
 end
+
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "guild").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "guild").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "guild").count
+p_count  = Profile.where(faction: "guild").count
+puts "Seeded Guild: #{cr_count} card references, #{p_count} profiles."

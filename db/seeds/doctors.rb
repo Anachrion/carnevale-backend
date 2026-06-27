@@ -1,3 +1,74 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Doctor of the Mind",             identifier: "doctors-doctor-of-the-mind",             cost: 22 },
+  { name: "Master of Necromantic Studies",  identifier: "doctors-master-of-necromantic-studies",  cost: 23 },
+  { name: "Master of Arcane Security",      identifier: "doctors-master-of-arcane-security",      cost: 27 },
+  { name: "Master of Zoology",              identifier: "doctors-master-of-zoology",              cost: 20 },
+  { name: "Plague Doctor",                  identifier: "doctors-plague-doctor",                  cost: 21 },
+  { name: "Patient 42",                     identifier: "doctors-patient-42",                     cost: 14 },
+  { name: "The Being",                      identifier: "doctors-the-being",                      cost: 15 },
+  { name: "The Unholy Union",               identifier: "doctors-the-unholy-union",               cost: 45 },
+  { name: "Brined Horror",                  identifier: "doctors-brined-horror",                  cost: 19 },
+  { name: "Doctor of Blood",                identifier: "doctors-doctor-of-blood",                cost: 16 },
+  { name: "Doctor of Divine Probabilities", identifier: "doctors-doctor-of-divine-probabilities", cost: 15 },
+  { name: "Doctor of Tides",                identifier: "doctors-doctor-of-tides",                cost: 18 },
+  { name: "Doctor of Poisons",              identifier: "doctors-doctor-of-poisons",              cost: 13 },
+  { name: "Doctor of the Beasts",           identifier: "doctors-doctor-of-the-beasts",           cost: 14 },
+  { name: "Doctor of the Firmament",        identifier: "doctors-doctor-of-the-firmament",        cost: 16 },
+  { name: "Ethereal Assassin",              identifier: "doctors-ethereal-assassin",              cost: 13 },
+  { name: "Ethereal Snatcher",              identifier: "doctors-ethereal-snatcher",              cost: 15 },
+  { name: "Alchemist Doctor",               identifier: "doctors-alchemist-doctor",               cost: 13 },
+  { name: "Morgue Doctor",                  identifier: "doctors-morgue-doctor",                  cost: 15 },
+  { name: "Marine Biologist",               identifier: "doctors-marine-biologist",               cost: 14 },
+  { name: "Ordnance Doctor",                identifier: "doctors-ordnance-doctor",                cost: 15 },
+  { name: "Unleashed Madman",               identifier: "doctors-unleashed-madman",               cost: 15 },
+  { name: "Voltage Bombardiers",            identifier: "doctors-voltage-bombardiers",            cost: 12 },
+  { name: "Warden",                         identifier: "doctors-warden",                         cost: 13 },
+  { name: "Apprentice Doctor",              identifier: "doctors-apprentice-doctor-a",            cost: 12 },
+  { name: "Apprentice Doctor",              identifier: "doctors-apprentice-doctor-b",            cost: 12 },
+  { name: "Basilisk",                       identifier: "doctors-basilisk",                       cost: 13 },
+  { name: "Carrion",                        identifier: "doctors-carrion-a",                      cost: 10 },
+  { name: "Carrion",                        identifier: "doctors-carrion-b",                      cost: 10 },
+  { name: "Crocodile",                      identifier: "doctors-crocodile",                      cost: 14 },
+  { name: "Doctor of Venesection",          identifier: "doctors-doctor-of-venesection-a",        cost: 10 },
+  { name: "Doctor of Venesection",          identifier: "doctors-doctor-of-venesection-b",        cost: 10 },
+  { name: "Diving Assistant",               identifier: "doctors-diving-assistant",               cost: 13 },
+  { name: "Electron Cannoneer",             identifier: "doctors-electron-cannoneer",             cost: 12 },
+  { name: "Ghoul",                          identifier: "doctors-ghoul-a",                        cost:  6 },
+  { name: "Ghoul",                          identifier: "doctors-ghoul-b",                        cost:  6 },
+  { name: "Gorilla",                        identifier: "doctors-gorilla",                        cost: 13 },
+  { name: "Hippocampus",                    identifier: "doctors-hippocampus",                    cost: 19 },
+  { name: "Hippogryph",                     identifier: "doctors-hippogryph",                     cost:  7 },
+  { name: "Hollowman",                      identifier: "doctors-hollowman-a",                    cost:  6 },
+  { name: "Hollowman",                      identifier: "doctors-hollowman-b",                    cost:  6 },
+  { name: "Harvester",                      identifier: "doctors-harvester",                      cost: 11 },
+  { name: "Husk",                           identifier: "doctors-husk-a",                         cost:  4 },
+  { name: "Husk",                           identifier: "doctors-husk-b",                         cost:  4 },
+  { name: "Lab Assistant",                  identifier: "doctors-lab-assistant-a",                cost: 10 },
+  { name: "Lab Assistant",                  identifier: "doctors-lab-assistant-b",                cost: 10 },
+  { name: "Lion",                           identifier: "doctors-lion",                           cost: 12 },
+  { name: "Madman",                         identifier: "doctors-madman-a",                       cost:  5 },
+  { name: "Madman",                         identifier: "doctors-madman-b",                       cost:  5 },
+  { name: "Manticore",                      identifier: "doctors-manticore",                      cost:  9 },
+  { name: "Mermaid",                        identifier: "doctors-mermaid",                        cost: 13 },
+  { name: "Monstrosity",                    identifier: "doctors-monstrosity",                    cost:  9 },
+  { name: "Nurse",                          identifier: "doctors-nurse-a",                        cost:  7 },
+  { name: "Nurse",                          identifier: "doctors-nurse-b",                        cost:  7 },
+  { name: "Rhino",                          identifier: "doctors-rhino",                          cost: 15 },
+  { name: "Shackled Feaster",               identifier: "doctors-shackled-feaster",               cost:  7 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "doctors", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # ── The Doctors ────────────────────────────────────────────────────────────────
 
 # Special Rules
@@ -747,3 +818,14 @@ end
     path: path, offset_x: ox, offset_y: oy, zoom: zoom, flipped: flipped
   )
 end
+
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "doctors").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "doctors").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "doctors").count
+p_count  = Profile.where(faction: "doctors").count
+puts "Seeded Doctors: #{cr_count} card references, #{p_count} profiles."

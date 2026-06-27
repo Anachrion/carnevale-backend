@@ -1,3 +1,81 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Patriarch Bishop de Bernis",   identifier: "vatican-patriarch-bishop-de-bernis",   cost: 24 },
+  { name: "Father Cesta",                 identifier: "vatican-father-cesta",                 cost: 24 },
+  { name: "Exorcist",                     identifier: "vatican-exorcist",                     cost: 20 },
+  { name: "Inquisitor",                   identifier: "vatican-inquisitor",                   cost: 22 },
+  { name: "Knight Commander",             identifier: "vatican-knight-commander",             cost: 21 },
+  { name: "Angel of the Blooded Rose",    identifier: "vatican-angel-of-the-blooded-rose",    cost: 20 },
+  { name: "Felix Baumgartner",            identifier: "vatican-felix-baumgartner",            cost: 17 },
+  { name: "Gethsemane",                   identifier: "vatican-gethsemane",                   cost: 37 },
+  { name: "Eater of Sin",                 identifier: "vatican-eater-of-sin",                 cost: 16 },
+  { name: "Avignon Guard",                identifier: "vatican-avignon-guard",                cost: 14 },
+  { name: "Baptist",                      identifier: "vatican-baptist",                      cost: 15 },
+  { name: "Burning Saint",                identifier: "vatican-burning-saint",                cost: 16 },
+  { name: "Conventual Chaplain",          identifier: "vatican-conventual-chaplain",          cost: 13 },
+  { name: "Cross-bearing Deacon",         identifier: "vatican-cross-bearing-deacon",         cost: 14 },
+  { name: "Divine Seraphim",              identifier: "vatican-divine-seraphim",              cost: 18 },
+  { name: "Executioner",                  identifier: "vatican-executioner",                  cost: 12 },
+  { name: "Galilean Priest",              identifier: "vatican-galilean-priest",              cost: 17 },
+  { name: "Golgotha",                     identifier: "vatican-golgotha",                     cost: 18 },
+  { name: "Inquisition Commissioner",     identifier: "vatican-inquisition-commissioner",     cost: 16 },
+  { name: "Knight of the Holy Sepulchre", identifier: "vatican-knight-of-the-holy-sepulchre", cost: 17 },
+  { name: "Paladin of St Lazarus",        identifier: "vatican-paladin-of-st-lazarus",        cost: 16 },
+  { name: "Prelate of the Flaming Sword", identifier: "vatican-prelate-of-the-flaming-sword", cost: 15 },
+  { name: "Scorpio Marksman",             identifier: "vatican-scorpio-marksman",             cost: 15 },
+  { name: "Sepulchral Vanguard",          identifier: "vatican-sepulchral-vanguard",          cost: 15 },
+  { name: "Seraph",                       identifier: "vatican-seraph",                       cost: 17 },
+  { name: "Silere Priest",                identifier: "vatican-silere-priest",                cost: 16 },
+  { name: "Stigmatist",                   identifier: "vatican-stigmatist",                   cost: 13 },
+  { name: "Summoner Priest",              identifier: "vatican-summoner-priest",              cost: 15 },
+  { name: "Templar Marshal",              identifier: "vatican-templar-marshal",              cost: 14 },
+  { name: "Throne",                       identifier: "vatican-throne",                       cost: 22 },
+  { name: "Venator of Devotion",          identifier: "vatican-venator-of-devotion",          cost: 17 },
+  { name: "French Infantryman",           identifier: "vatican-french-infantryman-a",         cost:  9 },
+  { name: "French Infantryman",           identifier: "vatican-french-infantryman-b",         cost:  9 },
+  { name: "Inquisitorial Spy",            identifier: "vatican-inquisitorial-spy",            cost:  9 },
+  { name: "Knight of Malta",              identifier: "vatican-knight-of-malta-a",            cost: 14 },
+  { name: "Knight of Malta",              identifier: "vatican-knight-of-malta-b",            cost: 14 },
+  { name: "Lacrimosa",                    identifier: "vatican-lacrimosa",                    cost: 10 },
+  { name: "Maltese Squire",               identifier: "vatican-maltese-squire-a",             cost: 10 },
+  { name: "Maltese Squire",               identifier: "vatican-maltese-squire-b",             cost: 10 },
+  { name: "Martyr",                       identifier: "vatican-martyr-a",                     cost:  8 },
+  { name: "Martyr",                       identifier: "vatican-martyr-b",                     cost:  8 },
+  { name: "Priest",                       identifier: "vatican-priest-a",                     cost: 10 },
+  { name: "Priest",                       identifier: "vatican-priest-b",                     cost: 10 },
+  { name: "Redemptionist",                identifier: "vatican-redemptionist-a",              cost: 12 },
+  { name: "Redemptionist",                identifier: "vatican-redemptionist-b",              cost: 12 },
+  { name: "Stalker",                      identifier: "vatican-stalker",                      cost: 12 },
+  { name: "Thalassic Messenger",          identifier: "vatican-thalassic-messenger",          cost: 18 },
+  { name: "Theophant of Sinai",           identifier: "vatican-theophant-of-sinai",           cost: 13 },
+  { name: "Witch Finder",                 identifier: "vatican-witch-finder",                 cost: 12 },
+  { name: "Thomas Thieme",                identifier: "vatican-thomas-thieme",                cost: 13 },
+  { name: "Altar Boy",                    identifier: "vatican-altar-boy-a",                  cost:  8 },
+  { name: "Altar Boy",                    identifier: "vatican-altar-boy-b",                  cost:  8 },
+  { name: "Bishop Guard",                 identifier: "vatican-bishop-guard-a",               cost: 11 },
+  { name: "Bishop Guard",                 identifier: "vatican-bishop-guard-b",               cost: 11 },
+  { name: "Celestial Congregation",       identifier: "vatican-celestial-congregation",       cost: 15 },
+  { name: "Celestial Spirit",             identifier: "vatican-celestial-spirit-a",           cost: 10 },
+  { name: "Celestial Spirit",             identifier: "vatican-celestial-spirit-b",           cost: 10 },
+  { name: "Cherubim",                     identifier: "vatican-cherubim-a",                   cost:  8 },
+  { name: "Cherubim",                     identifier: "vatican-cherubim-b",                   cost:  8 },
+  { name: "Chevaleresse",                 identifier: "vatican-chevaleresse-a",               cost: 11 },
+  { name: "Chevaleresse",                 identifier: "vatican-chevaleresse-b",               cost: 11 },
+  { name: "Crucifier",                    identifier: "vatican-crucifier",                    cost: 10 },
+  { name: "Reliquary Page",               identifier: "vatican-reliquary-page",               cost:  9 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "vatican", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # ── The Vatican ────────────────────────────────────────────────────────────────
 
 # Shared special rules
@@ -741,3 +819,14 @@ end
     path: path, offset_x: ox, offset_y: oy, zoom: zoom, flipped: flipped
   )
 end
+
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "vatican").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "vatican").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "vatican").count
+p_count  = Profile.where(faction: "vatican").count
+puts "Seeded Vatican: #{cr_count} card references, #{p_count} profiles."
