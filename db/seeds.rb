@@ -7,7 +7,7 @@ json_path = File.expand_path("../carnevale/assets/data/profiles.json", Rails.roo
 if File.exist?(json_path)
   require "json"
   json_map = JSON.parse(File.read(json_path)).each_with_object({}) do |p, h|
-    h[[p["name"], p["faction"]]] = { card_front: p["front_image"], card_back: p["back_image"] }
+    h[[p["name"], p["faction"]]] = { card_front: File.basename(p["front_image"]), card_back: File.basename(p["back_image"]) }
   end
   CardReference.includes(:profile).find_each do |cr|
     entry = json_map[[cr.profile.name, cr.profile.faction]]
