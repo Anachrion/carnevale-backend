@@ -55,16 +55,6 @@ card_ref_data = [
   { name: "Ottoman Rigger",         identifier: "patricians-ottoman-rigger",         cost: 12 },
 ]
 
-now = Time.current
-records = card_ref_data.map do |attrs|
-  display_name = case attrs[:identifier]
-                 when /-a$/ then "#{attrs[:name]} (A)"
-                 when /-b$/ then "#{attrs[:name]} (B)"
-                 else attrs[:name]
-                 end
-  { name: display_name, identifier: attrs[:identifier], created_at: now, updated_at: now }
-end
-CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name])
 
 # ── Special Rules ──────────────────────────────────────────────────────────────
 
@@ -798,14 +788,18 @@ end
   )
 end
 
-# ── Link CardReferences to Profiles ───────────────────────────────────────────
-identifiers = card_ref_data.map { |a| a[:identifier] }
+# ── Card References ────────────────────────────────────────────────────────────
 profile_map = Profile.where(faction: "patricians").each_with_object({}) { |p, h| h[p.name] = p.id }
-CardReference.where(identifier: identifiers).find_each do |cr|
-  base_name = cr.name.sub(/ \([AB]\)\z/, "")
-  profile_id = profile_map[base_name]
-  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], profile_id: profile_map[attrs[:name]], created_at: now, updated_at: now }
 end
-cr_count = CardReference.where(identifier: identifiers).count
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name profile_id])
+cr_count = CardReference.where(identifier: records.map { |r| r[:identifier] }).count
 p_count  = Profile.where(faction: "patricians").count
 puts "Seeded Patricians: #{cr_count} card references, #{p_count} profiles."

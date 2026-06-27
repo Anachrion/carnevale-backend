@@ -2,8 +2,7 @@ FactoryBot.define do
   factory :card_reference do
     sequence(:name) { |n| "Reference #{n}" }
     sequence(:identifier) { |n| "guild-reference-#{n}" }
-    faction { :guild }
-    cost { 10 }
+    association :profile
   end
 end
 
@@ -16,7 +15,7 @@ end
 #  name       :string
 #  created_at :datetime         not null
 #  updated_at :datetime         not null
-#  profile_id :bigint
+#  profile_id :bigint           not null
 #
 # Indexes
 #
