@@ -9,7 +9,7 @@ two:
 
 # == Schema Information
 #
-# Table name: references
+# Table name: card_references
 #
 #  id         :bigint           not null, primary key
 #  cost       :integer          default(0), not null
@@ -21,5 +21,5 @@ two:
 #
 # Indexes
 #
-#  index_references_on_identifier  (identifier) UNIQUE
+#  index_card_references_on_identifier  (identifier) UNIQUE
 #

@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_134659) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_27_163010) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "card_references", force: :cascade do |t|
+    t.integer "cost", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.string "faction", null: false
+    t.string "identifier", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
+    t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
+  end
 
   create_table "illustrations", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -29,15 +39,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_134659) do
   end
 
   create_table "list_entries", force: :cascade do |t|
+    t.bigint "card_reference_id", null: false
     t.datetime "created_at", null: false
     t.bigint "list_id", null: false
     t.integer "position", null: false
-    t.bigint "reference_id", null: false
     t.datetime "updated_at", null: false
+    t.index ["card_reference_id"], name: "index_list_entries_on_card_reference_id"
+    t.index ["list_id", "card_reference_id"], name: "index_list_entries_on_list_id_and_card_reference_id", unique: true
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
-    t.index ["list_id", "reference_id"], name: "index_list_entries_on_list_id_and_reference_id", unique: true
     t.index ["list_id"], name: "index_list_entries_on_list_id"
-    t.index ["reference_id"], name: "index_list_entries_on_reference_id"
   end
 
   create_table "lists", force: :cascade do |t|
@@ -89,16 +99,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_134659) do
     t.integer "will_points", default: 0, null: false
   end
 
-  create_table "references", force: :cascade do |t|
-    t.integer "cost", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.string "faction", null: false
-    t.string "identifier", null: false
-    t.string "name"
-    t.datetime "updated_at", null: false
-    t.index ["identifier"], name: "index_references_on_identifier", unique: true
-  end
-
   create_table "special_rules", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description", default: "", null: false
@@ -122,8 +122,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_134659) do
   end
 
   add_foreign_key "illustrations", "profiles"
+  add_foreign_key "list_entries", "card_references"
   add_foreign_key "list_entries", "lists"
-  add_foreign_key "list_entries", "references"
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"
   add_foreign_key "profile_weapons", "profiles"

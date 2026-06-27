@@ -5,7 +5,7 @@ module Api
 
       def create
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
-        entry = @list.list_entries.build(reference_id: entry_params[:reference_id], position: next_position)
+        entry = @list.list_entries.build(card_reference_id: entry_params[:card_reference_id], position: next_position)
         if entry.save
           render json: list_json(@list.reload, with_entries: true), status: :created
         else
@@ -26,7 +26,7 @@ module Api
       end
 
       def entry_params
-        params.require(:entry).permit(:reference_id)
+        params.require(:entry).permit(:card_reference_id)
       end
     end
   end

@@ -1,4 +1,4 @@
-class Reference < ApplicationRecord
+class CardReference < ApplicationRecord
   include HasFaction
 
   has_many :list_entries, dependent: :destroy
@@ -12,7 +12,7 @@ end
 
 # == Schema Information
 #
-# Table name: references
+# Table name: card_references
 #
 #  id         :bigint           not null, primary key
 #  cost       :integer          default(0), not null
@@ -24,5 +24,5 @@ end
 #
 # Indexes
 #
-#  index_references_on_identifier  (identifier) UNIQUE
+#  index_card_references_on_identifier  (identifier) UNIQUE
 #
