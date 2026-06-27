@@ -1,3 +1,54 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Il Capitano",            identifier: "gifted-il-capitano",           cost: 19 },
+  { name: "La Signora",             identifier: "gifted-la-signora",            cost: 18 },
+  { name: "The Duke",               identifier: "gifted-the-duke",              cost: 22 },
+  { name: "The Aberration",         identifier: "gifted-the-aberration",        cost: 23 },
+  { name: "Artisan Elena",          identifier: "gifted-artisan-elena",         cost: 17 },
+  { name: "Black Spectre",          identifier: "gifted-black-spectre",         cost: 30 },
+  { name: "Burattino",              identifier: "gifted-burattino",             cost: 15 },
+  { name: "Fadhila",                identifier: "gifted-fadhila",               cost: 19 },
+  { name: "Fate",                   identifier: "gifted-fate",                  cost: 18 },
+  { name: "Francisco De Lorme",     identifier: "gifted-francisco-de-lorme",    cost: 16 },
+  { name: "Harbinger's Reflection", identifier: "gifted-harbingers-reflection", cost: 17 },
+  { name: "Harlequin",              identifier: "gifted-harlequin",             cost: 18 },
+  { name: "Il Mentore",             identifier: "gifted-il-mentore",            cost: 16 },
+  { name: "Innamorati",             identifier: "gifted-innamorati",            cost: 13 },
+  { name: "Justice",                identifier: "gifted-justice",               cost: 18 },
+  { name: "Marco Leontus",          identifier: "gifted-marco-leontus",         cost: 15 },
+  { name: "Master Gerhard",         identifier: "gifted-master-gerhard",        cost: 16 },
+  { name: "Maria Fioritura",        identifier: "gifted-maria-fioritura",       cost: 18 },
+  { name: "Painted Protector",      identifier: "gifted-painted-protector",     cost:  0 },
+  { name: "Senshi the Undying",     identifier: "gifted-senshi-the-undying",    cost: 20 },
+  { name: "Solus Hydraea",          identifier: "gifted-solus-hydraea",         cost: 17 },
+  { name: "The Mask Maker",         identifier: "gifted-the-mask-maker",        cost: 14 },
+  { name: "White Dove",             identifier: "gifted-white-dove",            cost: 21 },
+  { name: "Zovena Vela",            identifier: "gifted-zovena-vela",           cost: 15 },
+  { name: "Brighella",              identifier: "gifted-brighella",             cost: 13 },
+  { name: "Colombina",              identifier: "gifted-colombina",             cost: 10 },
+  { name: "Coviello",               identifier: "gifted-coviello",              cost: 11 },
+  { name: "The Demolitionist",      identifier: "gifted-the-demolitionist",     cost: 13 },
+  { name: "Escaped Madman",         identifier: "gifted-escaped-madman",        cost: 16 },
+  { name: "Il Dottore",             identifier: "gifted-il-dottore",            cost: 12 },
+  { name: "Mezzetino",              identifier: "gifted-mezzetino",             cost: 13 },
+  { name: "Pantaleone",             identifier: "gifted-pantaleone",            cost: 10 },
+  { name: "Scapino",                identifier: "gifted-scapino",               cost:  0 },
+  { name: "Starspawn",              identifier: "gifted-starspawn",             cost: 15 },
+  { name: "Pierrot",                identifier: "gifted-pierrot-a",             cost:  8 },
+  { name: "Pierrot",                identifier: "gifted-pierrot-b",             cost:  8 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "gifted", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # Gifted faction seeds — all 35 profiles.
 # Idempotent — safe to run multiple times. Load from db/seeds.rb.
 # The Gifted are mercenaries: "Any character with the Faction (Gifted) keyword can
@@ -620,4 +671,13 @@ end
   )
 end
 
-puts "Seeded Gifted: 35 profiles."
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "gifted").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "gifted").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "gifted").count
+p_count  = Profile.where(faction: "gifted").count
+puts "Seeded Gifted: #{cr_count} card references, #{p_count} profiles."

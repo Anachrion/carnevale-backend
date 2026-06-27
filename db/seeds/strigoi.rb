@@ -1,3 +1,69 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Vlad Dracula",        identifier: "strigoi-vlad-dracula",        cost: 27 },
+  { name: "Blood Crone",         identifier: "strigoi-blood-crone",         cost: 18 },
+  { name: "Noble Strigoi",       identifier: "strigoi-noble-strigoi",       cost: 21 },
+  { name: "Stryha Crone",        identifier: "strigoi-stryha-crone",        cost: 22 },
+  { name: "Wallachian Hospodar", identifier: "strigoi-wallachian-hospodar", cost: 21 },
+  { name: "Ceres",               identifier: "strigoi-ceres",               cost: 19 },
+  { name: "Cibele",              identifier: "strigoi-cibele",              cost: 19 },
+  { name: "Miriam",              identifier: "strigoi-miriam",              cost: 19 },
+  { name: "Monstrous Stryx",     identifier: "strigoi-monstrous-stryx",     cost: 40 },
+  { name: "Aquatic Strigoi",     identifier: "strigoi-aquatic-strigoi",     cost: 14 },
+  { name: "Cetean Upior",        identifier: "strigoi-cetean-upior",        cost: 21 },
+  { name: "Highborn Servant",    identifier: "strigoi-highborn-servant",    cost: 13 },
+  { name: "Hulking Moroi",       identifier: "strigoi-hulking-moroi",       cost: 14 },
+  { name: "Leech",               identifier: "strigoi-leech",               cost: 12 },
+  { name: "Moon Eater",          identifier: "strigoi-moon-eater",          cost: 23 },
+  { name: "Reaper",              identifier: "strigoi-reaper",              cost: 13 },
+  { name: "Seer",                identifier: "strigoi-seer",                cost: 15 },
+  { name: "Spatar",              identifier: "strigoi-spatar",              cost: 16 },
+  { name: "Strige",              identifier: "strigoi-strige",              cost: 14 },
+  { name: "Strigoi Jude",        identifier: "strigoi-strigoi-jude",        cost: 18 },
+  { name: "Strigoi Priest",      identifier: "strigoi-strigoi-priest",      cost: 14 },
+  { name: "Targoveti",           identifier: "strigoi-targoveti-a",         cost: 10 },
+  { name: "Targoveti",           identifier: "strigoi-targoveti-b",         cost: 10 },
+  { name: "Thrall",              identifier: "strigoi-thrall-a",            cost:  9 },
+  { name: "Thrall",              identifier: "strigoi-thrall-b",            cost:  9 },
+  { name: "Strigoi Sluger",      identifier: "strigoi-strigoi-sluger",      cost: 18 },
+  { name: "Strzyga",             identifier: "strigoi-strzyga",             cost: 18 },
+  { name: "Tarot Reader",        identifier: "strigoi-tarot-reader",        cost: 16 },
+  { name: "Varcolac",            identifier: "strigoi-varcolac",            cost: 17 },
+  { name: "Wallachian Impaler",  identifier: "strigoi-wallachian-impaler",  cost: 18 },
+  { name: "Zoryi",               identifier: "strigoi-zoryi",               cost: 19 },
+  { name: "Al Naibii",           identifier: "strigoi-al-naibii",           cost:  9 },
+  { name: "Common Strigoi",      identifier: "strigoi-common-strigoi-a",    cost: 13 },
+  { name: "Common Strigoi",      identifier: "strigoi-common-strigoi-b",    cost: 13 },
+  { name: "Ferryman",            identifier: "strigoi-ferryman-a",          cost:  9 },
+  { name: "Ferryman",            identifier: "strigoi-ferryman-b",          cost:  9 },
+  { name: "Giurgiu Guard",       identifier: "strigoi-giurgiu-guard-a",     cost: 13 },
+  { name: "Giurgiu Guard",       identifier: "strigoi-giurgiu-guard-b",     cost: 13 },
+  { name: "Harpy",               identifier: "strigoi-harpy-a",             cost:  6 },
+  { name: "Harpy",               identifier: "strigoi-harpy-b",             cost:  6 },
+  { name: "Newborn Strigoi",     identifier: "strigoi-newborn-strigoi",     cost:  8 },
+  { name: "Nosferatu",           identifier: "strigoi-nosferatu-a",         cost: 13 },
+  { name: "Nosferatu",           identifier: "strigoi-nosferatu-b",         cost: 13 },
+  { name: "Romani",              identifier: "strigoi-romani-a",            cost:  9 },
+  { name: "Romani",              identifier: "strigoi-romani-b",            cost:  9 },
+  { name: "Rotter",              identifier: "strigoi-rotter-a",            cost: 12 },
+  { name: "Rotter",              identifier: "strigoi-rotter-b",            cost: 12 },
+  { name: "Sinker",              identifier: "strigoi-sinker-a",            cost: 10 },
+  { name: "Sinker",              identifier: "strigoi-sinker-b",            cost: 10 },
+  { name: "Starved Dhampir",     identifier: "strigoi-starved-dhampir",     cost:  7 },
+  { name: "Poenari Scout",       identifier: "strigoi-poenari-scout",       cost: 12 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "strigoi", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # ── Special Rules ──────────────────────────────────────────────────────────────
 
 transformation = SpecialRule.find_or_create_by!(name: "Transformation") do |r|
@@ -679,3 +745,14 @@ end
     path: path, offset_x: ox, offset_y: oy, zoom: zoom, flipped: flipped
   )
 end
+
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "strigoi").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "strigoi").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "strigoi").count
+p_count  = Profile.where(faction: "strigoi").count
+puts "Seeded Strigoi: #{cr_count} card references, #{p_count} profiles."

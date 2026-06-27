@@ -1,3 +1,75 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "The Flame That Burns Underwater", identifier: "rashaar-the-flame-that-burns-underwater", cost: 30 },
+  { name: "Magi-Rashaar",                   identifier: "rashaar-magi-rashaar",                    cost: 24 },
+  { name: "Paartul Matriarch",              identifier: "rashaar-paartul-matriarch",               cost: 25 },
+  { name: "Sir Tiburcio",                   identifier: "rashaar-sir-tiburcio",                    cost: 23 },
+  { name: "Thalidraur",                     identifier: "rashaar-thalidraur",                      cost: 26 },
+  { name: "Voice of Dagon",                 identifier: "rashaar-voice-of-dagon",                  cost: 20 },
+  { name: "Morgraur",                       identifier: "rashaar-morgraur",                        cost: 68 },
+  { name: "Emissary of Mother Hydra",       identifier: "rashaar-emissary-of-mother-hydra",        cost: 51 },
+  { name: "Maw Tentacle",                   identifier: "rashaar-maw-tentacle",                    cost:  0 },
+  { name: "Lash Tentacle",                  identifier: "rashaar-lash-tentacle",                   cost:  0 },
+  { name: "Dagger Tentacle",                identifier: "rashaar-dagger-tentacle",                 cost:  0 },
+  { name: "Thorn Tentacle",                 identifier: "rashaar-thorn-tentacle",                  cost:  0 },
+  { name: "The Drowned Nun",                identifier: "rashaar-the-drowned-nun",                 cost: 18 },
+  { name: "Brachyura",                      identifier: "rashaar-brachyura-a",                     cost: 18 },
+  { name: "Brachyura",                      identifier: "rashaar-brachyura-b",                     cost: 18 },
+  { name: "Caandru Eel",                    identifier: "rashaar-caandru-eel",                     cost: 14 },
+  { name: "Cult Enforcer",                  identifier: "rashaar-cult-enforcer",                   cost: 14 },
+  { name: "Dagonite Priest",                identifier: "rashaar-dagonite-priest",                 cost: 15 },
+  { name: "Demagogue",                      identifier: "rashaar-demagogue",                       cost: 15 },
+  { name: "Handler",                        identifier: "rashaar-handler",                         cost: 12 },
+  { name: "Karcharos",                      identifier: "rashaar-karcharos",                       cost: 18 },
+  { name: "Krakenhost",                     identifier: "rashaar-krakenhost",                      cost: 17 },
+  { name: "Mature Kraken",                  identifier: "rashaar-mature-kraken",                   cost: 24 },
+  { name: "Paliaa",                         identifier: "rashaar-paliaa",                          cost: 19 },
+  { name: "Raadru",                         identifier: "rashaar-raadru",                          cost: 20 },
+  { name: "Salaacia",                       identifier: "rashaar-salaacia",                        cost: 16 },
+  { name: "Secreting Myxin",                identifier: "rashaar-secreting-myxin",                 cost: 23 },
+  { name: "Sirena",                         identifier: "rashaar-sirena",                          cost: 18 },
+  { name: "Tainted Maw",                    identifier: "rashaar-tainted-maw",                     cost: 18 },
+  { name: "Advanced Hybrid",                identifier: "rashaar-advanced-hybrid-a",               cost: 12 },
+  { name: "Advanced Hybrid",                identifier: "rashaar-advanced-hybrid-b",               cost: 12 },
+  { name: "Aglaope",                        identifier: "rashaar-aglaope",                         cost: 12 },
+  { name: "Bounding Telebine",              identifier: "rashaar-bounding-telebine",               cost:  9 },
+  { name: "Bulbous Toad",                   identifier: "rashaar-bulbous-toad",                    cost: 13 },
+  { name: "Crybaby",                        identifier: "rashaar-crybaby-a",                       cost:  0 },
+  { name: "Crybaby",                        identifier: "rashaar-crybaby-b",                       cost:  0 },
+  { name: "Cymothoan Crusher",              identifier: "rashaar-cymothoan-crusher",               cost: 17 },
+  { name: "Dagon Officiant",                identifier: "rashaar-dagon-officiant-a",               cost:  0 },
+  { name: "Dagon Officiant",                identifier: "rashaar-dagon-officiant-b",               cost:  0 },
+  { name: "Dagonite Page",                  identifier: "rashaar-dagonite-page",                   cost: 13 },
+  { name: "Dagonite Zealot",                identifier: "rashaar-dagonite-zealot-a",               cost:  0 },
+  { name: "Dagonite Zealot",                identifier: "rashaar-dagonite-zealot-b",               cost:  0 },
+  { name: "Encrusted Squire",               identifier: "rashaar-encrusted-squire",                cost: 12 },
+  { name: "Half-Breed",                     identifier: "rashaar-half-breed",                      cost: 16 },
+  { name: "Hellhound",                      identifier: "rashaar-hellhound",                       cost: 10 },
+  { name: "Hybrid",                         identifier: "rashaar-hybrid-a",                        cost:  9 },
+  { name: "Hybrid",                         identifier: "rashaar-hybrid-b",                        cost:  9 },
+  { name: "Infant Kraken",                  identifier: "rashaar-infant-kraken-a",                 cost:  0 },
+  { name: "Infant Kraken",                  identifier: "rashaar-infant-kraken-b",                 cost:  0 },
+  { name: "Lesser Rhyll",                   identifier: "rashaar-lesser-rhyll",                    cost: 13 },
+  { name: "Lesser Ugdru",                   identifier: "rashaar-lesser-ugdru-a",                  cost: 14 },
+  { name: "Lesser Ugdru",                   identifier: "rashaar-lesser-ugdru-b",                  cost: 14 },
+  { name: "Slave",                          identifier: "rashaar-slave-a",                         cost:  0 },
+  { name: "Slave",                          identifier: "rashaar-slave-b",                         cost:  0 },
+  { name: "Urchin",                         identifier: "rashaar-urchin-a",                        cost:  8 },
+  { name: "Urchin",                         identifier: "rashaar-urchin-b",                        cost:  8 },
+  { name: "Wet Nurse",                      identifier: "rashaar-wet-nurse",                       cost: 10 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "rashaar", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # Rashaar faction seeds — first half (24 of 47 profiles).
 # Idempotent — safe to run multiple times. Load from db/seeds.rb.
 
@@ -809,4 +881,13 @@ end
   )
 end
 
-puts "Seeded Rashaar: 47 profiles."
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "rashaar").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "rashaar").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "rashaar").count
+p_count  = Profile.where(faction: "rashaar").count
+puts "Seeded Rashaar: #{cr_count} card references, #{p_count} profiles."

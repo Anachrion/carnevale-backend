@@ -1,3 +1,71 @@
+# ── Card References ────────────────────────────────────────────────────────────
+card_ref_data = [
+  { name: "Pinnacle of Affluence",  identifier: "patricians-pinnacle-of-affluence",  cost: 32 },
+  { name: "Guard Commander",        identifier: "patricians-guard-commander",        cost: 20 },
+  { name: "Noble Admiral",          identifier: "patricians-noble-admiral",          cost: 19 },
+  { name: "Venetian Noble",         identifier: "patricians-venetian-noble",         cost: 21 },
+  { name: "Mounted Venetian Noble", identifier: "patricians-mounted-venetian-noble", cost: 24 },
+  { name: "Janissary Chorbaji",     identifier: "patricians-janissary-chorbaji",     cost: 23 },
+  { name: "Sopracomito",            identifier: "patricians-sopracomito",            cost: 15 },
+  { name: "Don Gregorio Morisini",  identifier: "patricians-don-gregorio-morisini",  cost: 18 },
+  { name: "Moon",                   identifier: "patricians-moon",                   cost: 16 },
+  { name: "Sun",                    identifier: "patricians-sun",                    cost: 15 },
+  { name: "Adventuring Noble",      identifier: "patricians-adventuring-noble",      cost: 16 },
+  { name: "Captain of the Guard",   identifier: "patricians-captain-of-the-guard",   cost: 14 },
+  { name: "Cat Burglar",            identifier: "patricians-cat-burglar",            cost: 15 },
+  { name: "Fencing Master",         identifier: "patricians-fencing-master",         cost: 16 },
+  { name: "Foreign Dignitary",      identifier: "patricians-foreign-dignitary",      cost: 14 },
+  { name: "Gourmand Noble",         identifier: "patricians-gourmand-noble",         cost: 13 },
+  { name: "Naval Lieutenant",       identifier: "patricians-naval-lieutenant",       cost: 15 },
+  { name: "Janissary Sapper",       identifier: "patricians-janissary-sapper",       cost: 16 },
+  { name: "Ottoman Cannoneer",      identifier: "patricians-ottoman-cannoneer",      cost: 15 },
+  { name: "Ottoman Janissary",      identifier: "patricians-ottoman-janissary-a",    cost: 17 },
+  { name: "Ottoman Janissary",      identifier: "patricians-ottoman-janissary-b",    cost: 17 },
+  { name: "Seven Years Veteran",    identifier: "patricians-seven-years-veteran",    cost: 15 },
+  { name: "Submissive Noble",       identifier: "patricians-submissive-noble",       cost: 17 },
+  { name: "Syphilitic Noble",       identifier: "patricians-syphilitic-noble",       cost: 13 },
+  { name: "Venetian Heavy Guard",   identifier: "patricians-venetian-heavy-guard",   cost: 16 },
+  { name: "Venetian Spy",           identifier: "patricians-venetian-spy",           cost: 16 },
+  { name: "Wayfinder",              identifier: "patricians-wayfinder",              cost: 12 },
+  { name: "Barnabotti",             identifier: "patricians-barnabotti-a",           cost: 12 },
+  { name: "Barnabotti",             identifier: "patricians-barnabotti-b",           cost: 12 },
+  { name: "Butler",                 identifier: "patricians-butler-a",               cost: 10 },
+  { name: "Butler",                 identifier: "patricians-butler-b",               cost: 10 },
+  { name: "Cannibal Cultist",       identifier: "patricians-cannibal-cultist",       cost:  8 },
+  { name: "Cortigiane",             identifier: "patricians-cortigiane-a",           cost: 12 },
+  { name: "Cortigiane",             identifier: "patricians-cortigiane-b",           cost: 12 },
+  { name: "City Guard",             identifier: "patricians-city-guard-a",           cost: 10 },
+  { name: "City Guard",             identifier: "patricians-city-guard-b",           cost: 10 },
+  { name: "Guard Marksman",         identifier: "patricians-guard-marksman",         cost: 12 },
+  { name: "Guard Sentry",           identifier: "patricians-guard-sentry",           cost: 12 },
+  { name: "Hired Muscle",           identifier: "patricians-hired-muscle",           cost: 11 },
+  { name: "Household Staff",        identifier: "patricians-household-staff-a",      cost:  9 },
+  { name: "Household Staff",        identifier: "patricians-household-staff-b",      cost:  9 },
+  { name: "Hunting Hound",          identifier: "patricians-hunting-hound-a",        cost:  6 },
+  { name: "Hunting Hound",          identifier: "patricians-hunting-hound-b",        cost:  6 },
+  { name: "Merchant",               identifier: "patricians-merchant-a",             cost: 13 },
+  { name: "Merchant",               identifier: "patricians-merchant-b",             cost: 13 },
+  { name: "Naval Ensign",           identifier: "patricians-naval-ensign",           cost: 12 },
+  { name: "Naval Recruit",          identifier: "patricians-naval-recruit-a",        cost:  9 },
+  { name: "Naval Recruit",          identifier: "patricians-naval-recruit-b",        cost:  9 },
+  { name: "Noble Seafarer",         identifier: "patricians-noble-seafarer-a",       cost: 12 },
+  { name: "Noble Seafarer",         identifier: "patricians-noble-seafarer-b",       cost: 12 },
+  { name: "Ottoman Archer",         identifier: "patricians-ottoman-archer",         cost: 10 },
+  { name: "Ottoman Pirate",         identifier: "patricians-ottoman-pirate",         cost: 11 },
+  { name: "Ottoman Rigger",         identifier: "patricians-ottoman-rigger",         cost: 12 },
+]
+
+now = Time.current
+records = card_ref_data.map do |attrs|
+  display_name = case attrs[:identifier]
+                 when /-a$/ then "#{attrs[:name]} (A)"
+                 when /-b$/ then "#{attrs[:name]} (B)"
+                 else attrs[:name]
+                 end
+  { name: display_name, identifier: attrs[:identifier], faction: "patricians", cost: attrs[:cost], created_at: now, updated_at: now }
+end
+CardReference.upsert_all(records, unique_by: :identifier, update_only: %i[name faction cost])
+
 # ── Special Rules ──────────────────────────────────────────────────────────────
 
 you_there_do_something = SpecialRule.find_or_create_by!(name: "You there! Do something!") do |r|
@@ -729,3 +797,14 @@ end
     path: path, offset_x: ox, offset_y: oy, zoom: zoom, flipped: flipped
   )
 end
+
+# ── Link CardReferences to Profiles ───────────────────────────────────────────
+profile_map = Profile.where(faction: "patricians").each_with_object({}) { |p, h| h[p.name] = p.id }
+CardReference.where(faction: "patricians").find_each do |cr|
+  base_name = cr.name.sub(/ \([AB]\)\z/, "")
+  profile_id = profile_map[base_name]
+  cr.update_columns(profile_id: profile_id) if profile_id && cr.profile_id != profile_id
+end
+cr_count = CardReference.where(faction: "patricians").count
+p_count  = Profile.where(faction: "patricians").count
+puts "Seeded Patricians: #{cr_count} card references, #{p_count} profiles."
