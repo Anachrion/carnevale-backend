@@ -1,15 +1,17 @@
 class CardReference < ApplicationRecord
-  include HasFaction
-
   belongs_to :profile, optional: true
 
   has_many :list_entries, dependent: :destroy
   has_many :lists, through: :list_entries
 
+  delegate :faction, to: :profile, allow_nil: true
+
+  def cost
+    profile&.ducats
+  end
+
   validates :name, presence: true
   validates :identifier, presence: true, uniqueness: true
-  validates :faction, presence: true
-  validates :cost, presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 end
 
 # == Schema Information
@@ -17,8 +19,6 @@ end
 # Table name: card_references
 #
 #  id         :bigint           not null, primary key
-#  cost       :integer          default(0), not null
-#  faction    :string           not null
 #  identifier :string           not null
 #  name       :string
 #  created_at :datetime         not null

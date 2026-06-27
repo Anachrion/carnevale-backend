@@ -10,8 +10,6 @@ end
 # Table name: card_references
 #
 #  id         :bigint           not null, primary key
-#  cost       :integer          default(0), not null
-#  faction    :string           not null
 #  identifier :string           not null
 #  name       :string
 #  created_at :datetime         not null
