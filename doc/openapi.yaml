@@ -243,11 +243,14 @@ components:
       properties:
         entry:
           type: object
-          required: [list_id, card_reference_id]
+          required: [list_id, entry_type, entry_id]
           properties:
             list_id:
               type: integer
-            card_reference_id:
+            entry_type:
+              type: string
+              enum: [CardReference, Equipment]
+            entry_id:
               type: integer
 
     EntryPositionInput:
@@ -286,13 +289,16 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, card_reference_id, name, cost]
+      required: [id, position, entry_type, entry_id, name, cost]
       properties:
         id:
           type: integer
         position:
           type: integer
-        card_reference_id:
+        entry_type:
+          type: string
+          enum: [CardReference, Equipment]
+        entry_id:
           type: integer
         name:
           type: string

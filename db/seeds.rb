@@ -31,10 +31,12 @@ identifiers = %w[
 ]
 
 card_refs = CardReference.where(identifier: identifiers).index_by(&:identifier)
+
+list.list_entries.destroy_all
 identifiers.each_with_index do |id, position|
   cr = card_refs[id]
   next unless cr
-  list.list_entries.find_or_create_by!(card_reference: cr) { |e| e.position = position + 1 }
+  list.list_entries.create!(entry: cr, position: position + 1)
 end
 
 puts "Seeded sample list '#{list.name}' with #{list.list_entries.count} entries."
