@@ -13,6 +13,12 @@ module Api
         end
       end
 
+      def update
+        entry = ListEntry.find(params[:id])
+        ListEntryReorderService.call(entry, position_params[:position].to_i)
+        render json: list_json(entry.list.reload, with_entries: true)
+      end
+
       def destroy
         entry = ListEntry.find(params[:id])
         entry.destroy
@@ -23,6 +29,10 @@ module Api
 
       def entry_params
         params.require(:entry).permit(:list_id, :card_reference_id)
+      end
+
+      def position_params
+        params.require(:entry).permit(:position)
       end
     end
   end

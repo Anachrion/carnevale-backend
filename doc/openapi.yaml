@@ -135,6 +135,26 @@ paths:
     parameters:
       - $ref: "#/components/parameters/Id"
 
+    patch:
+      operationId: updateListEntryPosition
+      summary: Move a card to a new position in the list
+      tags: [ListEntries]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryPositionInput"
+      responses:
+        "200":
+          description: OK — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "404":
+          description: Not found
+
     delete:
       operationId: deleteListEntry
       summary: Remove a card from a list
@@ -229,6 +249,18 @@ components:
               type: integer
             card_reference_id:
               type: integer
+
+    EntryPositionInput:
+      type: object
+      required: [entry]
+      properties:
+        entry:
+          type: object
+          required: [position]
+          properties:
+            position:
+              type: integer
+              minimum: 1
 
     # ── Responses ───────────────────────────────────────────────────────────────
 

@@ -67,6 +67,44 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/list_entries/:id" do
+    it "moves the entry to the requested position and returns the updated list" do
+      ref_a = guild_ref
+      ref_b = guild_ref
+      ref_c = guild_ref
+      e1 = create(:list_entry, list: list, card_reference: ref_a, position: 1)
+      e2 = create(:list_entry, list: list, card_reference: ref_b, position: 2)
+      e3 = create(:list_entry, list: list, card_reference: ref_c, position: 3)
+
+      patch "/api/v1/list_entries/#{e3.id}",
+            params: { entry: { position: 1 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      positions = JSON.parse(response.body)["entries"].map { |e| e["position"] }
+      expect(positions).to eq([1, 2, 3])
+      expect(e3.reload.position).to eq(1)
+      expect(e1.reload.position).to eq(2)
+      expect(e2.reload.position).to eq(3)
+    end
+
+    it "does not auto-sort after a manual reorder" do
+      leader_profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader"])
+      henchman_profile = create(:profile, faction: :guild, ducats: 5, keywords: ["Henchman"])
+      leader_ref = create(:card_reference, profile: leader_profile)
+      henchman_ref = create(:card_reference, profile: henchman_profile)
+      e1 = create(:list_entry, list: list, card_reference: henchman_ref, position: 1)
+      e2 = create(:list_entry, list: list, card_reference: leader_ref, position: 2)
+
+      patch "/api/v1/list_entries/#{e1.id}",
+            params: { entry: { position: 2 } }.to_json,
+            headers: headers
+
+      expect(e1.reload.position).to eq(2)
+      expect(e2.reload.position).to eq(1)
+    end
+  end
+
   describe "DELETE /api/v1/list_entries/:id" do
     it "removes the entry and returns the updated list" do
       ref = guild_ref
