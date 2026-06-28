@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       resources :lists
       resources :list_entries, only: %i[create update destroy]
       resources :profiles, only: %i[index show]
+      resources :equipment, only: %i[index]
     end
   end
 

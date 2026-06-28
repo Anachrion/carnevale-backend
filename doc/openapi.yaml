@@ -208,6 +208,21 @@ paths:
         "404":
           description: Not found
 
+  /equipment:
+    get:
+      operationId: getEquipment
+      summary: List all equipment
+      tags: [Equipment]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Equipment"
+
 components:
   parameters:
     Id:
@@ -441,6 +456,19 @@ components:
         card_back:
           type: string
           nullable: true
+
+    Equipment:
+      type: object
+      required: [id, name, description, cost]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        cost:
+          type: integer
 
     ValidationErrors:
       type: object
