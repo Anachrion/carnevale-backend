@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_27_191830) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_28_083022) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -24,6 +24,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_191830) do
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
     t.index ["profile_id"], name: "index_card_references_on_profile_id"
+  end
+
+  create_table "equipment", force: :cascade do |t|
+    t.integer "cost"
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name"
+    t.datetime "updated_at", null: false
   end
 
   create_table "illustrations", force: :cascade do |t|
@@ -41,12 +49,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_191830) do
   end
 
   create_table "list_entries", force: :cascade do |t|
-    t.bigint "card_reference_id", null: false
     t.datetime "created_at", null: false
+    t.bigint "entry_id", null: false
+    t.string "entry_type", null: false
     t.bigint "list_id", null: false
     t.integer "position", null: false
     t.datetime "updated_at", null: false
-    t.index ["card_reference_id"], name: "index_list_entries_on_card_reference_id"
+    t.index ["entry_type", "entry_id"], name: "index_list_entries_on_entry_type_and_entry_id"
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
     t.index ["list_id"], name: "index_list_entries_on_list_id"
   end
@@ -124,7 +133,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_27_191830) do
 
   add_foreign_key "card_references", "profiles"
   add_foreign_key "illustrations", "profiles"
-  add_foreign_key "list_entries", "card_references"
   add_foreign_key "list_entries", "lists"
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"

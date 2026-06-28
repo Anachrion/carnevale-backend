@@ -4,7 +4,7 @@ module Api
       def create
         @list = List.find(entry_params[:list_id])
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
-        entry = @list.list_entries.build(card_reference_id: entry_params[:card_reference_id], position: next_position)
+        entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
           ListSortingService.call(@list)
           render json: list_json(@list.reload, with_entries: true), status: :created
@@ -28,7 +28,7 @@ module Api
       private
 
       def entry_params
-        params.require(:entry).permit(:list_id, :card_reference_id)
+        params.require(:entry).permit(:list_id, :entry_type, :entry_id)
       end
 
       def position_params

@@ -27,24 +27,26 @@ class ListValidationService
     @errors ||= []
   end
 
-  private
-
-  def projected_references
-    @projected_references ||= begin
-      refs = @list.card_references.includes(:profile).to_a
-      @adding ? refs + [@adding] : refs
+  def projected_items
+    @projected_items ||= begin
+      items = @list.list_entries.includes(:entry).map(&:entry)
+      @adding ? items + [@adding] : items
     end
   end
 
+  def projected_card_references
+    @projected_card_references ||= projected_items.grep(CardReference)
+  end
+
   def check_points_limit
-    total = projected_references.sum { |cr| cr.cost.to_i }
+    total = projected_items.sum { |item| item.cost.to_i }
     return if total <= @list.points
 
     @errors << "total cost (#{total}) exceeds the #{@list.points} points limit"
   end
 
   def check_faction_consistency
-    projected_references.each do |cr|
+    projected_card_references.each do |cr|
       next if cr.faction == @list.faction || cr.faction == "gifted"
 
       @errors << "#{cr.name} belongs to the #{cr.faction} faction and cannot join a #{@list.faction} list"
@@ -52,7 +54,7 @@ class ListValidationService
   end
 
   def check_unique_constraint
-    unique_refs = projected_references.select { |cr| cr.profile&.keywords&.include?("Unique") }
+    unique_refs = projected_card_references.select { |cr| cr.profile&.keywords&.include?("Unique") }
     unique_refs.group_by(&:id).each do |_, refs|
       @errors << "#{refs.first.name} is Unique and can only be hired once" if refs.size > 1
     end

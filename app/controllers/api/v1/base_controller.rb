@@ -11,11 +11,11 @@ module Api
           name: list.name,
           faction: list.faction,
           points: list.points,
-          total_cost: list.list_entries.sum { |e| e.card_reference.cost }
+          total_cost: list.list_entries.sum(&:cost)
         }
         if with_entries
-          json[:entries] = list.list_entries.includes(card_reference: :profile).order(:position).map do |entry|
-            { id: entry.id, position: entry.position, card_reference_id: entry.card_reference_id, name: entry.card_reference.name, cost: entry.card_reference.cost }
+          json[:entries] = list.list_entries.includes(:entry).order(:position).map do |list_entry|
+            { id: list_entry.id, position: list_entry.position, entry_type: list_entry.entry_type, entry_id: list_entry.entry_id, name: list_entry.entry.name, cost: list_entry.cost }
           end
         end
         json
