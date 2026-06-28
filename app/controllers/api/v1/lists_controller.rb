@@ -4,12 +4,12 @@ module Api
       before_action :set_list, only: %i[show update destroy]
 
       def index
-        lists = List.all.includes(list_entries: { card_reference: :profile })
+        lists = List.all.includes(list_entries: :entry)
         render json: lists.map { |list| list_json(list, with_entries: true) }
       end
 
       def show
-        render json: list_json(@list.tap { |l| l.list_entries.includes(:card_reference).load }, with_entries: true)
+        render json: list_json(@list.tap { |l| l.list_entries.includes(:entry).load }, with_entries: true)
       end
 
       def create
