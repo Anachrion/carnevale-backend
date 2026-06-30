@@ -6,14 +6,14 @@ RSpec.describe ListSortingService, type: :service do
   def entry_with(keywords:, cost:, position:)
     profile = create(:profile, faction: :guild, keywords: keywords, ducats: cost)
     ref = create(:card_reference, profile: profile)
-    entry = ListEntry.new(list: list, card_reference: ref, position: position)
+    entry = ListEntry.new(list: list, entry: ref, position: position)
     entry.save(validate: false)
     entry
   end
 
   def positions_by_name
-    list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-      e.card_reference.profile.name
+    list.list_entries.includes(entry: :profile).order(:position).map do |e|
+      e.entry.profile.name
     end
   end
 
@@ -25,8 +25,8 @@ RSpec.describe ListSortingService, type: :service do
 
       described_class.call(list)
 
-      keywords_in_order = list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-        e.card_reference.profile.keywords.first
+      keywords_in_order = list.list_entries.includes(entry: :profile).order(:position).map do |e|
+        e.entry.profile.keywords.first
       end
       expect(keywords_in_order).to eq(%w[Leader Hero Henchman])
     end
@@ -38,8 +38,8 @@ RSpec.describe ListSortingService, type: :service do
 
       described_class.call(list)
 
-      costs_in_order = list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-        e.card_reference.cost
+      costs_in_order = list.list_entries.includes(entry: :profile).order(:position).map do |e|
+        e.entry.cost
       end
       expect(costs_in_order).to eq([10, 20, 30])
     end
@@ -52,13 +52,13 @@ RSpec.describe ListSortingService, type: :service do
 
       described_class.call(list)
 
-      keywords_in_order = list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-        e.card_reference.profile.keywords.first
+      keywords_in_order = list.list_entries.includes(entry: :profile).order(:position).map do |e|
+        e.entry.profile.keywords.first
       end
       expect(keywords_in_order).to eq(%w[Leader Leader Hero Henchman])
 
-      costs_in_order = list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-        e.card_reference.cost
+      costs_in_order = list.list_entries.includes(entry: :profile).order(:position).map do |e|
+        e.entry.cost
       end
       expect(costs_in_order).to eq([10, 30, 20, 5])
     end
@@ -78,8 +78,8 @@ RSpec.describe ListSortingService, type: :service do
 
       described_class.call(list)
 
-      keywords_in_order = list.list_entries.includes(card_reference: :profile).order(:position).map do |e|
-        e.card_reference.profile.keywords
+      keywords_in_order = list.list_entries.includes(entry: :profile).order(:position).map do |e|
+        e.entry.profile.keywords
       end
       expect(keywords_in_order.first).to include("Leader")
     end
