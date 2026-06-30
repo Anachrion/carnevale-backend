@@ -11,7 +11,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
   def post_entry(ref, target_list: list)
     post "/api/v1/list_entries",
-         params: { entry: { list_id: target_list.id, card_reference_id: ref.id } }.to_json,
+         params: { entry: { list_id: target_list.id, entry_type: ref.class.name, entry_id: ref.id } }.to_json,
          headers: headers
   end
 
@@ -51,7 +51,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
     it "returns 422 when adding a Unique card already present" do
       ref = guild_ref(keywords: ["Unique"])
-      create(:list_entry, list: list, card_reference: ref, position: 1)
+      create(:list_entry, list: list, entry: ref, position: 1)
 
       post_entry(ref)
 
@@ -72,9 +72,9 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       ref_a = guild_ref
       ref_b = guild_ref
       ref_c = guild_ref
-      e1 = create(:list_entry, list: list, card_reference: ref_a, position: 1)
-      e2 = create(:list_entry, list: list, card_reference: ref_b, position: 2)
-      e3 = create(:list_entry, list: list, card_reference: ref_c, position: 3)
+      e1 = create(:list_entry, list: list, entry: ref_a, position: 1)
+      e2 = create(:list_entry, list: list, entry: ref_b, position: 2)
+      e3 = create(:list_entry, list: list, entry: ref_c, position: 3)
 
       patch "/api/v1/list_entries/#{e3.id}",
             params: { entry: { position: 1 } }.to_json,
@@ -93,8 +93,8 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       henchman_profile = create(:profile, faction: :guild, ducats: 5, keywords: ["Henchman"])
       leader_ref = create(:card_reference, profile: leader_profile)
       henchman_ref = create(:card_reference, profile: henchman_profile)
-      e1 = create(:list_entry, list: list, card_reference: henchman_ref, position: 1)
-      e2 = create(:list_entry, list: list, card_reference: leader_ref, position: 2)
+      e1 = create(:list_entry, list: list, entry: henchman_ref, position: 1)
+      e2 = create(:list_entry, list: list, entry: leader_ref, position: 2)
 
       patch "/api/v1/list_entries/#{e1.id}",
             params: { entry: { position: 2 } }.to_json,
@@ -108,7 +108,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
   describe "DELETE /api/v1/list_entries/:id" do
     it "removes the entry and returns the updated list" do
       ref = guild_ref
-      entry = create(:list_entry, list: list, card_reference: ref, position: 1)
+      entry = create(:list_entry, list: list, entry: ref, position: 1)
 
       delete "/api/v1/list_entries/#{entry.id}"
 

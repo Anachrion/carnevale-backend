@@ -1,7 +1,7 @@
 FactoryBot.define do
   factory :list_entry do
     association :list
-    association :card_reference, factory: :reference
+    association :entry, factory: :reference
     sequence(:position)
   end
 end

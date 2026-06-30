@@ -15,7 +15,7 @@ RSpec.describe ListValidationService, type: :service do
 
   def add_entry(list, ref, position: nil)
     position ||= (list.list_entries.maximum(:position) || 0) + 1
-    entry = ListEntry.new(list: list, card_reference: ref, position: position)
+    entry = ListEntry.new(list: list, entry: ref, position: position)
     entry.save(validate: false)
     entry
   end
