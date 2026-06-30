@@ -14,37 +14,72 @@ RSpec.describe ListEntry, type: :model do
       expect(entry).to be_valid
     end
 
-    it "is invalid when the card pushes the list over budget" do
-      entry = list.list_entries.build(entry: guild_ref(cost: 101), position: 1)
-      expect(entry).not_to be_valid
-      expect(entry.errors[:base].first).to match(/exceeds the 100 points limit/)
+    it "still saves when the card pushes the list over budget, but marks the list's selection invalid" do
+      entry = create(:list_entry, list: list, entry: guild_ref(cost: 101), position: 1)
+
+      expect(entry).to be_persisted
+      expect(list.reload.selection_valid).to be false
+      expect(list.selection_errors).to include(match(/exceeds the 100 points limit/))
     end
 
-    it "is invalid when the card belongs to a different faction" do
+    it "still saves when the card belongs to a different faction, but marks the list's selection invalid" do
       profile = create(:profile, faction: :rashaar, ducats: 10)
-      ref = create(:card_reference, profile: profile)
-      entry = list.list_entries.build(entry: ref, position: 1)
-      expect(entry).not_to be_valid
-      expect(entry.errors[:base].first).to match(/rashaar/)
-    end
-
-    it "is invalid when adding a Unique card already in the list" do
-      ref = guild_ref(keywords: ["Unique"])
-      create(:list_entry, list: list, entry: ref, position: 1)
-
-      duplicate = list.list_entries.build(entry: ref, position: 2)
-      expect(duplicate).not_to be_valid
-      expect(duplicate.errors[:base].first).to match(/Unique and can only be hired once/)
-    end
-
-    it "does not re-run roster validation on update" do
-      profile = create(:profile, faction: :guild, ducats: 10)
       ref = create(:card_reference, profile: profile)
       entry = create(:list_entry, list: list, entry: ref, position: 1)
 
-      profile.update!(ducats: 200)
+      expect(entry).to be_persisted
+      expect(list.reload.selection_valid).to be false
+      expect(list.selection_errors).to include(match(/rashaar/))
+    end
+
+    it "still saves when adding a duplicate Unique card, but marks the list's selection invalid" do
+      ref = guild_ref(keywords: ["Unique", "Leader"])
+      create(:list_entry, list: list, entry: ref, position: 1)
+
+      duplicate = create(:list_entry, list: list, entry: ref, position: 2)
+
+      expect(duplicate).to be_persisted
+      expect(list.reload.selection_valid).to be false
+      expect(list.selection_errors).to include(match(/Unique and can only be hired once/))
+    end
+
+    it "marks the list's selection valid once the entries satisfy the rules" do
+      create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+
+      expect(list.reload.selection_valid).to be true
+      expect(list.selection_errors).to eq([])
+    end
+  end
+
+  describe "on update" do
+    it "refreshes the list's selection validity" do
+      ref = guild_ref(keywords: ["Leader"])
+      entry = create(:list_entry, list: list, entry: ref, position: 1)
+      expect(list.reload.selection_valid).to be true
+
+      ref.profile.update!(ducats: 200)
       entry.touch
-      expect(entry).to be_valid
+
+      expect(list.reload.selection_valid).to be false
+    end
+  end
+
+  describe "on destroy" do
+    it "refreshes the list's selection validity" do
+      leader = guild_ref(keywords: ["Leader"])
+      henchman = guild_ref(keywords: ["Henchman"])
+      hero_a = guild_ref(keywords: ["Hero"])
+      hero_b = guild_ref(keywords: ["Hero"])
+      create(:list_entry, list: list, entry: leader, position: 1)
+      create(:list_entry, list: list, entry: henchman, position: 2)
+      extra_hero = create(:list_entry, list: list, entry: hero_a, position: 3)
+      create(:list_entry, list: list, entry: hero_b, position: 4)
+
+      expect(list.reload.selection_valid).to be false
+
+      extra_hero.destroy
+
+      expect(list.reload.selection_valid).to be true
     end
   end
 end

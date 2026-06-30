@@ -284,7 +284,7 @@ components:
 
     List:
       type: object
-      required: [id, faction, points, total_cost, entries]
+      required: [id, faction, points, total_cost, selection_valid, selection_errors, entries]
       properties:
         id:
           type: integer
@@ -297,6 +297,13 @@ components:
           type: integer
         total_cost:
           type: integer
+        selection_valid:
+          type: boolean
+          description: Whether the current set of entries satisfies the gang composition rules (points limit, faction, uniqueness, Leader, Hero/Henchman ratio, etc).
+        selection_errors:
+          type: array
+          items:
+            type: string
         entries:
           type: array
           items:

@@ -15,7 +15,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
     it "returns the correct fields including entries" do
       list = create(:list, name: "Test Gang", faction: "guild", points: 150)
-      ref = create(:card_reference, name: "Capodecina", cost: 20)
+      ref = create(:card_reference, name: "Capodecina", profile: create(:profile, faction: "guild", ducats: 20, keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref, position: 1)
 
       get "/api/v1/lists"
@@ -28,7 +28,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
   describe "GET /api/v1/lists/:id" do
     it "returns the list with entries" do
       list = create(:list)
-      ref = create(:card_reference, name: "Capodecina", cost: 20)
+      ref = create(:card_reference, name: "Capodecina", profile: create(:profile, faction: "guild", ducats: 20, keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref, position: 1)
 
       get "/api/v1/lists/#{list.id}"
@@ -41,7 +41,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
     it "returns entries ordered by position" do
       list = create(:list)
       ref_a = create(:card_reference)
-      ref_b = create(:card_reference)
+      ref_b = create(:card_reference, profile: create(:profile, faction: "guild", keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref_b, position: 2)
       create(:list_entry, list: list, entry: ref_a, position: 1)
 
@@ -108,7 +108,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
     it "also destroys associated entries" do
       list = create(:list)
-      create(:list_entry, list: list)
+      create(:list_entry, list: list, entry: create(:card_reference, profile: create(:profile, faction: "guild", keywords: ["Leader"])))
       expect {
         delete "/api/v1/lists/#{list.id}"
       }.to change(ListEntry, :count).by(-1)

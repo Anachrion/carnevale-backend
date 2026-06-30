@@ -21,6 +21,8 @@ class ListValidationService
     check_faction_consistency
     check_unique_constraint
     check_equipment_uniqueness
+    check_leader_count
+    check_hero_henchman_ratio
     @errors.empty?
   end
 
@@ -65,5 +67,21 @@ class ListValidationService
     projected_items.grep(Equipment).group_by(&:id).each do |_, items|
       @errors << "#{items.first.name} can only be taken once" if items.size > 1
     end
+  end
+
+  def check_leader_count
+    return if projected_items.empty?
+    return if @list.points <= 75
+
+    leader_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Leader") }
+    @errors << "the gang must have exactly one Leader (found #{leader_count})" unless leader_count == 1
+  end
+
+  def check_hero_henchman_ratio
+    hero_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Hero") }
+    henchman_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Henchman") }
+    return if hero_count <= henchman_count
+
+    @errors << "the gang cannot have more Heroes (#{hero_count}) than Henchmen (#{henchman_count})"
   end
 end
