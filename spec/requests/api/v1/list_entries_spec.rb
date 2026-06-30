@@ -17,7 +17,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
   describe "POST /api/v1/list_entries" do
     it "creates an entry and returns the updated list" do
-      post_entry(guild_ref)
+      post_entry(guild_ref(keywords: ["Leader"]))
 
       expect(response).to have_http_status(:created)
       body = JSON.parse(response.body)
@@ -26,7 +26,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     end
 
     it "assigns incrementing positions" do
-      post_entry(guild_ref)
+      post_entry(guild_ref(keywords: ["Leader"]))
       post_entry(guild_ref)
 
       expect(response).to have_http_status(:created)
@@ -34,31 +34,40 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       expect(positions).to eq([1, 2])
     end
 
-    it "returns 422 when cost exceeds points limit" do
+    it "creates the entry but marks the list's selection invalid when cost exceeds points limit" do
+      post_entry(guild_ref(keywords: ["Leader"]))
       post_entry(guild_ref(cost: 101))
 
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(JSON.parse(response.body)["errors"]).not_to be_empty
+      expect(response).to have_http_status(:created)
+      body = JSON.parse(response.body)
+      expect(body["selection_valid"]).to be false
+      expect(body["selection_errors"]).not_to be_empty
     end
 
-    it "returns 422 when card belongs to a different faction" do
+    it "creates the entry but marks the list's selection invalid when card belongs to a different faction" do
+      post_entry(guild_ref(keywords: ["Leader"]))
       profile = create(:profile, faction: :vatican, ducats: 10)
       ref = create(:card_reference, profile: profile)
       post_entry(ref)
 
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["selection_valid"]).to be false
     end
 
-    it "returns 422 when adding a Unique card already present" do
-      ref = guild_ref(keywords: ["Unique"])
+    it "creates the entry but marks the list's selection invalid when adding a Unique card already present" do
+      ref = guild_ref(keywords: ["Unique", "Leader"])
       create(:list_entry, list: list, entry: ref, position: 1)
 
       post_entry(ref)
 
-      expect(response).to have_http_status(:unprocessable_content)
+      expect(response).to have_http_status(:created)
+      expect(JSON.parse(response.body)["selection_valid"]).to be false
     end
 
     it "allows a gifted card in a non-gifted list" do
+      leader_ref = guild_ref(keywords: ["Leader"])
+      create(:list_entry, list: list, entry: leader_ref, position: 1)
+
       profile = create(:profile, faction: :gifted, ducats: 10)
       ref = create(:card_reference, profile: profile)
       post_entry(ref)
@@ -69,7 +78,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
   describe "PATCH /api/v1/list_entries/:id" do
     it "moves the entry to the requested position and returns the updated list" do
-      ref_a = guild_ref
+      ref_a = guild_ref(keywords: ["Leader"])
       ref_b = guild_ref
       ref_c = guild_ref
       e1 = create(:list_entry, list: list, entry: ref_a, position: 1)
@@ -93,8 +102,8 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       henchman_profile = create(:profile, faction: :guild, ducats: 5, keywords: ["Henchman"])
       leader_ref = create(:card_reference, profile: leader_profile)
       henchman_ref = create(:card_reference, profile: henchman_profile)
-      e1 = create(:list_entry, list: list, entry: henchman_ref, position: 1)
       e2 = create(:list_entry, list: list, entry: leader_ref, position: 2)
+      e1 = create(:list_entry, list: list, entry: henchman_ref, position: 1)
 
       patch "/api/v1/list_entries/#{e1.id}",
             params: { entry: { position: 2 } }.to_json,
@@ -107,7 +116,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
   describe "DELETE /api/v1/list_entries/:id" do
     it "removes the entry and returns the updated list" do
-      ref = guild_ref
+      ref = guild_ref(keywords: ["Leader"])
       entry = create(:list_entry, list: list, entry: ref, position: 1)
 
       delete "/api/v1/list_entries/#{entry.id}"

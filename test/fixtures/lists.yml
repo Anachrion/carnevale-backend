@@ -13,10 +13,12 @@ two:
 #
 # Table name: lists
 #
-#  id         :bigint           not null, primary key
-#  faction    :string           not null
-#  name       :string
-#  points     :integer          default(100), not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+#  id               :bigint           not null, primary key
+#  faction          :string           not null
+#  name             :string
+#  points           :integer          default(100), not null
+#  selection_errors :json             not null
+#  selection_valid  :boolean          default(FALSE), not null
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
 #

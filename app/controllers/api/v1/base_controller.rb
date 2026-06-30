@@ -11,7 +11,9 @@ module Api
           name: list.name,
           faction: list.faction,
           points: list.points,
-          total_cost: list.list_entries.sum(&:cost)
+          total_cost: list.list_entries.sum(&:cost),
+          selection_valid: list.selection_valid,
+          selection_errors: list.selection_errors
         }
         if with_entries
           json[:entries] = list.list_entries.includes(:entry).order(:position).map do |list_entry|

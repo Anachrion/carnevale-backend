@@ -7,13 +7,12 @@ class ListEntry < ApplicationRecord
   validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :position, uniqueness: { scope: :list_id }
 
-  validate :validate_list_roster, on: :create
+  after_commit :refresh_list_selection_validity, on: %i[create update destroy]
 
   private
 
-  def validate_list_roster
-    result = ListValidationService.call(list, adding: entry)
-    result[:errors].each { |msg| errors.add(:base, msg) }
+  def refresh_list_selection_validity
+    list.refresh_selection_validity
   end
 end
 
