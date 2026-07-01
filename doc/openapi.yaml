@@ -11,6 +11,72 @@ servers:
     description: Production
 
 paths:
+  /signup:
+    post:
+      operationId: signup
+      summary: Register a new user
+      description: Creates the user and sends a confirmation email. The user cannot log in until the confirmation link has been clicked.
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegistrationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /login:
+    post:
+      operationId: login
+      summary: Log in and receive a JWT
+      description: On success, the JWT is returned in the `Authorization` response header as `Bearer <token>`. Send it back on subsequent requests to authenticate.
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Authorization:
+              schema:
+                type: string
+              description: "Bearer JWT, e.g. `Bearer eyJhbGciOi...`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          description: Invalid email or password, or unconfirmed account
+
+  /logout:
+    delete:
+      operationId: logout
+      summary: Revoke the current JWT
+      tags: [Session]
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: No content
+        "401":
+          description: Not authenticated
+
   /lists:
     get:
       operationId: getLists
@@ -232,8 +298,44 @@ components:
       schema:
         type: integer
 
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     # ── Requests ────────────────────────────────────────────────────────────────
+
+    LoginInput:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email, password]
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+
+    RegistrationInput:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [username, email, password, password_confirmation]
+          properties:
+            username:
+              type: string
+            email:
+              type: string
+            password:
+              type: string
+            password_confirmation:
+              type: string
 
     ListInput:
       type: object
@@ -281,6 +383,21 @@ components:
               minimum: 1
 
     # ── Responses ───────────────────────────────────────────────────────────────
+
+    Session:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [id, email, username]
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+            username:
+              type: string
 
     List:
       type: object
