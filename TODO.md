@@ -8,3 +8,9 @@
   app just needs to trigger and complete the reset via its own API calls, but
   if you want the whole thing to stay in-app (no browser hop), the mailer
   template would need a follow-up change to link back into the app instead.
+
+## Roadmap
+
+3. Full game/match tracking (big chunk of work).
+4. Card versioning.
+5. Share lists via QR code.
