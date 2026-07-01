@@ -76,6 +76,51 @@ paths:
         "401":
           description: Not authenticated
 
+  /password:
+    post:
+      operationId: forgotPassword
+      summary: Request a password reset email
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "200":
+          description: OK — instructions sent if the email is on file
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+    patch:
+      operationId: resetPassword
+      summary: Set a new password using a reset token
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /lists:
     get:
       operationId: getLists
@@ -330,6 +375,32 @@ components:
             username:
               type: string
             email:
+              type: string
+            password:
+              type: string
+            password_confirmation:
+              type: string
+
+    ForgotPasswordInput:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [email]
+          properties:
+            email:
+              type: string
+
+    ResetPasswordInput:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [reset_password_token, password, password_confirmation]
+          properties:
+            reset_password_token:
               type: string
             password:
               type: string
