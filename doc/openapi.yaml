@@ -15,7 +15,6 @@ paths:
     post:
       operationId: signup
       summary: Register a new user
-      description: Creates the user and sends a confirmation email. The user cannot log in until the confirmation link has been clicked.
       tags: [Session]
       requestBody:
         required: true
@@ -62,7 +61,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Session"
         "401":
-          description: Invalid email or password, or unconfirmed account
+          description: Invalid email or password
 
   /logout:
     delete:
