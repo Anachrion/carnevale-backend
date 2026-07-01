@@ -14,6 +14,7 @@ Rails.application.routes.draw do
         post "signup", to: "registrations#create"
         post "password", to: "passwords#create"
         patch "password", to: "passwords#update"
+        patch "account", to: "registrations#update"
       end
 
       resources :lists

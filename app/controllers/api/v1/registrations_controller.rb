@@ -15,7 +15,19 @@ module Api
         end
       end
 
+      def update
+        if resource.update(account_update_params)
+          render json: { user: user_json(resource) }, status: :ok
+        else
+          render json: { errors: resource.errors }, status: :unprocessable_entity
+        end
+      end
+
       private
+
+      def account_update_params
+        params.require(:user).permit(:username)
+      end
 
       def user_json(user)
         { id: user.id, email: user.email, username: user.username }

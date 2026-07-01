@@ -121,6 +121,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /account:
+    patch:
+      operationId: updateAccount
+      summary: Update the current user's username
+      tags: [Session]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAccountInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "401":
+          description: Not authenticated
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /lists:
     get:
       operationId: getLists
@@ -405,6 +434,17 @@ components:
             password:
               type: string
             password_confirmation:
+              type: string
+
+    UpdateAccountInput:
+      type: object
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [username]
+          properties:
+            username:
               type: string
 
     ListInput:
