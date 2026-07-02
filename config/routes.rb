@@ -21,8 +21,27 @@ Rails.application.routes.draw do
       resources :list_entries, only: %i[create update destroy]
       resources :profiles, only: %i[index show]
       resources :equipment, only: %i[index]
+      resources :scenarios, only: %i[index]
+
+      resources :games, only: %i[index create show] do
+        collection do
+          post :join
+        end
+        member do
+          post :role_roll
+          patch :role
+          get :available_lists
+          patch :select_gang
+          post "agendas/draw", action: :draw_agendas
+          post :deployment_roll
+          patch :deployment_zone
+          post :ready
+        end
+      end
     end
   end
+
+  mount ActionCable.server => "/cable"
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest

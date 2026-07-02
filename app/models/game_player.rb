@@ -12,6 +12,23 @@ class GamePlayer < ApplicationRecord
   validates :user_id, uniqueness: { scope: :game_id }
   validates :role, inclusion: { in: ROLES }, allow_nil: true
   validates :deployment_zone, inclusion: { in: DEPLOYMENT_ZONES }, allow_nil: true
+
+  def as_json_for(viewer_game_player)
+    {
+      id: id,
+      user_id: user_id,
+      username: user.username,
+      host: host,
+      list: list && { id: list.id, name: list.name, faction: list.faction, points: list.points, total_cost: list.list_entries.sum(&:cost) },
+      role: role,
+      deployment_zone: deployment_zone,
+      role_roll: role_roll,
+      deployment_roll: deployment_roll,
+      ready: ready,
+      # Drawn agendas are private — only ever revealed to the player who drew them.
+      agendas: viewer_game_player&.id == id ? Agenda.where(id: agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : []
+    }
+  end
 end
 
 # == Schema Information

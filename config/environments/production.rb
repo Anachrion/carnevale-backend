@@ -62,6 +62,9 @@ Rails.application.configure do
   # Base URL of the front-end app, used to build links (e.g. password reset) in emails.
   config.x.frontend_url = ENV.fetch("FRONTEND_URL")
 
+  # Only accept Action Cable connections that claim to come from the front-end app.
+  config.action_cable.allowed_request_origins = [ENV.fetch("FRONTEND_URL")]
+
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
   #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
