@@ -45,7 +45,8 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
   # Base URL of the front-end app, used to build links (e.g. password reset) in emails.
-  config.x.frontend_url = ENV.fetch("FRONTEND_URL", "http://localhost:8080")
+  # Defaults are set in .env.development; override locally via .env if needed.
+  config.x.frontend_url = ENV.fetch("FRONTEND_URL")
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log
