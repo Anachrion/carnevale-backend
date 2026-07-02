@@ -1,15 +1,22 @@
 require 'rails_helper'
 
 RSpec.describe "Api::V1::ListEntries", type: :request do
-  let(:list) { create(:list, faction: :guild, points: 100) }
-  let(:headers) { { "Content-Type" => "application/json" } }
+  let(:user) { create(:user, password: "password123", password_confirmation: "password123") }
+  let(:list) { create(:list, user: user, faction: :guild, points: 100) }
+  let(:json_headers) { { "Content-Type" => "application/json" } }
+  let(:headers) { auth_headers }
+
+  def auth_headers(as: user)
+    post "/api/v1/login", params: { user: { email: as.email, password: "password123" } }.to_json, headers: json_headers
+    json_headers.merge("Authorization" => response.headers["Authorization"])
+  end
 
   def guild_ref(cost: 10, keywords: [])
     profile = create(:profile, faction: :guild, ducats: cost, keywords: keywords)
     create(:card_reference, profile: profile)
   end
 
-  def post_entry(ref, target_list: list)
+  def post_entry(ref, target_list: list, headers: self.headers)
     post "/api/v1/list_entries",
          params: { entry: { list_id: target_list.id, entry_type: ref.class.name, entry_id: ref.id } }.to_json,
          headers: headers
@@ -119,10 +126,41 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       ref = guild_ref(keywords: ["Leader"])
       entry = create(:list_entry, list: list, entry: ref, position: 1)
 
-      delete "/api/v1/list_entries/#{entry.id}"
+      delete "/api/v1/list_entries/#{entry.id}", headers: headers
 
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["entries"]).to be_empty
+    end
+  end
+
+  describe "authorization" do
+    let(:other_list) { create(:list, faction: :guild, points: 100) }
+
+    it "returns 401 for POST when not authenticated" do
+      post_entry(guild_ref, headers: json_headers.merge("Accept" => "application/json"))
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "returns 404 when creating an entry on another user's list" do
+      post_entry(guild_ref, target_list: other_list)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 404 when updating another user's entry" do
+      entry = create(:list_entry, list: other_list, entry: guild_ref, position: 1)
+
+      patch "/api/v1/list_entries/#{entry.id}", params: { entry: { position: 1 } }.to_json, headers: headers
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns 404 when destroying another user's entry" do
+      entry = create(:list_entry, list: other_list, entry: guild_ref, position: 1)
+
+      delete "/api/v1/list_entries/#{entry.id}", headers: headers
+
+      expect(response).to have_http_status(:not_found)
+      expect(ListEntry.exists?(entry.id)).to be true
     end
   end
 end
