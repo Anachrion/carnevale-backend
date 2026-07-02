@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_210256) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_02_221314) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "agendas", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description", default: "", null: false
+    t.string "first_roll", null: false
+    t.string "name", null: false
+    t.integer "second_roll", null: false
+    t.datetime "updated_at", null: false
+    t.index ["first_roll", "second_roll"], name: "index_agendas_on_first_roll_and_second_roll", unique: true
+  end
 
   create_table "card_references", force: :cascade do |t|
     t.string "card_back"
@@ -119,6 +129,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_210256) do
     t.datetime "updated_at", null: false
     t.string "version", default: "2.2.0", null: false
     t.integer "will_points", default: 0, null: false
+  end
+
+  create_table "scenarios", force: :cascade do |t|
+    t.json "agendas", default: [], null: false
+    t.datetime "created_at", null: false
+    t.json "deployment_zones", default: [], null: false
+    t.integer "ducats", default: 0, null: false
+    t.string "duration", default: "", null: false
+    t.string "illustration"
+    t.string "name", null: false
+    t.text "primary_objective", default: "", null: false
+    t.text "setup", default: "", null: false
+    t.json "special_rules", default: [], null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "special_rules", force: :cascade do |t|
