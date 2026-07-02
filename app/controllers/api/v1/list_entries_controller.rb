@@ -1,8 +1,10 @@
 module Api
   module V1
     class ListEntriesController < BaseController
+      before_action :authenticate_user!
+
       def create
-        @list = List.find(entry_params[:list_id])
+        @list = current_user.lists.find(entry_params[:list_id])
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
@@ -14,18 +16,22 @@ module Api
       end
 
       def update
-        entry = ListEntry.find(params[:id])
+        entry = find_owned_entry
         ListEntryReorderService.call(entry, position_params[:position].to_i)
         render json: list_json(entry.list.reload, with_entries: true)
       end
 
       def destroy
-        entry = ListEntry.find(params[:id])
+        entry = find_owned_entry
         entry.destroy
         render json: list_json(entry.list.reload, with_entries: true)
       end
 
       private
+
+      def find_owned_entry
+        ListEntry.joins(:list).where(lists: { user_id: current_user.id }).find(params[:id])
+      end
 
       def entry_params
         params.require(:entry).permit(:list_id, :entry_type, :entry_id)

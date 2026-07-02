@@ -1,10 +1,11 @@
 module Api
   module V1
     class ListsController < BaseController
+      before_action :authenticate_user!
       before_action :set_list, only: %i[show update destroy]
 
       def index
-        lists = List.all.includes(list_entries: :entry)
+        lists = current_user.lists.includes(list_entries: :entry)
         render json: lists.map { |list| list_json(list, with_entries: true) }
       end
 
@@ -13,7 +14,7 @@ module Api
       end
 
       def create
-        @list = List.new(list_params)
+        @list = current_user.lists.new(list_params)
         if @list.save
           render json: list_json(@list, with_entries: true), status: :created
         else
@@ -37,7 +38,7 @@ module Api
       private
 
       def set_list
-        @list = List.find(params[:id])
+        @list = current_user.lists.find(params[:id])
       end
 
       def list_params

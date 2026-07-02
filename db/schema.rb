@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_140000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_02_210256) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -76,6 +76,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_140000) do
     t.json "selection_errors", default: [], null: false
     t.boolean "selection_valid", default: false, null: false
     t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_lists_on_user_id"
   end
 
   create_table "profile_special_rules", force: :cascade do |t|
@@ -158,6 +160,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_140000) do
   add_foreign_key "card_references", "profiles"
   add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "lists"
+  add_foreign_key "lists", "users"
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"
   add_foreign_key "profile_weapons", "profiles"

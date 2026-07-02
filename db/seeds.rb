@@ -18,8 +18,14 @@ end
 puts "Total: #{CardReference.count} card references, #{Profile.count} profiles, #{Weapon.count} weapons, #{SpecialRule.count} special rules"
 
 # ── Sample List ────────────────────────────────────────────────────────────────
+sample_user = User.find_or_create_by!(email: "demo@example.com") do |u|
+  u.username = "demo"
+  u.password = SecureRandom.hex(12)
+end
+
 list = List.find_or_create_by!(name: "Guild Sample List", faction: "guild") do |l|
   l.points = 150
+  l.user = sample_user
 end
 
 identifiers = %w[
