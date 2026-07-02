@@ -17,6 +17,7 @@ end
 #
 #  id                :bigint           not null, primary key
 #  agendas           :json             not null
+#  asymmetric        :boolean          default(FALSE), not null
 #  deployment_zones  :json             not null
 #  ducats            :integer          default(0), not null
 #  duration          :string           default(""), not null

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_221314) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_02_223508) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_221314) do
     t.text "description"
     t.string "name"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "game_players", force: :cascade do |t|
+    t.json "agenda_ids", default: [], null: false
+    t.datetime "created_at", null: false
+    t.integer "deployment_roll"
+    t.string "deployment_zone"
+    t.bigint "game_id", null: false
+    t.boolean "host", default: false, null: false
+    t.bigint "list_id"
+    t.boolean "ready", default: false, null: false
+    t.string "role"
+    t.integer "role_roll"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["game_id", "user_id"], name: "index_game_players_on_game_id_and_user_id", unique: true
+    t.index ["game_id"], name: "index_game_players_on_game_id"
+    t.index ["list_id"], name: "index_game_players_on_list_id"
+    t.index ["user_id"], name: "index_game_players_on_user_id"
+  end
+
+  create_table "games", force: :cascade do |t|
+    t.string "board_size"
+    t.datetime "created_at", null: false
+    t.bigint "deployment_roll_winner_id"
+    t.integer "ducat_limit", null: false
+    t.string "join_code", null: false
+    t.bigint "role_roll_winner_id"
+    t.bigint "scenario_id", null: false
+    t.string "status", default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["deployment_roll_winner_id"], name: "index_games_on_deployment_roll_winner_id"
+    t.index ["join_code"], name: "index_games_on_join_code", unique: true
+    t.index ["role_roll_winner_id"], name: "index_games_on_role_roll_winner_id"
+    t.index ["scenario_id"], name: "index_games_on_scenario_id"
   end
 
   create_table "illustrations", force: :cascade do |t|
@@ -133,6 +168,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_221314) do
 
   create_table "scenarios", force: :cascade do |t|
     t.json "agendas", default: [], null: false
+    t.boolean "asymmetric", default: false, null: false
     t.datetime "created_at", null: false
     t.json "deployment_zones", default: [], null: false
     t.integer "ducats", default: 0, null: false
@@ -182,6 +218,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_221314) do
   end
 
   add_foreign_key "card_references", "profiles"
+  add_foreign_key "game_players", "games"
+  add_foreign_key "game_players", "lists"
+  add_foreign_key "game_players", "users"
+  add_foreign_key "games", "game_players", column: "deployment_roll_winner_id"
+  add_foreign_key "games", "game_players", column: "role_roll_winner_id"
+  add_foreign_key "games", "scenarios"
   add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "lists"
   add_foreign_key "lists", "users"

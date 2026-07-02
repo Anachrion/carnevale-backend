@@ -76,6 +76,7 @@
   {
     name: "Street Fight",
     ducats: 100,
+    asymmetric: true,
     setup: "2'x4' board. Defender sets up all terrain. 1 bridge, placed in the centre of the board leading in the same way as the long board edge, shown in green.",
     primary_objective: "Every Attacking character to touch the opposite short board edge is removed from play and scores 1 Victory Point. Every Attacking character killed scores 1 Victory Point to the gang that killed them.",
     agendas: [
