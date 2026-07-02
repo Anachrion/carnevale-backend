@@ -5,6 +5,10 @@ module Api
 
       private
 
+      def render_error(message, status: :unprocessable_entity)
+        render json: { errors: { base: [ message ] } }, status: status
+      end
+
       def list_json(list, with_entries: false)
         json = {
           id: list.id,
