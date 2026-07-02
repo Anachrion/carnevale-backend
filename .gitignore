@@ -31,5 +31,6 @@
 # Claude Code settings (personal, not shared)
 .claude/settings.json
 .claude/settings.local.json
+.claude/worktrees/
 
 .codex/
