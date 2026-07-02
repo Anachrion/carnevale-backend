@@ -400,6 +400,368 @@ paths:
                 items:
                   $ref: "#/components/schemas/Equipment"
 
+  /scenarios:
+    get:
+      operationId: getScenarios
+      summary: List all scenarios
+      tags: [Scenarios]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Scenario"
+
+  /games:
+    get:
+      operationId: getGames
+      summary: List the current user's games (to resume/reopen)
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+
+    post:
+      operationId: createGame
+      summary: Create a game, hosted by the current user
+      description: ducat_limit defaults from the scenario if omitted.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/join:
+    post:
+      operationId: joinGame
+      summary: Join a game via its join_code
+      description: Idempotent if the current user has already joined. Returns 422 if the game is already full.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinGameInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: No game with that join_code
+        "422":
+          description: Game is full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    get:
+      operationId: getGame
+      summary: Get a game's full current state
+      description: Returns 404 if the game doesn't exist or the current user isn't a participant. Agendas are only ever populated for the requesting player's own game_player entry.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+  /games/{id}/role_roll:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: rollForRole
+      summary: Roll for Attacker/Defender priority (asymmetric scenarios only)
+      description: Ties are re-rolled automatically, server-side, before this responds.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Scenario isn't asymmetric, or the role is already decided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/role:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: pickRole
+      summary: Pick Attacker or Defender (role roll-off winner only)
+      description: The other player is automatically assigned the remaining role.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Roll-off not resolved yet, or not the winner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/available_lists:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    get:
+      operationId: getAvailableGangs
+      summary: The current user's lists, flagged selectable against this game's ducat_limit
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailableGang"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Role roll-off not resolved yet (asymmetric scenarios)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/select_gang:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: selectGang
+      summary: Select a list as the current user's gang for this game
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SelectGangInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: List exceeds the game's ducat_limit, or role roll-off not resolved yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/agendas/draw:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: drawAgendas
+      summary: Privately draw this player's Agenda cards
+      description: Never broadcast or visible to the opponent.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DrawAgendasResponse"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status, or agendas already drawn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/deployment_roll:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: rollForDeployment
+      summary: Roll the deployment-priority die
+      description: Ties are re-rolled automatically, server-side, before this responds.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status, or deployment zone already decided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/deployment_zone:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: pickDeploymentZone
+      summary: Pick a Deployment Zone (deployment roll-off winner only)
+      description: The other player is automatically assigned the remaining zone.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeploymentZoneInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Roll-off not resolved yet, or not the winner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/ready:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: markReady
+      summary: Confirm physical deployment is done
+      description: Once both players are ready, the game's status becomes in_progress.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
 components:
   parameters:
     Id:
@@ -529,6 +891,50 @@ components:
             position:
               type: integer
               minimum: 1
+
+    CreateGameInput:
+      type: object
+      required: [scenario_id]
+      properties:
+        scenario_id:
+          type: integer
+        ducat_limit:
+          type: integer
+          nullable: true
+          description: Defaults to the scenario's ducats if omitted.
+        board_size:
+          type: string
+          nullable: true
+
+    JoinGameInput:
+      type: object
+      required: [join_code]
+      properties:
+        join_code:
+          type: string
+
+    SelectGangInput:
+      type: object
+      required: [list_id]
+      properties:
+        list_id:
+          type: integer
+
+    RoleInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [attacker, defender]
+
+    DeploymentZoneInput:
+      type: object
+      required: [zone]
+      properties:
+        zone:
+          type: string
+          enum: [A, B]
 
     # ── Responses ───────────────────────────────────────────────────────────────
 
@@ -752,3 +1158,164 @@ components:
             type: array
             items:
               type: string
+
+    Scenario:
+      type: object
+      required:
+        - id
+        - name
+        - ducats
+        - asymmetric
+        - setup
+        - primary_objective
+        - agendas
+        - special_rules
+        - duration
+        - deployment_zones
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        ducats:
+          type: integer
+          description: Default ducat limit recommended by the rulebook for this scenario.
+        asymmetric:
+          type: boolean
+          description: True for scenarios with Attacker/Defender roles (e.g. Street Fight), which run a role roll-off once both players have joined.
+        setup:
+          type: string
+        primary_objective:
+          type: string
+        agendas:
+          type: array
+          items:
+            type: string
+        special_rules:
+          type: array
+          items:
+            type: string
+        duration:
+          type: string
+        deployment_zones:
+          type: array
+          items:
+            type: string
+        illustration:
+          type: string
+          nullable: true
+
+    Agenda:
+      type: object
+      required: [id, name, description]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+
+    GamePlayerGang:
+      type: object
+      required: [id, name, faction, points, total_cost]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        faction:
+          type: string
+        points:
+          type: integer
+        total_cost:
+          type: integer
+
+    GamePlayer:
+      type: object
+      required: [id, user_id, username, host, list, role, deployment_zone, role_roll, deployment_roll, ready, agendas]
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        username:
+          type: string
+        host:
+          type: boolean
+        list:
+          allOf:
+            - $ref: "#/components/schemas/GamePlayerGang"
+          nullable: true
+        role:
+          type: string
+          enum: [attacker, defender]
+          nullable: true
+        deployment_zone:
+          type: string
+          enum: [A, B]
+          nullable: true
+        role_roll:
+          type: integer
+          nullable: true
+        deployment_roll:
+          type: integer
+          nullable: true
+        ready:
+          type: boolean
+        agendas:
+          type: array
+          description: Only populated for the requesting player's own entry — always empty for the opponent's.
+          items:
+            $ref: "#/components/schemas/Agenda"
+
+    Game:
+      type: object
+      required: [id, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, players]
+      properties:
+        id:
+          type: integer
+        join_code:
+          type: string
+        status:
+          type: string
+          enum: [pending, gang_selection, agenda_draw, deployment_rolloff, deploying, in_progress, completed]
+        ducat_limit:
+          type: integer
+        board_size:
+          type: string
+          nullable: true
+        scenario:
+          $ref: "#/components/schemas/Scenario"
+        role_roll_winner_id:
+          type: integer
+          nullable: true
+          description: game_player id of the role roll-off winner (asymmetric scenarios only).
+        deployment_roll_winner_id:
+          type: integer
+          nullable: true
+          description: game_player id of the deployment roll-off winner.
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/GamePlayer"
+
+    AvailableGang:
+      type: object
+      required: [list, selectable]
+      properties:
+        list:
+          $ref: "#/components/schemas/List"
+        selectable:
+          type: boolean
+          description: False when list.points exceeds the game's ducat_limit.
+
+    DrawAgendasResponse:
+      type: object
+      required: [agendas]
+      properties:
+        agendas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Agenda"
