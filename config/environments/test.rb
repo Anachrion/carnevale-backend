@@ -39,6 +39,9 @@ Rails.application.configure do
   # Set host to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "example.com" }
 
+  # Base URL of the front-end app, used to build links (e.g. password reset) in emails.
+  config.x.frontend_url = "http://example.com"
+
   # Print deprecation notices to the stderr.
   config.active_support.deprecation = :stderr
 
