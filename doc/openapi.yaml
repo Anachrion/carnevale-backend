@@ -1216,7 +1216,7 @@ components:
         description:
           type: string
 
-    GamePlayerGang:
+    GangSummary:
       type: object
       required: [id, name, faction, points, total_cost]
       properties:
@@ -1246,7 +1246,7 @@ components:
           type: boolean
         list:
           allOf:
-            - $ref: "#/components/schemas/GamePlayerGang"
+            - $ref: "#/components/schemas/GangSummary"
           nullable: true
         role:
           type: string
@@ -1306,7 +1306,7 @@ components:
       required: [list, selectable]
       properties:
         list:
-          $ref: "#/components/schemas/List"
+          $ref: "#/components/schemas/GangSummary"
         selectable:
           type: boolean
           description: False when list.points exceeds the game's ducat_limit.

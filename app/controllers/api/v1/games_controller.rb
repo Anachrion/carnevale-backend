@@ -65,7 +65,7 @@ module Api
       end
 
       def available_lists
-        render json: current_user.lists.map { |l| { list: list_json(l), selectable: l.points <= @game.ducat_limit } }
+        render json: current_user.lists.map { |l| { list: l.as_json_summary, selectable: l.points <= @game.ducat_limit } }
       end
 
       def select_gang
