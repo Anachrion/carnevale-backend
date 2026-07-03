@@ -16,6 +16,10 @@ class List < ApplicationRecord
     result = ListValidationService.call(self)
     update_columns(selection_valid: result[:success], selection_errors: result[:errors])
   end
+
+  def as_json_summary
+    { id: id, name: name, faction: faction, points: points, total_cost: list_entries.sum(&:cost) }
+  end
 end
 
 # == Schema Information

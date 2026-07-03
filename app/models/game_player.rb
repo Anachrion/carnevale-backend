@@ -19,7 +19,7 @@ class GamePlayer < ApplicationRecord
       user_id: user_id,
       username: user.username,
       host: host,
-      list: list && { id: list.id, name: list.name, faction: list.faction, points: list.points, total_cost: list.list_entries.sum(&:cost) },
+      list: list&.as_json_summary,
       role: role,
       deployment_zone: deployment_zone,
       role_roll: role_roll,
