@@ -83,9 +83,12 @@ class Game < ApplicationRecord
   def draw_one_agenda_id(already_drawn)
     loop do
       bucket = AGENDA_BUCKET_WEIGHTS.sample
-      agenda = Agenda.where(first_roll: bucket).order(Arel.sql("RANDOM()")).first
-      next if already_drawn.include?(agenda.id)
-      break agenda.id
+      # Sample in Ruby rather than `ORDER BY RANDOM() LIMIT 1`: identical SQL text for a
+      # repeated bucket gets served from the per-request query cache, which would return the
+      # same row every time and could spin forever once that row is already drawn.
+      candidates = Agenda.where(first_roll: bucket).pluck(:id) - already_drawn
+      next if candidates.empty?
+      break candidates.sample
     end
   end
 
