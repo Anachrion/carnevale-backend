@@ -22,8 +22,6 @@ class GamePlayer < ApplicationRecord
       list: list&.as_json_summary,
       role: role,
       deployment_zone: deployment_zone,
-      role_roll: role_roll,
-      deployment_roll: deployment_roll,
       ready: ready,
       # Drawn agendas are private — only ever revealed to the player who drew them.
       agendas: viewer_game_player&.id == id ? Agenda.where(id: agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : []
@@ -37,12 +35,10 @@ end
 #
 #  id              :bigint           not null, primary key
 #  agenda_ids      :json             not null
-#  deployment_roll :integer
 #  deployment_zone :string
 #  host            :boolean          default(FALSE), not null
 #  ready           :boolean          default(FALSE), not null
 #  role            :string
-#  role_roll       :integer
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #  game_id         :bigint           not null

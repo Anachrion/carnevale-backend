@@ -79,9 +79,6 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.get "/api/v1/games/#{game_id}", headers: h
       expect(json(host)["status"]).to eq("deployment_rolloff")
 
-      host.post "/api/v1/games/#{game_id}/deployment_roll", headers: h
-      guest.post "/api/v1/games/#{game_id}/deployment_roll", headers: g
-      host.get "/api/v1/games/#{game_id}", headers: h
       winner_id = json(host)["deployment_roll_winner_id"]
       expect(winner_id).to be_present
 
@@ -119,8 +116,6 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.get "/api/v1/games/#{game_id}/available_lists", headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
 
-      host.post "/api/v1/games/#{game_id}/role_roll", headers: h
-      guest.post "/api/v1/games/#{game_id}/role_roll", headers: g
       host.get "/api/v1/games/#{game_id}", headers: h
       winner_id = json(host)["role_roll_winner_id"]
       expect(winner_id).to be_present

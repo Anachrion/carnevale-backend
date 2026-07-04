@@ -26,12 +26,10 @@ end
 #
 #  id              :bigint           not null, primary key
 #  agenda_ids      :json             not null
-#  deployment_roll :integer
 #  deployment_zone :string
 #  host            :boolean          default(FALSE), not null
 #  ready           :boolean          default(FALSE), not null
 #  role            :string
-#  role_roll       :integer
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #  game_id         :bigint           not null

@@ -28,12 +28,10 @@ Rails.application.routes.draw do
           post :join
         end
         member do
-          post :role_roll
           patch :role
           get :available_lists
           patch :select_gang
           post "agendas/draw", action: :draw_agendas
-          post :deployment_roll
           patch :deployment_zone
           post :ready
         end

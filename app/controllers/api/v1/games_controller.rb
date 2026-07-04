@@ -41,18 +41,10 @@ module Api
         return render_error("Game is full") if game.game_players.count >= 2
 
         game_player = game.game_players.create!(user: current_user, host: false)
+        game.assign_roll_winners!
         game.update!(status: "gang_selection")
         game.broadcast_state!
         render json: game.as_json_for(game_player)
-      end
-
-      def role_roll
-        return render_error("Scenario is not asymmetric") unless @game.scenario.asymmetric?
-        return render_error("Role already decided") if @game.role_roll_winner_id.present?
-
-        @game.roll!(:role, @game_player)
-        @game.broadcast_state!
-        render json: @game.as_json_for(@game_player)
       end
 
       def role
@@ -86,15 +78,6 @@ module Api
         maybe_advance_to_deployment_rolloff!
         @game.broadcast_state!
         render json: { agendas: @game_player.reload.as_json_for(@game_player)[:agendas] }
-      end
-
-      def deployment_roll
-        return render_error("Wrong game status for the deployment roll-off") unless @game.status == "deployment_rolloff"
-        return render_error("Deployment zone already decided") if @game.deployment_roll_winner_id.present?
-
-        @game.roll!(:deployment, @game_player)
-        @game.broadcast_state!
-        render json: @game.as_json_for(@game_player)
       end
 
       def deployment_zone

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_02_223508) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_090846) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -47,14 +47,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_02_223508) do
   create_table "game_players", force: :cascade do |t|
     t.json "agenda_ids", default: [], null: false
     t.datetime "created_at", null: false
-    t.integer "deployment_roll"
     t.string "deployment_zone"
     t.bigint "game_id", null: false
     t.boolean "host", default: false, null: false
     t.bigint "list_id"
     t.boolean "ready", default: false, null: false
     t.string "role"
-    t.integer "role_roll"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["game_id", "user_id"], name: "index_game_players_on_game_id_and_user_id", unique: true
