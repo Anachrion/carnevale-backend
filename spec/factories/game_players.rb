@@ -11,7 +11,6 @@ end
 # Table name: game_players
 #
 #  id                  :bigint           not null, primary key
-#  agenda_ids          :json             not null
 #  host                :boolean          default(FALSE), not null
 #  ready               :boolean          default(FALSE), not null
 #  role                :string

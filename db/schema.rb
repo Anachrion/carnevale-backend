@@ -10,9 +10,24 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_142142) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_165500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "agenda_events", force: :cascade do |t|
+    t.string "action", null: false
+    t.bigint "agenda_id", null: false
+    t.bigint "caused_by_event_id"
+    t.datetime "created_at", null: false
+    t.bigint "game_player_id", null: false
+    t.string "origin"
+    t.integer "turn", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agenda_id"], name: "index_agenda_events_on_agenda_id"
+    t.index ["caused_by_event_id"], name: "index_agenda_events_on_caused_by_event_id"
+    t.index ["game_player_id", "agenda_id", "action"], name: "index_agenda_events_on_player_agenda_action", unique: true
+    t.index ["game_player_id"], name: "index_agenda_events_on_game_player_id"
+  end
 
   create_table "agendas", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -45,7 +60,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_142142) do
   end
 
   create_table "game_players", force: :cascade do |t|
-    t.json "agenda_ids", default: [], null: false
     t.datetime "created_at", null: false
     t.bigint "game_id", null: false
     t.boolean "host", default: false, null: false
@@ -66,6 +80,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_142142) do
   create_table "games", force: :cascade do |t|
     t.string "board_size"
     t.datetime "created_at", null: false
+    t.integer "current_turn", default: 1, null: false
     t.integer "ducat_limit", null: false
     t.string "join_code", null: false
     t.string "name", null: false
@@ -176,6 +191,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_142142) do
     t.text "primary_objective", default: "", null: false
     t.text "setup", default: "", null: false
     t.json "special_rules", default: [], null: false
+    t.integer "turns", null: false
     t.datetime "updated_at", null: false
   end
 
@@ -215,6 +231,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_142142) do
     t.datetime "updated_at", null: false
   end
 
+  add_foreign_key "agenda_events", "agenda_events", column: "caused_by_event_id"
+  add_foreign_key "agenda_events", "agendas"
+  add_foreign_key "agenda_events", "game_players"
   add_foreign_key "card_references", "profiles"
   add_foreign_key "game_players", "games"
   add_foreign_key "game_players", "users"
