@@ -15,12 +15,16 @@ class Game < ApplicationRecord
 
   before_validation :generate_join_code, on: :create
 
-  # Rolls `kind` (:role or :deployment) for `game_player`, then resolves the pair once both
-  # players have rolled: ties reroll automatically (no extra client action), otherwise the
-  # higher roll wins and `#{kind}_roll_winner` is set.
-  def roll!(kind, game_player)
-    game_player.update!("#{kind}_roll" => rand(1..6))
-    resolve_roll!(kind)
+  # Picks the roll-off winners as soon as both players are in the game, so nothing depends on
+  # a client action: deployment_roll_winner is always assigned, role_roll_winner only for
+  # asymmetric scenarios (where it matters). Each screen only reveals the outcome once the
+  # game reaches the corresponding step.
+  def assign_roll_winners!
+    players = game_players.reload.to_a
+    return unless players.size == 2
+
+    update!(role_roll_winner: players.sample) if scenario.asymmetric?
+    update!(deployment_roll_winner: players.sample)
   end
 
   # Winner's choice is assigned to `chooser`; the complementary option is auto-assigned to the
@@ -65,20 +69,6 @@ class Game < ApplicationRecord
   end
 
   private
-
-  def resolve_roll!(kind)
-    players = game_players.reload.to_a
-    return unless players.size == 2 && players.all? { |p| p.public_send("#{kind}_roll").present? }
-
-    a, b = players
-    if a.public_send("#{kind}_roll") == b.public_send("#{kind}_roll")
-      players.each { |p| p.update!("#{kind}_roll" => rand(1..6)) }
-      resolve_roll!(kind)
-    else
-      winner = players.max_by { |p| p.public_send("#{kind}_roll") }
-      update!("#{kind}_roll_winner" => winner)
-    end
-  end
 
   def draw_one_agenda_id(already_drawn)
     loop do
