@@ -7,6 +7,7 @@ FactoryBot.define do
     agendas { ["3 scoring 1 Victory Point each."] }
     special_rules { [] }
     duration { "5 rounds." }
+    turns { 5 }
     deployment_zones { ["Up to 8\" away from opposite board edges."] }
   end
 end
@@ -26,6 +27,7 @@ end
 #  primary_objective :text             default(""), not null
 #  setup             :text             default(""), not null
 #  special_rules     :json             not null
+#  turns             :integer          not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #

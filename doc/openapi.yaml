@@ -745,10 +745,22 @@ paths:
     post:
       operationId: drawAgendas
       summary: Privately draw this player's Agenda cards
-      description: Never broadcast or visible to the opponent.
+      description: |
+        Never broadcast or visible to the opponent. Behavior depends on game status: while
+        `agenda_draw`, draws the scenario's full initial hand (no request body). While
+        `in_progress`, draws a single replacement card and requires `origin` in the body
+        (`special_rule` or `command_point` — a card is never freely drawn mid-game, only
+        granted by one of those). Every agenda a player has ever drawn — whether still in
+        hand, scored, or discarded — can never be drawn again by that same player.
       tags: [Games]
       security:
         - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DrawAgendaInput"
       responses:
         "200":
           description: OK
@@ -761,7 +773,119 @@ paths:
         "404":
           description: Not found
         "422":
-          description: Wrong game status, or agendas already drawn
+          description: Wrong game status, agendas already drawn, or invalid/missing origin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/agendas/{agenda_id}/score:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/AgendaId"
+
+    post:
+      operationId: scoreAgenda
+      summary: Score an Agenda from this player's hand (flat 1 Victory Point)
+      description: |
+        Only valid while the game is `in_progress`, and only for an agenda currently in the
+        requesting player's hand. Set `recycle: true` if the scenario's "Cycle" rule applies,
+        which immediately draws a replacement card (origin `recycle`, linked back to this score).
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScoreAgendaInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status, or agenda not in hand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/agendas/{agenda_id}/discard:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - $ref: "#/components/parameters/AgendaId"
+
+    post:
+      operationId: discardAgenda
+      summary: Discard an Agenda from this player's hand
+      description: |
+        Only valid while the game is `in_progress`, and only for an agenda currently in the
+        requesting player's hand. Requires `origin` (`special_rule` or `command_point` — an
+        agenda is never freely discarded, only via one of those). Set `recycle: true` if the
+        scenario's "Cycle" rule applies, which immediately draws a replacement card (origin
+        `recycle`, linked back to this discard).
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DiscardAgendaInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status, invalid/missing origin, or agenda not in hand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/turns/advance:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: advanceTurn
+      summary: Advance the game's shared turn counter
+      description: |
+        Callable by either player — like the roll winners and role pick, this app tracks the
+        physical game rather than refereeing whose turn it is to act. On the scenario's final
+        turn, this instead marks the game `completed`.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status for advancing the turn
           content:
             application/json:
               schema:
@@ -794,6 +918,13 @@ components:
   parameters:
     Id:
       name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+
+    AgendaId:
+      name: agenda_id
       in: path
       required: true
       schema:
@@ -959,6 +1090,34 @@ components:
         role:
           type: string
           enum: [attacker, defender]
+
+    DrawAgendaInput:
+      type: object
+      description: Only used (and only required) while the game is `in_progress` — ignored during the initial `agenda_draw` batch draw.
+      properties:
+        origin:
+          type: string
+          enum: [special_rule, command_point]
+
+    ScoreAgendaInput:
+      type: object
+      properties:
+        recycle:
+          type: boolean
+          default: false
+          description: If true, immediately draws a replacement card (origin `recycle`) linked back to this score.
+
+    DiscardAgendaInput:
+      type: object
+      required: [origin]
+      properties:
+        origin:
+          type: string
+          enum: [special_rule, command_point]
+        recycle:
+          type: boolean
+          default: false
+          description: If true, immediately draws a replacement card (origin `recycle`) linked back to this discard.
 
     # ── Responses ───────────────────────────────────────────────────────────────
 
@@ -1195,6 +1354,7 @@ components:
         - agendas
         - special_rules
         - duration
+        - turns
         - deployment_zones
       properties:
         id:
@@ -1221,6 +1381,10 @@ components:
             type: string
         duration:
           type: string
+          description: Free-text rendering of the scenario's duration (e.g. "5 rounds."). See `turns` for the structured count.
+        turns:
+          type: integer
+          description: Number of turns the scenario lasts.
         deployment_zones:
           type: array
           items:
@@ -1240,6 +1404,33 @@ components:
         description:
           type: string
 
+    AgendaHistoryEntry:
+      type: object
+      required: [turn, action, origin, caused_by_event_id, agenda]
+      properties:
+        turn:
+          type: integer
+        action:
+          type: string
+          enum: [drawn, scored, discarded]
+        origin:
+          type: string
+          nullable: true
+          enum: [initial, special_rule, command_point, recycle]
+          description: Why this event happened. Always null for `scored` events — scoring just resolves the Agenda's own printed condition, it isn't granted by an external rule the way drawing/discarding mid-game is.
+        caused_by_event_id:
+          type: integer
+          nullable: true
+          description: Set only when origin is `recycle` — the id of the scored/discarded event (within this same list) that triggered this replacement draw.
+        agenda:
+          type: object
+          required: [id, name]
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+
     GangSummary:
       type: object
       required: [id, name, faction, points, total_cost]
@@ -1258,7 +1449,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, agendas]
+      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, score, agendas, agenda_history]
       properties:
         id:
           type: integer
@@ -1284,15 +1475,23 @@ components:
         won_deployment_roll:
           type: boolean
           description: True for the deployment roll-off winner. Picked at random as soon as the second player joins. Informational only — the deployment zone itself is chosen at the table, not in-app.
+        score:
+          type: integer
+          description: Total Victory Points scored from Agendas so far (every Agenda scores a flat 1 VP). Visible for both players, unlike the hidden hand.
         agendas:
           type: array
-          description: Only populated for the requesting player's own entry — always empty for the opponent's.
+          description: This player's current hand. Only populated for the requesting player's own entry — always empty for the opponent's.
           items:
             $ref: "#/components/schemas/Agenda"
+        agenda_history:
+          type: array
+          description: Every draw/score/discard event for this player, in turn order. Only populated for the requesting player's own entry — always empty for the opponent's.
+          items:
+            $ref: "#/components/schemas/AgendaHistoryEntry"
 
     Game:
       type: object
-      required: [id, name, join_code, status, ducat_limit, board_size, scenario, viewer_visibility, players]
+      required: [id, name, join_code, status, ducat_limit, board_size, current_turn, scenario, viewer_visibility, players]
       properties:
         id:
           type: integer
@@ -1308,6 +1507,9 @@ components:
         board_size:
           type: string
           nullable: true
+        current_turn:
+          type: integer
+          description: The shared turn counter, starting at 1. Advanced by either player via POST /games/{id}/turns/advance.
         scenario:
           $ref: "#/components/schemas/Scenario"
         viewer_visibility:

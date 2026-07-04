@@ -13,6 +13,7 @@ module Catalog
         agendas: agendas,
         special_rules: special_rules,
         duration: duration,
+        turns: turns,
         deployment_zones: deployment_zones,
         illustration: illustration
       }
@@ -35,6 +36,7 @@ end
 #  primary_objective :text             default(""), not null
 #  setup             :text             default(""), not null
 #  special_rules     :json             not null
+#  turns             :integer          not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #

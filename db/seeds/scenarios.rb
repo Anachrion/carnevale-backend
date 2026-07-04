@@ -14,6 +14,7 @@
       "Each player sets up 1 gondola anywhere on the board in water when setting up scenery."
     ],
     duration: "5 rounds.",
+    turns: 5,
     deployment_zones: [
       "Up to 8\" away from opposite board edges.",
       "2 Players shown in blue, 3-4 players shown in red."
@@ -32,6 +33,7 @@
       "Any character within 3\" of an Objective gains the Expert Offence (2) and Expert Marksman (2) special rules."
     ],
     duration: "5 rounds.",
+    turns: 5,
     deployment_zones: [
       "Up to 8\" away from opposite board edges and 12\" away from side board edges.",
       "2 Players shown in blue, 3-4 players shown in red."
@@ -50,6 +52,7 @@
       "When choosing gangs, players do not have to include a character with the Leader keyword."
     ],
     duration: "5 rounds.",
+    turns: 5,
     deployment_zones: [
       "Up to 8\" away from opposite corners.",
       "2 Players shown in blue, 3-4 players shown in red."
@@ -68,6 +71,7 @@
       "Every friendly character gains the Brave special rule if they are within line of sight of a friendly character carrying an Objective."
     ],
     duration: "8 rounds.",
+    turns: 8,
     deployment_zones: [
       "Up to 12\" away from opposite corners.",
       "2 Players shown in blue, 3-4 players shown in red."
@@ -86,6 +90,7 @@
       "Defending players choose one friendly character in each of their gangs with Command Points to gain 3 additional Command Points at the start of the game."
     ],
     duration: "7 rounds.",
+    turns: 7,
     deployment_zones: [
       "Attacker: up to 6\" away from one short board edge, shown in blue. If there is more than 1 Attacker, divide the space equally in 2, shown in dark blue.",
       "Defender: up to 24\" from the opposite short board edge, shown in red. If there is more than 1 Defender, divide the space equally in 2, shown in dark red."
