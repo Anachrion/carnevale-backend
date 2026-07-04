@@ -1,6 +1,8 @@
-class ProfileSpecialRule < ApplicationRecord
-  belongs_to :profile
-  belongs_to :special_rule
+module Catalog
+  class ProfileSpecialRule < ApplicationRecord
+    belongs_to :profile, class_name: "Catalog::Profile"
+    belongs_to :special_rule, class_name: "Catalog::SpecialRule"
+  end
 end
 
 # == Schema Information

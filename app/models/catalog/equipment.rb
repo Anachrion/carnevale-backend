@@ -1,4 +1,6 @@
-class Equipment < ApplicationRecord
+module Catalog
+  class Equipment < ApplicationRecord
+  end
 end
 
 # == Schema Information

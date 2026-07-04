@@ -6,7 +6,7 @@ RSpec.describe ListSortingService, type: :service do
   def entry_with(keywords:, cost:, position:)
     profile = create(:profile, faction: :guild, keywords: keywords, ducats: cost)
     ref = create(:card_reference, profile: profile)
-    entry = ListEntry.new(list: list, entry: ref, position: position)
+    entry = Gang::Entry.new(list: list, entry: ref, position: position)
     entry.save(validate: false)
     entry
   end

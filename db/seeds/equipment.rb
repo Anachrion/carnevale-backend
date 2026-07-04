@@ -57,10 +57,10 @@ equipment_data = [
 ]
 
 equipment_data.each do |attrs|
-  Equipment.find_or_create_by!(name: attrs[:name]) do |e|
+  Catalog::Equipment.find_or_create_by!(name: attrs[:name]) do |e|
     e.cost = attrs[:cost]
     e.description = attrs[:description]
   end
 end
 
-puts "Seeded #{Equipment.count} equipment items."
+puts "Seeded #{Catalog::Equipment.count} equipment items."

@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :equipment do
+  factory :equipment, class: "Catalog::Equipment" do
     name { "MyString" }
     description { "MyText" }
     cost { 1 }

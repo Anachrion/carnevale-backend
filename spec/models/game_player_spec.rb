@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe GamePlayer, type: :model do
+RSpec.describe Encounter::Player, type: :model do
   it "rejects a user joining the same game twice" do
     game = create(:game)
     user = create(:user)

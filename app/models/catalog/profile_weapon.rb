@@ -1,6 +1,8 @@
-class ProfileWeapon < ApplicationRecord
-  belongs_to :profile
-  belongs_to :weapon
+module Catalog
+  class ProfileWeapon < ApplicationRecord
+    belongs_to :profile, class_name: "Catalog::Profile"
+    belongs_to :weapon, class_name: "Catalog::Weapon"
+  end
 end
 
 # == Schema Information

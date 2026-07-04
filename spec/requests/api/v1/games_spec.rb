@@ -126,7 +126,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       winner_id = json(host)["players"].find { |p| p["won_role_roll"] }&.fetch("id")
       expect(winner_id).to be_present
 
-      winner_user = GamePlayer.find(winner_id).user
+      winner_user = Encounter::Player.find(winner_id).user
       winner_session = winner_user == host_user ? host : guest
       winner_headers = winner_user == host_user ? h : g
       winner_session.patch "/api/v1/games/#{game_id}/role", params: { role: "attacker" }.to_json, headers: winner_headers
@@ -175,8 +175,8 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.delete "/api/v1/games/#{game_id}", headers: h
       guest.delete "/api/v1/games/#{game_id}", headers: g
 
-      expect(List.exists?(snapshot_id)).to be false
-      expect(List.exists?(host_list.id)).to be true
+      expect(Gang::List.exists?(snapshot_id)).to be false
+      expect(Gang::List.exists?(host_list.id)).to be true
     end
   end
 
@@ -232,7 +232,7 @@ RSpec.describe "Api::V1::Games", type: :request do
 
       guest.get "/api/v1/games/#{game_id}", headers: g
       expect(guest.response).to have_http_status(:ok)
-      expect(Game.exists?(game_id)).to be true
+      expect(Encounter::Game.exists?(game_id)).to be true
     end
 
     it "hard-deletes the game once every player has deleted it" do
@@ -249,7 +249,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest.delete "/api/v1/games/#{game_id}", headers: g
       expect(guest.response).to have_http_status(:no_content)
 
-      expect(Game.exists?(game_id)).to be false
+      expect(Encounter::Game.exists?(game_id)).to be false
     end
 
     it "unarchives a game for one user only, restoring it to their list" do

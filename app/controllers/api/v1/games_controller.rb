@@ -12,8 +12,8 @@ module Api
       end
 
       def create
-        scenario = Scenario.find(params[:scenario_id])
-        game = Game.new(
+        scenario = Catalog::Scenario.find(params[:scenario_id])
+        game = Encounter::Game.new(
           scenario: scenario,
           name: params[:name].presence,
           ducat_limit: params[:ducat_limit].presence || scenario.ducats,
@@ -32,7 +32,7 @@ module Api
       end
 
       def join
-        game = Game.find_by!(join_code: params[:join_code].to_s.upcase)
+        game = Encounter::Game.find_by!(join_code: params[:join_code].to_s.upcase)
         game_player = game.game_players.find_by(user: current_user)
 
         if game_player
@@ -54,7 +54,7 @@ module Api
         winner = @game.role_roll_winner
         return render_error("Role roll-off not resolved yet") unless winner
         return render_error("Only the roll-off winner picks a role") unless winner.id == @game_player.id
-        return render_error("Invalid role") unless @game.assign_paired_choice!(:role, @game_player, params[:role], GamePlayer::ROLES)
+        return render_error("Invalid role") unless @game.assign_paired_choice!(:role, @game_player, params[:role], Encounter::Player::ROLES)
 
         @game.broadcast_state!
         render json: @game.as_json_for(@game_player)

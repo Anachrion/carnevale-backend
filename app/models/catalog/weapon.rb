@@ -1,6 +1,8 @@
-class Weapon < ApplicationRecord
-  has_many :profile_weapons
-  has_many :profiles, through: :profile_weapons
+module Catalog
+  class Weapon < ApplicationRecord
+    has_many :profile_weapons, class_name: "Catalog::ProfileWeapon"
+    has_many :profiles, through: :profile_weapons
+  end
 end
 
 # == Schema Information

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Agenda, type: :model do
+RSpec.describe Catalog::Agenda, type: :model do
   pending "add some examples to (or delete) #{__FILE__}"
 end
 

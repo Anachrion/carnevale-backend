@@ -1,9 +1,11 @@
-class Illustration < ApplicationRecord
-  belongs_to :profile
+module Catalog
+  class Illustration < ApplicationRecord
+    belongs_to :profile, class_name: "Catalog::Profile"
 
-  validates :path, presence: true
-  validates :number, presence: true, numericality: { only_integer: true, greater_than: 0 }
-  validates :number, uniqueness: { scope: :profile_id }
+    validates :path, presence: true
+    validates :number, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    validates :number, uniqueness: { scope: :profile_id }
+  end
 end
 
 # == Schema Information

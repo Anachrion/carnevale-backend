@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :list_entry do
+  factory :list_entry, class: "Gang::Entry" do
     association :list
     association :entry, factory: :reference
     sequence(:position)

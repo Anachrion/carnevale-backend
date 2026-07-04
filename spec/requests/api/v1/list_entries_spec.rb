@@ -160,7 +160,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       delete "/api/v1/list_entries/#{entry.id}", headers: headers
 
       expect(response).to have_http_status(:not_found)
-      expect(ListEntry.exists?(entry.id)).to be true
+      expect(Gang::Entry.exists?(entry.id)).to be true
     end
   end
 end

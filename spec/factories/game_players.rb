@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :game_player do
+  factory :game_player, class: "Encounter::Player" do
     association :game
     association :user
     host { false }

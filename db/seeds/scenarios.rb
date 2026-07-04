@@ -92,7 +92,7 @@
     ]
   }
 ].each do |attrs|
-  Scenario.find_or_create_by!(name: attrs[:name]).update!(attrs)
+  Catalog::Scenario.find_or_create_by!(name: attrs[:name]).update!(attrs)
 end
 
-puts "Total: #{Scenario.count} scenarios"
+puts "Total: #{Catalog::Scenario.count} scenarios"

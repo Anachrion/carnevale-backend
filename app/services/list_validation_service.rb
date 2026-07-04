@@ -38,7 +38,7 @@ class ListValidationService
   end
 
   def projected_card_references
-    @projected_card_references ||= projected_items.grep(CardReference)
+    @projected_card_references ||= projected_items.grep(Catalog::CardReference)
   end
 
   def check_points_limit
@@ -64,7 +64,7 @@ class ListValidationService
   end
 
   def check_equipment_uniqueness
-    projected_items.grep(Equipment).group_by(&:id).each do |_, items|
+    projected_items.grep(Catalog::Equipment).group_by(&:id).each do |_, items|
       @errors << "#{items.first.name} can only be taken once" if items.size > 1
     end
   end

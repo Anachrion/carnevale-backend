@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :card_reference, aliases: [:reference] do
+  factory :card_reference, aliases: [:reference], class: "Catalog::CardReference" do
     sequence(:name) { |n| "Reference #{n}" }
     sequence(:identifier) { |n| "guild-reference-#{n}" }
     association :profile

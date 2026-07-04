@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :game do
+  factory :game, class: "Encounter::Game" do
     association :scenario
     ducat_limit { 150 }
   end

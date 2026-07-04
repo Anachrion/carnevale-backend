@@ -1,20 +1,22 @@
-class Scenario < ApplicationRecord
-  validates :name, presence: true, uniqueness: true
+module Catalog
+  class Scenario < ApplicationRecord
+    validates :name, presence: true, uniqueness: true
 
-  def as_json_for_game
-    {
-      id: id,
-      name: name,
-      ducats: ducats,
-      asymmetric: asymmetric,
-      setup: setup,
-      primary_objective: primary_objective,
-      agendas: agendas,
-      special_rules: special_rules,
-      duration: duration,
-      deployment_zones: deployment_zones,
-      illustration: illustration
-    }
+    def as_json_for_game
+      {
+        id: id,
+        name: name,
+        ducats: ducats,
+        asymmetric: asymmetric,
+        setup: setup,
+        primary_objective: primary_objective,
+        agendas: agendas,
+        special_rules: special_rules,
+        duration: duration,
+        deployment_zones: deployment_zones,
+        illustration: illustration
+      }
+    end
   end
 end
 

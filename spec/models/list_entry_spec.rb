@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe ListEntry, type: :model do
+RSpec.describe Gang::Entry, type: :model do
   let(:list) { create(:list, faction: :guild, points: 100) }
 
   def guild_ref(cost: 10, keywords: [])

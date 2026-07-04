@@ -19,7 +19,7 @@ class ListSortingService
   private
 
   def role_rank(entry)
-    return 3 unless entry.entry.is_a?(CardReference)
+    return 3 unless entry.entry.is_a?(Catalog::CardReference)
     keywords = entry.entry.profile&.keywords || []
     keywords.filter_map { |kw| ROLE_RANK[kw] }.min || 2
   end

@@ -44,7 +44,7 @@
   { first_roll: "10", second_roll: 4, name: "Aquatic Attack", description: "Perform 3 Dive actions with any number of characters in 1 round." },
   { first_roll: "10", second_roll: 5, name: "Hold Your Breath", description: "Have a friendly character perform 2 Dive actions in 2 subsequent rounds." }
 ].each do |attrs|
-  Agenda.find_or_initialize_by(first_roll: attrs[:first_roll], second_roll: attrs[:second_roll]).update!(attrs)
+  Catalog::Agenda.find_or_initialize_by(first_roll: attrs[:first_roll], second_roll: attrs[:second_roll]).update!(attrs)
 end
 
-puts "Total: #{Agenda.count} agendas"
+puts "Total: #{Catalog::Agenda.count} agendas"

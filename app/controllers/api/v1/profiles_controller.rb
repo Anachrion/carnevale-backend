@@ -2,13 +2,13 @@ module Api
   module V1
     class ProfilesController < BaseController
       def index
-        profiles = Profile.includes(:weapons, :special_rules, :card_references)
+        profiles = Catalog::Profile.includes(:weapons, :special_rules, :card_references)
         profiles = profiles.where(faction: params[:faction]) if params[:faction].present?
         render json: profiles.map { |p| profile_json(p) }
       end
 
       def show
-        profile = Profile.includes(:weapons, :special_rules, :card_references).find(params[:id])
+        profile = Catalog::Profile.includes(:weapons, :special_rules, :card_references).find(params[:id])
         render json: profile_json(profile)
       end
 

@@ -868,7 +868,7 @@ components:
               type: integer
             entry_type:
               type: string
-              enum: [CardReference, Equipment]
+              enum: [Catalog::CardReference, Catalog::Equipment]
             entry_id:
               type: integer
 
@@ -978,7 +978,7 @@ components:
           type: integer
         entry_type:
           type: string
-          enum: [CardReference, Equipment]
+          enum: [Catalog::CardReference, Catalog::Equipment]
         entry_id:
           type: integer
         name:

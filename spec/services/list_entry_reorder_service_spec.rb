@@ -6,7 +6,7 @@ RSpec.describe ListEntryReorderService, type: :service do
   def create_entry(position)
     profile = create(:profile, faction: :guild, ducats: 10)
     ref = create(:card_reference, profile: profile)
-    entry = ListEntry.new(list: list, entry: ref, position: position)
+    entry = Gang::Entry.new(list: list, entry: ref, position: position)
     entry.save(validate: false)
     entry
   end

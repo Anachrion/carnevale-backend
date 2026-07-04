@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe Game, type: :model do
+RSpec.describe Encounter::Game, type: :model do
   it "generates a unique join code on create" do
     game = create(:game)
     expect(game.join_code).to match(/\A[A-Z0-9]{6}\z/)

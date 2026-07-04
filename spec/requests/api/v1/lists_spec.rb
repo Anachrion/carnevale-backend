@@ -79,9 +79,9 @@ RSpec.describe "Api::V1::Lists", type: :request do
     it "creates a list owned by the current user" do
       expect {
         post "/api/v1/lists", params: valid_params.to_json, headers: auth_headers
-      }.to change(List, :count).by(1)
+      }.to change(Gang::List, :count).by(1)
       expect(response).to have_http_status(:created)
-      expect(List.last.owner).to eq(user)
+      expect(Gang::List.last.owner).to eq(user)
     end
 
     it "returns the created list" do
@@ -134,7 +134,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
       list = create(:list, owner: user)
       expect {
         delete "/api/v1/lists/#{list.id}", headers: auth_headers
-      }.to change(List, :count).by(-1)
+      }.to change(Gang::List, :count).by(-1)
       expect(response).to have_http_status(:no_content)
     end
 
@@ -143,7 +143,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
       create(:list_entry, list: list, entry: create(:card_reference, profile: create(:profile, faction: "guild", keywords: ["Leader"])))
       expect {
         delete "/api/v1/lists/#{list.id}", headers: auth_headers
-      }.to change(ListEntry, :count).by(-1)
+      }.to change(Gang::Entry, :count).by(-1)
     end
 
     it "returns 404 for unknown list" do
@@ -155,7 +155,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
       other_list = create(:list)
       expect {
         delete "/api/v1/lists/#{other_list.id}", headers: auth_headers
-      }.not_to change(List, :count)
+      }.not_to change(Gang::List, :count)
       expect(response).to have_http_status(:not_found)
     end
   end
