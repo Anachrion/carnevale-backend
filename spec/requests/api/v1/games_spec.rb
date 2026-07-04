@@ -40,6 +40,20 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.post "/api/v1/games", params: { scenario_id: scenario.id, ducat_limit: 80 }.to_json, headers: h
       expect(json(host)["ducat_limit"]).to eq(80)
     end
+
+    it "defaults the name to the scenario's name when not provided" do
+      host = open_session
+      h = headers_for(host, host_user)
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      expect(json(host)["name"]).to eq("Gang War")
+    end
+
+    it "allows overriding the name" do
+      host = open_session
+      h = headers_for(host, host_user)
+      host.post "/api/v1/games", params: { scenario_id: scenario.id, name: "Rivals in the Rain" }.to_json, headers: h
+      expect(json(host)["name"]).to eq("Rivals in the Rain")
+    end
   end
 
   describe "the full 2-player happy path" do

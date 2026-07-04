@@ -14,6 +14,7 @@ class Game < ApplicationRecord
   validates :join_code, presence: true, uniqueness: true
 
   before_validation :generate_join_code, on: :create
+  before_validation :default_name_to_scenario, on: :create
 
   # Picks the roll-off winners as soon as both players are in the game, so nothing depends on
   # a client action: deployment_roll_winner is always assigned, role_roll_winner only for
@@ -49,6 +50,7 @@ class Game < ApplicationRecord
   def as_json_for(viewer_game_player)
     {
       id: id,
+      name: name,
       join_code: join_code,
       status: status,
       ducat_limit: ducat_limit,
@@ -89,6 +91,10 @@ class Game < ApplicationRecord
       break code unless Game.exists?(join_code: code)
     end
   end
+
+  def default_name_to_scenario
+    self.name = scenario.name if name.blank? && scenario
+  end
 end
 
 # == Schema Information
@@ -99,6 +105,7 @@ end
 #  board_size                :string
 #  ducat_limit               :integer          not null
 #  join_code                 :string           not null
+#  name                      :string
 #  status                    :string           default("pending"), not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null

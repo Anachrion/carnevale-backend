@@ -447,7 +447,7 @@ paths:
     post:
       operationId: createGame
       summary: Create a game, hosted by the current user
-      description: ducat_limit defaults from the scenario if omitted.
+      description: ducat_limit and name default from the scenario if omitted.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -927,6 +927,10 @@ components:
       properties:
         scenario_id:
           type: integer
+        name:
+          type: string
+          nullable: true
+          description: Defaults to the scenario's name if omitted.
         ducat_limit:
           type: integer
           nullable: true
@@ -1295,10 +1299,12 @@ components:
 
     Game:
       type: object
-      required: [id, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, viewer_visibility, players]
+      required: [id, name, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, viewer_visibility, players]
       properties:
         id:
           type: integer
+        name:
+          type: string
         join_code:
           type: string
         status:
