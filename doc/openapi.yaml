@@ -702,6 +702,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/players/{player_id}/list:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: player_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    get:
+      operationId: getPlayerList
+      summary: Either player's selected gang, in full (with entries)
+      description: |
+        Available for consultation by both participants once that player has picked a gang,
+        regardless of whose turn it currently is — gang lists aren't secret once selected.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: That player hasn't selected a gang yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/agendas/draw:
     parameters:
       - $ref: "#/components/parameters/Id"
