@@ -148,6 +148,58 @@ RSpec.describe Encounter::Game, type: :model do
     end
   end
 
+  describe "#start!" do
+    it "flips the game to in_progress once both players are ready" do
+      game = create(:game, status: "deploying")
+      create_list(:game_player, 2, game: game, ready: true)
+
+      expect(game.start!).to be true
+      expect(game.reload.status).to eq("in_progress")
+    end
+
+    it "does nothing until both players are ready" do
+      game = create(:game, status: "deploying")
+      create(:game_player, game: game, ready: true)
+      create(:game_player, game: game, ready: false)
+
+      expect(game.start!).to be false
+      expect(game.reload.status).to eq("deploying")
+    end
+
+    it "does not re-run once already in_progress" do
+      game = create(:game, status: "in_progress")
+      create_list(:game_player, 2, game: game, ready: true)
+
+      expect(game.start!).to be false
+    end
+
+    it "creates an entry state for each card-reference entry, snapshotting the profile's stats" do
+      game = create(:game, status: "deploying")
+      host, _guest = create_list(:game_player, 2, game: game, ready: true)
+      profile = create(:profile, life_points: 8, will_points: 2, command_points: 1)
+      list = create(:list, owner: host)
+      list_entry = create(:list_entry, list: list, entry: create(:card_reference, profile: profile))
+
+      game.start!
+
+      entry_state = list_entry.reload.entry_state
+      expect(entry_state).to be_present
+      expect(entry_state.current_life_points).to eq(8)
+      expect(entry_state.starting_will_points).to eq(2)
+    end
+
+    it "does not create an entry state for equipment entries" do
+      game = create(:game, status: "deploying")
+      host, _guest = create_list(:game_player, 2, game: game, ready: true)
+      list = create(:list, owner: host)
+      list_entry = create(:list_entry, list: list, entry: create(:equipment))
+
+      game.start!
+
+      expect(list_entry.reload.entry_state).to be_nil
+    end
+  end
+
   describe "#advance_turn!" do
     it "increments current_turn while turns remain" do
       scenario = create(:scenario, turns: 2)

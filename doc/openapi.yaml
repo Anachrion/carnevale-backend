@@ -898,7 +898,7 @@ paths:
     post:
       operationId: markReady
       summary: Confirm physical deployment is done
-      description: Once both players are ready, the game's status becomes in_progress.
+      description: Once both players are ready, the game's status becomes in_progress and an EntryState (current/starting HP, WP, CP, and status counters) is created for every model (Catalog::CardReference entry) in each player's list.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -1179,6 +1179,43 @@ components:
         name:
           type: string
         cost:
+          type: integer
+        state:
+          allOf:
+            - $ref: "#/components/schemas/EntryState"
+          nullable: true
+          description: Present once the game has started (POST /games/{id}/ready flips it to in_progress); null beforehand and for Catalog::Equipment entries, which have no HP/WP/CP to track.
+
+    EntryState:
+      type: object
+      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters]
+      properties:
+        life_points:
+          $ref: "#/components/schemas/EntryStatValue"
+        will_points:
+          $ref: "#/components/schemas/EntryStatValue"
+        command_points:
+          $ref: "#/components/schemas/EntryStatValue"
+        stunned:
+          type: boolean
+        hidden:
+          type: boolean
+        guarding:
+          type: boolean
+        carrying_objective:
+          type: boolean
+        underwater_counters:
+          type: integer
+          minimum: 0
+          maximum: 2
+
+    EntryStatValue:
+      type: object
+      required: [current, starting]
+      properties:
+        current:
+          type: integer
+        starting:
           type: integer
 
     Profile:

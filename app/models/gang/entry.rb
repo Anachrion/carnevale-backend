@@ -4,6 +4,7 @@ module Gang
 
     belongs_to :list, class_name: "Gang::List"
     belongs_to :entry, polymorphic: true
+    has_one :entry_state, class_name: "Encounter::EntryState", foreign_key: "list_entry_id", dependent: :destroy
 
     delegate :cost, to: :entry
 
