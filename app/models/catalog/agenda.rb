@@ -1,7 +1,9 @@
-class Agenda < ApplicationRecord
-  validates :name, presence: true, uniqueness: true
-  validates :first_roll, presence: true
-  validates :second_roll, presence: true, uniqueness: { scope: :first_roll }
+module Catalog
+  class Agenda < ApplicationRecord
+    validates :name, presence: true, uniqueness: true
+    validates :first_roll, presence: true
+    validates :second_roll, presence: true, uniqueness: { scope: :first_roll }
+  end
 end
 
 # == Schema Information

@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :agenda do
+  factory :agenda, class: "Catalog::Agenda" do
     sequence(:name) { |n| "Agenda #{n}" }
     description { "Kill an enemy character with the Leader keyword with a friendly character with the Leader keyword." }
     first_roll { "1-3" }

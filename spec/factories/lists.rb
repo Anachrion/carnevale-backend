@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :list do
+  factory :list, class: "Gang::List" do
     association :owner, factory: :user
     sequence(:name) { |n| "Gang #{n}" }
     faction { :guild }

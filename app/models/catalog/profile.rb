@@ -1,15 +1,17 @@
-class Profile < ApplicationRecord
-  include HasFaction
+module Catalog
+  class Profile < ApplicationRecord
+    include HasFaction
 
-  has_many :card_references
+    has_many :card_references, class_name: "Catalog::CardReference"
 
-  has_many :illustrations, -> { order(:number) }
+    has_many :illustrations, -> { order(:number) }, class_name: "Catalog::Illustration"
 
-  has_many :profile_weapons, -> { order(:position) }
-  has_many :weapons, through: :profile_weapons
+    has_many :profile_weapons, -> { order(:position) }, class_name: "Catalog::ProfileWeapon"
+    has_many :weapons, through: :profile_weapons
 
-  has_many :profile_special_rules, -> { order(:position) }
-  has_many :special_rules, through: :profile_special_rules
+    has_many :profile_special_rules, -> { order(:position) }, class_name: "Catalog::ProfileSpecialRule"
+    has_many :special_rules, through: :profile_special_rules
+  end
 end
 
 # == Schema Information

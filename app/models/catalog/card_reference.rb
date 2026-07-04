@@ -1,14 +1,16 @@
-class CardReference < ApplicationRecord
-  belongs_to :profile
+module Catalog
+  class CardReference < ApplicationRecord
+    belongs_to :profile, class_name: "Catalog::Profile"
 
-  delegate :faction, to: :profile, allow_nil: true
+    delegate :faction, to: :profile, allow_nil: true
 
-  def cost
-    profile&.ducats
+    def cost
+      profile&.ducats
+    end
+
+    validates :name, presence: true
+    validates :identifier, presence: true, uniqueness: true
   end
-
-  validates :name, presence: true
-  validates :identifier, presence: true, uniqueness: true
 end
 
 # == Schema Information

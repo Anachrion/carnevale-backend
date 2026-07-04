@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :scenario do
+  factory :scenario, class: "Catalog::Scenario" do
     sequence(:name) { |n| "Scenario #{n}" }
     ducats { 150 }
     setup { "3'x3' board." }

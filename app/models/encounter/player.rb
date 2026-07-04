@@ -1,30 +1,34 @@
-class GamePlayer < ApplicationRecord
-  ROLES = %w[attacker defender].freeze
-  VISIBILITIES = %w[active archived deleted].freeze
+module Encounter
+  class Player < ApplicationRecord
+    self.table_name = "game_players"
 
-  belongs_to :game
-  belongs_to :user
-  has_one :list, as: :owner, dependent: :destroy
+    ROLES = %w[attacker defender].freeze
+    VISIBILITIES = %w[active archived deleted].freeze
 
-  enum :visibility, VISIBILITIES.index_with(&:itself), default: "active"
+    belongs_to :game, class_name: "Encounter::Game"
+    belongs_to :user
+    has_one :list, as: :owner, class_name: "Gang::List", dependent: :destroy
 
-  validates :user_id, uniqueness: { scope: :game_id }
-  validates :role, inclusion: { in: ROLES }, allow_nil: true
+    enum :visibility, VISIBILITIES.index_with(&:itself), default: "active"
 
-  def as_json_for(viewer_game_player)
-    {
-      id: id,
-      user_id: user_id,
-      username: user.username,
-      host: host,
-      list: list&.as_json_summary,
-      role: role,
-      ready: ready,
-      won_role_roll: won_role_roll,
-      won_deployment_roll: won_deployment_roll,
-      # Drawn agendas are private — only ever revealed to the player who drew them.
-      agendas: viewer_game_player&.id == id ? Agenda.where(id: agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : []
-    }
+    validates :user_id, uniqueness: { scope: :game_id }
+    validates :role, inclusion: { in: ROLES }, allow_nil: true
+
+    def as_json_for(viewer_game_player)
+      {
+        id: id,
+        user_id: user_id,
+        username: user.username,
+        host: host,
+        list: list&.as_json_summary,
+        role: role,
+        ready: ready,
+        won_role_roll: won_role_roll,
+        won_deployment_roll: won_deployment_roll,
+        # Drawn agendas are private — only ever revealed to the player who drew them.
+        agendas: viewer_game_player&.id == id ? Catalog::Agenda.where(id: agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : []
+      }
+    end
   end
 end
 

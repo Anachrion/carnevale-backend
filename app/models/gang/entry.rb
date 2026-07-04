@@ -1,18 +1,22 @@
-class ListEntry < ApplicationRecord
-  belongs_to :list
-  belongs_to :entry, polymorphic: true
+module Gang
+  class Entry < ApplicationRecord
+    self.table_name = "list_entries"
 
-  delegate :cost, to: :entry
+    belongs_to :list, class_name: "Gang::List"
+    belongs_to :entry, polymorphic: true
 
-  validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
-  validates :position, uniqueness: { scope: :list_id }
+    delegate :cost, to: :entry
 
-  after_commit :refresh_list_selection_validity, on: %i[create update destroy]
+    validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    validates :position, uniqueness: { scope: :list_id }
 
-  private
+    after_commit :refresh_list_selection_validity, on: %i[create update destroy]
 
-  def refresh_list_selection_validity
-    list.refresh_selection_validity
+    private
+
+    def refresh_list_selection_validity
+      list.refresh_selection_validity
+    end
   end
 end
 

@@ -1,6 +1,8 @@
-class SpecialRule < ApplicationRecord
-  has_many :profile_special_rules
-  has_many :profiles, through: :profile_special_rules
+module Catalog
+  class SpecialRule < ApplicationRecord
+    has_many :profile_special_rules, class_name: "Catalog::ProfileSpecialRule"
+    has_many :profiles, through: :profile_special_rules
+  end
 end
 
 # == Schema Information

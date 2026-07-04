@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :profile do
+  factory :profile, class: "Catalog::Profile" do
     sequence(:name) { |n| "Profile #{n}" }
     faction { :guild }
     ducats { 10 }

@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe List, type: :model do
+RSpec.describe Gang::List, type: :model do
   def guild_ref(cost: 10, keywords: [])
     profile = create(:profile, faction: :guild, ducats: cost, keywords: keywords)
     create(:card_reference, profile: profile)
