@@ -1,9 +1,6 @@
 class CardReference < ApplicationRecord
   belongs_to :profile
 
-  has_many :list_entries, dependent: :destroy
-  has_many :lists, through: :list_entries
-
   delegate :faction, to: :profile, allow_nil: true
 
   def cost
