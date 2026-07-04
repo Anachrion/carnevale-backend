@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_165914) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_181958) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -191,7 +191,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_165914) do
     t.text "primary_objective", default: "", null: false
     t.text "setup", default: "", null: false
     t.json "special_rules", default: [], null: false
-    t.integer "turns", null: false
+    t.integer "turns", default: 0, null: false
     t.datetime "updated_at", null: false
   end
 
