@@ -1,7 +1,7 @@
 class List < ApplicationRecord
   include HasFaction
 
-  belongs_to :user
+  belongs_to :owner, polymorphic: true
   has_many :list_entries, dependent: :destroy
 
   validates :name, presence: true
@@ -20,6 +20,19 @@ class List < ApplicationRecord
   def as_json_summary
     { id: id, name: name, faction: faction, points: points, total_cost: list_entries.sum(&:cost) }
   end
+
+  # Deep-copies this list (and its entries) into a new list owned by `owner`, so the copy stays
+  # unaffected by any future edits to this one. Used to freeze a player's gang the moment they
+  # select it for a game, so a later battle report always reflects what was actually played.
+  def snapshot_for(owner)
+    List.transaction do
+      List.create!(owner: owner, name: name, faction: faction, points: points).tap do |snapshot|
+        list_entries.each do |entry|
+          snapshot.list_entries.create!(entry_type: entry.entry_type, entry_id: entry.entry_id, position: entry.position)
+        end
+      end
+    end
+  end
 end
 
 # == Schema Information
@@ -29,18 +42,15 @@ end
 #  id               :bigint           not null, primary key
 #  faction          :string           not null
 #  name             :string
+#  owner_type       :string           not null
 #  points           :integer          default(100), not null
 #  selection_errors :json             not null
 #  selection_valid  :boolean          default(FALSE), not null
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
-#  user_id          :bigint           not null
+#  owner_id         :bigint           not null
 #
 # Indexes
 #
-#  index_lists_on_user_id  (user_id)
-#
-# Foreign Keys
-#
-#  fk_rails_...  (user_id => users.id)
+#  index_lists_on_owner  (owner_type,owner_id)
 #

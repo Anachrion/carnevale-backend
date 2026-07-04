@@ -30,7 +30,7 @@ module Api
       private
 
       def find_owned_entry
-        ListEntry.joins(:list).where(lists: { user_id: current_user.id }).find(params[:id])
+        ListEntry.joins(:list).where(lists: { owner_type: "User", owner_id: current_user.id }).find(params[:id])
       end
 
       def entry_params

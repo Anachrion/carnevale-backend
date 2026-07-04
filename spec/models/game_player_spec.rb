@@ -44,7 +44,6 @@ end
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #  game_id             :bigint           not null
-#  list_id             :bigint
 #  user_id             :bigint           not null
 #
 # Indexes
@@ -53,12 +52,10 @@ end
 #  index_game_players_on_game_id_and_user_id                (game_id,user_id) UNIQUE
 #  index_game_players_on_game_id_where_won_deployment_roll  (game_id) UNIQUE WHERE won_deployment_roll
 #  index_game_players_on_game_id_where_won_role_roll        (game_id) UNIQUE WHERE won_role_roll
-#  index_game_players_on_list_id                            (list_id)
 #  index_game_players_on_user_id                            (user_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (game_id => games.id)
-#  fk_rails_...  (list_id => lists.id)
 #  fk_rails_...  (user_id => users.id)
 #

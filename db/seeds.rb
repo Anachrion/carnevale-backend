@@ -33,7 +33,7 @@ end
 
 list = List.find_or_create_by!(name: "Guild Sample List", faction: "guild") do |l|
   l.points = 150
-  l.user = sample_user
+  l.owner = sample_user
 end
 
 identifiers = %w[
@@ -60,7 +60,7 @@ def seed_dev_list(username:, list_name:, faction:, identifiers:)
   user = User.find_by!(username: username)
   list = List.find_or_create_by!(name: list_name, faction: faction) do |l|
     l.points = 100
-    l.user = user
+    l.owner = user
   end
 
   card_refs = CardReference.where(identifier: identifiers).index_by(&:identifier)

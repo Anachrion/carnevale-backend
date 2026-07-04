@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe "Api::V1::ListEntries", type: :request do
   let(:user) { create(:user, password: "password123", password_confirmation: "password123") }
-  let(:list) { create(:list, user: user, faction: :guild, points: 100) }
+  let(:list) { create(:list, owner: user, faction: :guild, points: 100) }
   let(:json_headers) { { "Content-Type" => "application/json" } }
   let(:headers) { auth_headers }
 
