@@ -13,7 +13,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
   describe "GET /api/v1/lists" do
     it "returns only the current user's lists" do
-      create_list(:list, 3, user: user)
+      create_list(:list, 3, owner: user)
       create(:list) # another user's list
 
       get "/api/v1/lists", headers: auth_headers
@@ -22,7 +22,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
     end
 
     it "returns the correct fields including entries" do
-      list = create(:list, user: user, name: "Test Gang", faction: "guild", points: 150)
+      list = create(:list, owner: user, name: "Test Gang", faction: "guild", points: 150)
       ref = create(:card_reference, name: "Capodecina", profile: create(:profile, faction: "guild", ducats: 20, keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref, position: 1)
 
@@ -40,7 +40,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
   describe "GET /api/v1/lists/:id" do
     it "returns the list with entries" do
-      list = create(:list, user: user)
+      list = create(:list, owner: user)
       ref = create(:card_reference, name: "Capodecina", profile: create(:profile, faction: "guild", ducats: 20, keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref, position: 1)
 
@@ -52,7 +52,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
     end
 
     it "returns entries ordered by position" do
-      list = create(:list, user: user)
+      list = create(:list, owner: user)
       ref_a = create(:card_reference)
       ref_b = create(:card_reference, profile: create(:profile, faction: "guild", keywords: ["Leader"]))
       create(:list_entry, list: list, entry: ref_b, position: 2)
@@ -81,7 +81,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
         post "/api/v1/lists", params: valid_params.to_json, headers: auth_headers
       }.to change(List, :count).by(1)
       expect(response).to have_http_status(:created)
-      expect(List.last.user).to eq(user)
+      expect(List.last.owner).to eq(user)
     end
 
     it "returns the created list" do
@@ -103,7 +103,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
   end
 
   describe "PATCH /api/v1/lists/:id" do
-    let(:list) { create(:list, user: user, name: "Old Name") }
+    let(:list) { create(:list, owner: user, name: "Old Name") }
 
     it "updates the list" do
       patch "/api/v1/lists/#{list.id}", params: { list: { name: "New Name" } }.to_json, headers: auth_headers
@@ -131,7 +131,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
 
   describe "DELETE /api/v1/lists/:id" do
     it "destroys the list" do
-      list = create(:list, user: user)
+      list = create(:list, owner: user)
       expect {
         delete "/api/v1/lists/#{list.id}", headers: auth_headers
       }.to change(List, :count).by(-1)
@@ -139,7 +139,7 @@ RSpec.describe "Api::V1::Lists", type: :request do
     end
 
     it "also destroys associated entries" do
-      list = create(:list, user: user)
+      list = create(:list, owner: user)
       create(:list_entry, list: list, entry: create(:card_reference, profile: create(:profile, faction: "guild", keywords: ["Leader"])))
       expect {
         delete "/api/v1/lists/#{list.id}", headers: auth_headers

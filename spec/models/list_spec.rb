@@ -1,0 +1,37 @@
+require 'rails_helper'
+
+RSpec.describe List, type: :model do
+  def guild_ref(cost: 10, keywords: [])
+    profile = create(:profile, faction: :guild, ducats: cost, keywords: keywords)
+    create(:card_reference, profile: profile)
+  end
+
+  describe "#snapshot_for" do
+    it "deep-copies the list and its entries under the new owner" do
+      list = create(:list, faction: :guild, points: 100)
+      create(:list_entry, list: list, entry: guild_ref, position: 1)
+      game_player = create(:game_player)
+
+      snapshot = list.snapshot_for(game_player)
+
+      expect(snapshot).not_to eq(list)
+      expect(snapshot.owner).to eq(game_player)
+      expect(snapshot.name).to eq(list.name)
+      expect(snapshot.list_entries.count).to eq(1)
+      expect(snapshot.list_entries.first.entry).to eq(list.list_entries.first.entry)
+    end
+
+    it "stays unaffected by later edits to the original list" do
+      list = create(:list, faction: :guild, points: 100)
+      create(:list_entry, list: list, entry: guild_ref, position: 1)
+      game_player = create(:game_player)
+
+      snapshot = list.snapshot_for(game_player)
+      list.list_entries.create!(entry: guild_ref, position: 2)
+      list.update!(name: "Renamed after the match")
+
+      expect(snapshot.list_entries.reload.count).to eq(1)
+      expect(snapshot.reload.name).not_to eq("Renamed after the match")
+    end
+  end
+end

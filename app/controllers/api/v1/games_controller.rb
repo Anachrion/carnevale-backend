@@ -68,7 +68,7 @@ module Api
         list = current_user.lists.find(params[:list_id])
         return render_error("List exceeds this game's ducat limit") if list.points > @game.ducat_limit
 
-        @game_player.update!(list: list)
+        @game_player.list = list.snapshot_for(@game_player)
         maybe_advance_to_agenda_draw!
         @game.broadcast_state!
         render json: @game.as_json_for(@game_player)
@@ -138,7 +138,7 @@ module Api
       def maybe_advance_to_agenda_draw!
         return unless @game.status == "gang_selection"
         players = @game.game_players.reload
-        return unless players.size == 2 && players.all? { |p| p.list_id.present? }
+        return unless players.size == 2 && players.all? { |p| p.list.present? }
 
         @game.update!(status: "agenda_draw")
       end

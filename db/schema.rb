@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_115321) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_120713) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -50,7 +50,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_115321) do
     t.string "deployment_zone"
     t.bigint "game_id", null: false
     t.boolean "host", default: false, null: false
-    t.bigint "list_id"
     t.boolean "ready", default: false, null: false
     t.string "role"
     t.datetime "updated_at", null: false
@@ -62,7 +61,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_115321) do
     t.index ["game_id"], name: "index_game_players_on_game_id"
     t.index ["game_id"], name: "index_game_players_on_game_id_where_won_deployment_roll", unique: true, where: "won_deployment_roll"
     t.index ["game_id"], name: "index_game_players_on_game_id_where_won_role_roll", unique: true, where: "won_role_roll"
-    t.index ["list_id"], name: "index_game_players_on_list_id"
     t.index ["user_id"], name: "index_game_players_on_user_id"
   end
 
@@ -117,12 +115,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_115321) do
     t.datetime "created_at", null: false
     t.string "faction", null: false
     t.string "name"
+    t.bigint "owner_id", null: false
+    t.string "owner_type", null: false
     t.integer "points", default: 100, null: false
     t.json "selection_errors", default: [], null: false
     t.boolean "selection_valid", default: false, null: false
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_lists_on_user_id"
+    t.index ["owner_type", "owner_id"], name: "index_lists_on_owner"
   end
 
   create_table "profile_special_rules", force: :cascade do |t|
@@ -219,12 +218,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_115321) do
 
   add_foreign_key "card_references", "profiles"
   add_foreign_key "game_players", "games"
-  add_foreign_key "game_players", "lists"
   add_foreign_key "game_players", "users"
   add_foreign_key "games", "scenarios"
   add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "lists"
-  add_foreign_key "lists", "users"
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"
   add_foreign_key "profile_weapons", "profiles"

@@ -72,8 +72,8 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(json(guest)["status"]).to eq("gang_selection")
       expect(json(guest)["players"].size).to eq(2)
 
-      host_list = create(:list, user: host_user, faction: "guild", points: 100)
-      guest_list = create(:list, user: guest_user, faction: "doctors", points: 100)
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
 
       host.get "/api/v1/games/#{game_id}/available_lists", headers: h
       expect(json(host).first).to include("selectable" => true)
@@ -143,6 +143,48 @@ RSpec.describe "Api::V1::Games", type: :request do
 
       host.get "/api/v1/games/#{game_id}/available_lists", headers: h
       expect(host.response).to have_http_status(:ok)
+    end
+  end
+
+  describe "list snapshotting" do
+    it "freezes the selected list, so later edits to the live list don't change the game" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100, name: "Original Name")
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      expect(json(host)["players"].find { |p| p["username"] == host_user.username }["list"]["name"]).to eq("Original Name")
+
+      host_list.update!(name: "Renamed after the match")
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      expect(json(host)["players"].find { |p| p["username"] == host_user.username }["list"]["name"]).to eq("Original Name")
+    end
+
+    it "destroys the frozen snapshot once the game is hard-deleted, leaving the live list untouched" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      snapshot_id = json(host)["players"].find { |p| p["username"] == host_user.username }["list"]["id"]
+
+      host.delete "/api/v1/games/#{game_id}", headers: h
+      guest.delete "/api/v1/games/#{game_id}", headers: g
+
+      expect(List.exists?(snapshot_id)).to be false
+      expect(List.exists?(host_list.id)).to be true
     end
   end
 
@@ -275,7 +317,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       game_id = json(host)["id"]
       guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
 
-      too_big = create(:list, user: host_user, points: 100)
+      too_big = create(:list, owner: host_user, points: 100)
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: too_big.id }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
