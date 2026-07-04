@@ -2,7 +2,7 @@ module Catalog
   class Profile < ApplicationRecord
     include HasFaction
 
-    has_many :card_references, class_name: "Catalog::CardReference"
+    has_many :card_references, -> { order(:identifier) }, class_name: "Catalog::CardReference"
 
     has_many :illustrations, -> { order(:number) }, class_name: "Catalog::Illustration"
 
