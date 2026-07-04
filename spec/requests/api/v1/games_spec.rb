@@ -105,6 +105,46 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "GET /api/v1/games/:id/players/:player_id/list" do
+    it "lets either participant view either player's selected gang once picked" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100, name: "Host's Gang")
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      host_player_id = json(host)["players"].find { |p| p["username"] == host_user.username }["id"]
+
+      guest.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: g
+      expect(guest.response).to have_http_status(:ok)
+      expect(json(guest)["name"]).to eq("Host's Gang")
+
+      guest_player_id = json(host)["players"].find { |p| p["username"] == guest_user.username }["id"]
+      guest.get "/api/v1/games/#{game_id}/players/#{guest_player_id}/list", headers: g
+      expect(guest.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 404 for a game the user isn't a participant of" do
+      host = open_session
+      other = open_session
+      h = headers_for(host, host_user)
+      other_user = create(:user, password: "password123", password_confirmation: "password123")
+      o = headers_for(other, other_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      host_player_id = json(host)["players"].first["id"]
+
+      other.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: o
+      expect(other.response).to have_http_status(:not_found)
+    end
+  end
+
   describe "asymmetric scenarios" do
     let!(:street_fight) { create(:scenario, name: "Street Fight", ducats: 100, asymmetric: true) }
 

@@ -64,6 +64,15 @@ module Api
         render json: current_user.lists.map { |l| { list: l.as_json_summary, selectable: l.points <= @game.ducat_limit } }
       end
 
+      # Either player's selected gang, in full (with entries) — available for consultation by
+      # both participants once that player has picked one, regardless of whose turn it is.
+      def player_list
+        target = @game.game_players.find(params[:player_id])
+        return render_error("List not selected yet") unless target.list.present?
+
+        render json: list_json(target.list, with_entries: true)
+      end
+
       def select_gang
         list = current_user.lists.find(params[:list_id])
         return render_error("List exceeds this game's ducat limit") if list.points > @game.ducat_limit
