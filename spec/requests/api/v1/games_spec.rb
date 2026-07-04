@@ -105,6 +105,98 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "agenda scoring and turn tracking" do
+    def start_in_progress_game(turns: 5)
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      short_scenario = create(:scenario, name: "Short Scenario", ducats: 100, turns: turns)
+      host.post "/api/v1/games", params: { scenario_id: short_scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+
+      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      host.post "/api/v1/games/#{game_id}/ready", headers: h
+      guest.post "/api/v1/games/#{game_id}/ready", headers: g
+
+      [ host, guest, h, g, game_id ]
+    end
+
+    it "draws, scores (with recycle), discards, and advances turns through to completion" do
+      host, _guest, h, _g, game_id = start_in_progress_game(turns: 2)
+
+      expect(json(host)["current_turn"]).to eq(1)
+
+      host.post "/api/v1/games/#{game_id}/agendas/draw", params: { origin: "special_rule" }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["agendas"].size).to eq(4)
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      scored_agenda_id = host_entry["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{scored_agenda_id}/score", params: { recycle: true }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      expect(host_entry["score"]).to eq(1)
+      expect(host_entry["agendas"].size).to eq(4)
+      expect(host_entry["agenda_history"].map { |e| e["action"] }).to include("scored")
+      expect(host_entry["agenda_history"].find { |e| e["origin"] == "recycle" }).to be_present
+
+      discard_agenda_id = host_entry["agendas"].first["id"]
+      host.post "/api/v1/games/#{game_id}/agendas/#{discard_agenda_id}/discard", params: { origin: "command_point" }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(json(host)["current_turn"]).to eq(2)
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(json(host)["status"]).to eq("completed")
+    end
+
+    it "rejects scoring an agenda not in the player's hand" do
+      host, _guest, h, _g, game_id = start_in_progress_game
+      other_agenda = create(:agenda)
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{other_agenda.id}/score", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "requires a valid origin when discarding" do
+      host, _guest, h, _g, game_id = start_in_progress_game
+      host.get "/api/v1/games/#{game_id}", headers: h
+      agenda_id = json(host)["players"].find { |p| p["username"] == host_user.username }["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/discard", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "requires a valid origin when drawing mid-game" do
+      host, _guest, h, _g, game_id = start_in_progress_game
+
+      host.post "/api/v1/games/#{game_id}/agendas/draw", params: { origin: "bogus" }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "rejects advancing the turn outside in_progress" do
+      host = open_session
+      h = headers_for(host, host_user)
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe "GET /api/v1/games/:id/players/:player_id/list" do
     it "lets either participant view either player's selected gang once picked" do
       host = open_session
