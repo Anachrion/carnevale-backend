@@ -20,8 +20,18 @@ module Api
           selection_errors: list.selection_errors
         }
         if with_entries
-          json[:entries] = list.list_entries.includes(:entry).order(:position).map do |list_entry|
-            { id: list_entry.id, position: list_entry.position, entry_type: list_entry.entry_type, entry_id: list_entry.entry_id, name: list_entry.entry.name, cost: list_entry.cost }
+          json[:entries] = list.list_entries.includes(:entry, :entry_state).order(:position).map do |list_entry|
+            {
+              id: list_entry.id,
+              position: list_entry.position,
+              entry_type: list_entry.entry_type,
+              entry_id: list_entry.entry_id,
+              name: list_entry.entry.name,
+              cost: list_entry.cost,
+              # Only present once the game has started (Encounter::Game#start!); nil beforehand
+              # and for equipment entries, which have no HP/WP/CP to track.
+              state: list_entry.entry_state&.as_json_for_display
+            }
           end
         end
         json

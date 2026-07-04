@@ -84,6 +84,20 @@ module Encounter
       true
     end
 
+    # Called once both players are ready on the deployment screen — flips the game live and
+    # snapshots each model's HP/WP/CP into an Encounter::EntryState. Guarded by the status check
+    # so a repeated "ready" call (e.g. a duplicate request) doesn't recreate entry states.
+    def start!
+      return false if in_progress? || completed?
+      return false unless game_players.reload.all?(&:ready)
+
+      transaction do
+        update!(status: "in_progress")
+        create_entry_states!
+      end
+      true
+    end
+
     # Either player can advance the shared turn counter — like the roll winners and role pick,
     # this app tracks the physical game rather than refereeing whose turn it is to act.
     def advance_turn!
@@ -131,6 +145,18 @@ module Encounter
         candidates = Catalog::Agenda.where(first_roll: bucket).pluck(:id) - already_drawn
         next if candidates.empty?
         break candidates.sample
+      end
+    end
+
+    # Equipment entries have no profile (no HP/WP/CP), so only card-reference entries — i.e.
+    # actual models — get an entry state.
+    def create_entry_states!
+      game_players.each do |gp|
+        next unless gp.list
+
+        gp.list.list_entries.where(entry_type: "Catalog::CardReference").find_each do |list_entry|
+          Encounter::EntryState.create_for!(list_entry)
+        end
       end
     end
 

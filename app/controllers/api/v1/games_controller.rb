@@ -132,7 +132,7 @@ module Api
 
       def ready
         @game_player.update!(ready: true)
-        @game.update!(status: "in_progress") if @game.game_players.reload.all?(&:ready)
+        @game.start!
         @game.broadcast_state!
         render json: @game.as_json_for(@game_player)
       end

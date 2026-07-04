@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_181958) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_181958) do
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
     t.index ["profile_id"], name: "index_card_references_on_profile_id"
+  end
+
+  create_table "entry_states", force: :cascade do |t|
+    t.json "counters", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.integer "current_command_points", null: false
+    t.integer "current_life_points", null: false
+    t.integer "current_will_points", null: false
+    t.bigint "list_entry_id", null: false
+    t.integer "starting_command_points", null: false
+    t.integer "starting_life_points", null: false
+    t.integer "starting_will_points", null: false
+    t.datetime "updated_at", null: false
+    t.index ["list_entry_id"], name: "index_entry_states_on_list_entry_id", unique: true
   end
 
   create_table "equipment", force: :cascade do |t|
@@ -246,6 +260,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_181958) do
   add_foreign_key "agenda_events", "agendas"
   add_foreign_key "agenda_events", "game_players"
   add_foreign_key "card_references", "profiles"
+  add_foreign_key "entry_states", "list_entries"
   add_foreign_key "game_players", "games"
   add_foreign_key "game_players", "users"
   add_foreign_key "games", "scenarios"
