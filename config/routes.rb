@@ -32,7 +32,6 @@ Rails.application.routes.draw do
           get :available_lists
           patch :select_gang
           post "agendas/draw", action: :draw_agendas
-          patch :deployment_zone
           post :ready
           patch :archive
           patch :unarchive

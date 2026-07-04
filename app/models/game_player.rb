@@ -1,6 +1,5 @@
 class GamePlayer < ApplicationRecord
   ROLES = %w[attacker defender].freeze
-  DEPLOYMENT_ZONES = %w[A B].freeze
   VISIBILITIES = %w[active archived deleted].freeze
 
   belongs_to :game
@@ -11,7 +10,6 @@ class GamePlayer < ApplicationRecord
 
   validates :user_id, uniqueness: { scope: :game_id }
   validates :role, inclusion: { in: ROLES }, allow_nil: true
-  validates :deployment_zone, inclusion: { in: DEPLOYMENT_ZONES }, allow_nil: true
 
   def as_json_for(viewer_game_player)
     {
@@ -21,7 +19,6 @@ class GamePlayer < ApplicationRecord
       host: host,
       list: list&.as_json_summary,
       role: role,
-      deployment_zone: deployment_zone,
       ready: ready,
       won_role_roll: won_role_roll,
       won_deployment_roll: won_deployment_roll,
@@ -37,7 +34,6 @@ end
 #
 #  id                  :bigint           not null, primary key
 #  agenda_ids          :json             not null
-#  deployment_zone     :string
 #  host                :boolean          default(FALSE), not null
 #  ready               :boolean          default(FALSE), not null
 #  role                :string

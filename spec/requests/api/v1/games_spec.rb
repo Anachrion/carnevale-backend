@@ -91,18 +91,10 @@ RSpec.describe "Api::V1::Games", type: :request do
 
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
       host.get "/api/v1/games/#{game_id}", headers: h
-      expect(json(host)["status"]).to eq("deployment_rolloff")
+      expect(json(host)["status"]).to eq("deploying")
 
       winner_id = json(host)["players"].find { |p| p["won_deployment_roll"] }&.fetch("id")
       expect(winner_id).to be_present
-
-      winner_user = GamePlayer.find(winner_id).user
-      winner_session = winner_user == host_user ? host : guest
-      winner_headers = winner_user == host_user ? h : g
-      winner_session.patch "/api/v1/games/#{game_id}/deployment_zone", params: { zone: "A" }.to_json, headers: winner_headers
-      expect(winner_session.response).to have_http_status(:ok)
-      expect(json(winner_session)["status"]).to eq("deploying")
-      expect(json(winner_session)["players"].map { |p| p["deployment_zone"] }.sort).to eq(%w[A B])
 
       host.post "/api/v1/games/#{game_id}/ready", headers: h
       guest.get "/api/v1/games/#{game_id}", headers: g
