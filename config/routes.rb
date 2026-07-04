@@ -23,7 +23,7 @@ Rails.application.routes.draw do
       resources :equipment, only: %i[index]
       resources :scenarios, only: %i[index]
 
-      resources :games, only: %i[index create show] do
+      resources :games, only: %i[index create show destroy] do
         collection do
           post :join
         end
@@ -34,6 +34,8 @@ Rails.application.routes.draw do
           post "agendas/draw", action: :draw_agendas
           patch :deployment_zone
           post :ready
+          patch :archive
+          patch :unarchive
         end
       end
     end

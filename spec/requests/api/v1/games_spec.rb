@@ -132,6 +132,118 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "archiving and deleting" do
+    it "archives a game for one user only, hiding it from their list but keeping it reachable" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.patch "/api/v1/games/#{game_id}/archive", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["viewer_visibility"]).to eq("archived")
+
+      host.get "/api/v1/games", headers: h
+      expect(json(host)).to be_empty
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      guest.get "/api/v1/games", headers: g
+      expect(json(guest).size).to eq(1)
+    end
+
+    it "soft-deletes a game for one user only, making it inaccessible to them but not the opponent" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.delete "/api/v1/games/#{game_id}", headers: h
+      expect(host.response).to have_http_status(:no_content)
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      expect(host.response).to have_http_status(:not_found)
+
+      host.get "/api/v1/games", headers: h
+      expect(json(host)).to be_empty
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      expect(guest.response).to have_http_status(:ok)
+      expect(Game.exists?(game_id)).to be true
+    end
+
+    it "hard-deletes the game once every player has deleted it" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.delete "/api/v1/games/#{game_id}", headers: h
+      guest.delete "/api/v1/games/#{game_id}", headers: g
+      expect(guest.response).to have_http_status(:no_content)
+
+      expect(Game.exists?(game_id)).to be false
+    end
+
+    it "unarchives a game for one user only, restoring it to their list" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.patch "/api/v1/games/#{game_id}/archive", headers: h
+      host.get "/api/v1/games", headers: h
+      expect(json(host)).to be_empty
+
+      host.patch "/api/v1/games/#{game_id}/unarchive", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["viewer_visibility"]).to eq("active")
+
+      host.get "/api/v1/games", headers: h
+      expect(json(host).size).to eq(1)
+    end
+
+    it "restores the game for a user who deleted it and then rejoins via the join code" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      join_code = json(host)["join_code"]
+      guest.post "/api/v1/games/join", params: { join_code: join_code }.to_json, headers: g
+
+      guest.delete "/api/v1/games/#{game_id}", headers: g
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      expect(guest.response).to have_http_status(:not_found)
+
+      guest.post "/api/v1/games/join", params: { join_code: join_code }.to_json, headers: g
+      expect(guest.response).to have_http_status(:ok)
+      expect(json(guest)["viewer_visibility"]).to eq("active")
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      expect(guest.response).to have_http_status(:ok)
+    end
+  end
+
   describe "guard rails" do
     it "rejects selecting a gang that exceeds the ducat limit" do
       host = open_session
