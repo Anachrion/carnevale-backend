@@ -68,7 +68,7 @@ end
 #  board_size  :string
 #  ducat_limit :integer          not null
 #  join_code   :string           not null
-#  name        :string
+#  name        :string           not null
 #  status      :string           default("pending"), not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null

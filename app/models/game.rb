@@ -10,6 +10,7 @@ class Game < ApplicationRecord
 
   validates :ducat_limit, presence: true, numericality: { only_integer: true, greater_than: 0 }
   validates :join_code, presence: true, uniqueness: true
+  validates :name, presence: true
 
   before_validation :generate_join_code, on: :create
   before_validation :default_name_to_scenario, on: :create
@@ -109,7 +110,7 @@ end
 #  board_size  :string
 #  ducat_limit :integer          not null
 #  join_code   :string           not null
-#  name        :string
+#  name        :string           not null
 #  status      :string           default("pending"), not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
