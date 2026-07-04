@@ -1,6 +1,9 @@
 module Api
   module V1
     class GamesController < BaseController
+      DRAW_ORIGINS = %w[special_rule command_point].freeze
+      DISCARD_ORIGINS = %w[special_rule command_point].freeze
+
       before_action :authenticate_user!
       before_action :set_game_and_player, except: %i[index create join]
       before_action :ensure_roles_resolved!, only: %i[available_lists select_gang]
@@ -84,13 +87,47 @@ module Api
       end
 
       def draw_agendas
-        return render_error("Wrong game status for drawing agendas") unless @game.status == "agenda_draw"
-        return render_error("Agendas already drawn") if @game_player.agenda_ids.any?
+        case @game.status
+        when "agenda_draw"
+          return render_error("Agendas already drawn") if @game_player.drawn_agenda_ids.any?
 
-        @game.draw_agendas!(@game_player)
-        maybe_advance_to_deploying!
+          @game.draw_agendas!(@game_player)
+          maybe_advance_to_deploying!
+        when "in_progress"
+          return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
+
+          @game.draw_agenda!(@game_player, origin: params[:origin])
+        else
+          return render_error("Wrong game status for drawing agendas")
+        end
+
         @game.broadcast_state!
         render json: { agendas: @game_player.reload.as_json_for(@game_player)[:agendas] }
+      end
+
+      def score_agenda
+        return render_error("Wrong game status for scoring agendas") unless @game.status == "in_progress"
+        return render_error("Agenda not in hand") unless @game.score_agenda!(@game_player, params[:agenda_id].to_i, recycle: recycle_param)
+
+        @game.broadcast_state!
+        render json: @game.as_json_for(@game_player)
+      end
+
+      def discard_agenda
+        return render_error("Wrong game status for discarding agendas") unless @game.status == "in_progress"
+        return render_error("Invalid origin") unless DISCARD_ORIGINS.include?(params[:origin])
+        return render_error("Agenda not in hand") unless @game.discard_agenda!(@game_player, params[:agenda_id].to_i, origin: params[:origin], recycle: recycle_param)
+
+        @game.broadcast_state!
+        render json: @game.as_json_for(@game_player)
+      end
+
+      def advance_turn
+        return render_error("Wrong game status for advancing the turn") unless @game.status == "in_progress"
+
+        @game.advance_turn!
+        @game.broadcast_state!
+        render json: @game.as_json_for(@game_player)
       end
 
       def ready
@@ -143,9 +180,13 @@ module Api
 
       def maybe_advance_to_deploying!
         return unless @game.status == "agenda_draw"
-        return unless @game.game_players.reload.all? { |p| p.agenda_ids.any? }
+        return unless @game.game_players.reload.all? { |p| p.drawn_agenda_ids.any? }
 
         @game.update!(status: "deploying")
+      end
+
+      def recycle_param
+        ActiveModel::Type::Boolean.new.cast(params[:recycle])
       end
     end
   end

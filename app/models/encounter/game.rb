@@ -52,7 +52,49 @@ module Encounter
       count = 3 if count.zero?
       drawn = []
       drawn << draw_one_agenda_id(drawn) while drawn.size < count
-      game_player.update!(agenda_ids: drawn)
+      drawn.each do |agenda_id|
+        game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: "initial", turn: current_turn)
+      end
+    end
+
+    # Single card draw during play (as opposed to the initial batch above), e.g. granted by a
+    # special rule, a command point ability, or as the replacement half of a "Cycle" scenario
+    # rule (origin: "recycle", caused_by_event: the score/discard that triggered it).
+    def draw_agenda!(game_player, origin:, caused_by_event: nil)
+      raise ArgumentError, "origin must not be \"initial\" outside the initial draw" if origin == "initial"
+
+      already_drawn = game_player.drawn_agenda_ids
+      agenda_id = draw_one_agenda_id(already_drawn)
+      game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: origin, caused_by_event: caused_by_event, turn: current_turn)
+    end
+
+    def score_agenda!(game_player, agenda_id, recycle: false)
+      return false unless game_player.hand_agenda_ids.include?(agenda_id)
+
+      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: current_turn)
+      draw_agenda!(game_player, origin: "recycle", caused_by_event: event) if recycle
+      true
+    end
+
+    def discard_agenda!(game_player, agenda_id, origin:, recycle: false)
+      return false unless game_player.hand_agenda_ids.include?(agenda_id)
+
+      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: current_turn)
+      draw_agenda!(game_player, origin: "recycle", caused_by_event: event) if recycle
+      true
+    end
+
+    # Either player can advance the shared turn counter — like the roll winners and role pick,
+    # this app tracks the physical game rather than refereeing whose turn it is to act.
+    def advance_turn!
+      return false unless in_progress?
+
+      if current_turn >= scenario.turns
+        update!(status: "completed")
+      else
+        update!(current_turn: current_turn + 1)
+      end
+      true
     end
 
     def as_json_for(viewer_game_player)
@@ -63,6 +105,7 @@ module Encounter
         status: status,
         ducat_limit: ducat_limit,
         board_size: board_size,
+        current_turn: current_turn,
         scenario: scenario.as_json_for_game,
         viewer_visibility: viewer_game_player&.visibility,
         players: game_players.map { |gp| gp.as_json_for(viewer_game_player) }
@@ -108,15 +151,16 @@ end
 #
 # Table name: games
 #
-#  id          :bigint           not null, primary key
-#  board_size  :string
-#  ducat_limit :integer          not null
-#  join_code   :string           not null
-#  name        :string           not null
-#  status      :string           default("pending"), not null
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
-#  scenario_id :bigint           not null
+#  id           :bigint           not null, primary key
+#  board_size   :string
+#  current_turn :integer          default(1), not null
+#  ducat_limit  :integer          not null
+#  join_code    :string           not null
+#  name         :string           not null
+#  status       :string           default("pending"), not null
+#  created_at   :datetime         not null
+#  updated_at   :datetime         not null
+#  scenario_id  :bigint           not null
 #
 # Indexes
 #
