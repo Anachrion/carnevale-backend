@@ -27,7 +27,7 @@ end
 #  primary_objective :text             default(""), not null
 #  setup             :text             default(""), not null
 #  special_rules     :json             not null
-#  turns             :integer          not null
+#  turns             :integer          default(0), not null
 #  created_at        :datetime         not null
 #  updated_at        :datetime         not null
 #
