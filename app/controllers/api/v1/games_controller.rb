@@ -6,7 +6,8 @@ module Api
       before_action :ensure_roles_resolved!, only: %i[available_lists select_gang]
 
       def index
-        game_players = current_user.game_players.active.includes(game: [ :scenario, game_players: :user ])
+        visibility = params[:visibility] == "archived" ? "archived" : "active"
+        game_players = current_user.game_players.where(visibility: visibility).includes(game: [ :scenario, game_players: :user ])
         render json: game_players.map { |gp| gp.game.as_json_for(gp) }
       end
 
