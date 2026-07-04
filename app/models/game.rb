@@ -56,6 +56,7 @@ class Game < ApplicationRecord
       scenario: scenario.as_json_for_game,
       role_roll_winner_id: role_roll_winner_id,
       deployment_roll_winner_id: deployment_roll_winner_id,
+      viewer_visibility: viewer_game_player&.visibility,
       players: game_players.map { |gp| gp.as_json_for(viewer_game_player) }
     }
   end

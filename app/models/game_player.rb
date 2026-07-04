@@ -1,6 +1,7 @@
 class GamePlayer < ApplicationRecord
   ROLES = %w[attacker defender].freeze
   DEPLOYMENT_ZONES = %w[A B].freeze
+  VISIBILITIES = %w[active archived deleted].freeze
 
   belongs_to :game
   belongs_to :user
@@ -8,6 +9,8 @@ class GamePlayer < ApplicationRecord
 
   has_many :won_role_rolls, class_name: "Game", foreign_key: :role_roll_winner_id, dependent: :nullify, inverse_of: :role_roll_winner
   has_many :won_deployment_rolls, class_name: "Game", foreign_key: :deployment_roll_winner_id, dependent: :nullify, inverse_of: :deployment_roll_winner
+
+  enum :visibility, VISIBILITIES.index_with(&:itself), default: "active"
 
   validates :user_id, uniqueness: { scope: :game_id }
   validates :role, inclusion: { in: ROLES }, allow_nil: true
@@ -39,6 +42,7 @@ end
 #  host            :boolean          default(FALSE), not null
 #  ready           :boolean          default(FALSE), not null
 #  role            :string
+#  visibility      :string           default("active"), not null
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #  game_id         :bigint           not null

@@ -418,7 +418,8 @@ paths:
   /games:
     get:
       operationId: getGames
-      summary: List the current user's games (to resume/reopen)
+      summary: List the current user's active games (to resume/reopen)
+      description: Excludes games the current user has archived or deleted, regardless of the other player's state.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -506,6 +507,72 @@ paths:
       operationId: getGame
       summary: Get a game's full current state
       description: Returns 404 if the game doesn't exist or the current user isn't a participant. Agendas are only ever populated for the requesting player's own game_player entry.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+    delete:
+      operationId: deleteGame
+      summary: Soft-delete this game for the current user only
+      description: |
+        Hides the game from the current user permanently (they can no longer GET or list it).
+        The other player is unaffected and keeps seeing the game normally. Once every player
+        has deleted the game, it is hard-deleted server-side.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+  /games/{id}/archive:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: archiveGame
+      summary: Archive this game for the current user only
+      description: |
+        Hides the game from the current user's default game list (`GET /games`), but it remains
+        reachable via `GET /games/{id}`. Purely per-user — the other player's view is unaffected.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+  /games/{id}/unarchive:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: unarchiveGame
+      summary: Restore this game to the current user's default game list
+      description: Reverses `archive` for the current user only.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -1219,7 +1286,7 @@ components:
 
     Game:
       type: object
-      required: [id, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, players]
+      required: [id, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, viewer_visibility, players]
       properties:
         id:
           type: integer
@@ -1243,6 +1310,10 @@ components:
           type: integer
           nullable: true
           description: game_player id of the deployment roll-off winner. Picked at random as soon as the second player joins.
+        viewer_visibility:
+          type: string
+          enum: [active, archived, deleted]
+          description: The requesting user's own archive/delete state for this game — never reflects the opponent's.
         players:
           type: array
           items:

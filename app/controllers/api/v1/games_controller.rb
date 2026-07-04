@@ -6,8 +6,8 @@ module Api
       before_action :ensure_roles_resolved!, only: %i[available_lists select_gang]
 
       def index
-        games = current_user.games.includes(:scenario, game_players: :user)
-        render json: games.map { |g| g.as_json_for(g.game_players.find { |p| p.user_id == current_user.id }) }
+        game_players = current_user.game_players.active.includes(game: [ :scenario, game_players: :user ])
+        render json: game_players.map { |gp| gp.game.as_json_for(gp) }
       end
 
       def create
@@ -34,6 +34,7 @@ module Api
         game_player = game.game_players.find_by(user: current_user)
 
         if game_player
+          game_player.update!(visibility: "active") unless game_player.active?
           render json: game.as_json_for(game_player)
           return
         end
@@ -97,10 +98,29 @@ module Api
         render json: @game.as_json_for(@game_player)
       end
 
+      # Only hides the game from the current user's own game list; the opponent is unaffected.
+      def archive
+        @game_player.update!(visibility: "archived")
+        render json: @game.as_json_for(@game_player)
+      end
+
+      def unarchive
+        @game_player.update!(visibility: "active")
+        render json: @game.as_json_for(@game_player)
+      end
+
+      # Soft-deletes the game for the current user only. Once every player has done the same,
+      # there's nothing left for either side to see, so the game is hard-deleted.
+      def destroy
+        @game_player.update!(visibility: "deleted")
+        @game.destroy! if @game.game_players.reload.all?(&:deleted?)
+        head :no_content
+      end
+
       private
 
       def set_game_and_player
-        @game_player = current_user.game_players.find_by!(game_id: params[:id])
+        @game_player = current_user.game_players.where.not(visibility: "deleted").find_by!(game_id: params[:id])
         @game = @game_player.game
       end
 

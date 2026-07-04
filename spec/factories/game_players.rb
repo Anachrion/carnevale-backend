@@ -16,6 +16,7 @@ end
 #  host            :boolean          default(FALSE), not null
 #  ready           :boolean          default(FALSE), not null
 #  role            :string
+#  visibility      :string           default("active"), not null
 #  created_at      :datetime         not null
 #  updated_at      :datetime         not null
 #  game_id         :bigint           not null
