@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_095432) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_04_111555) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -68,6 +68,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_095432) do
     t.bigint "deployment_roll_winner_id"
     t.integer "ducat_limit", null: false
     t.string "join_code", null: false
+    t.string "name"
     t.bigint "role_roll_winner_id"
     t.bigint "scenario_id", null: false
     t.string "status", default: "pending", null: false

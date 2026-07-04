@@ -14,6 +14,17 @@ RSpec.describe Game, type: :model do
     game = build(:game, ducat_limit: 0)
     expect(game).not_to be_valid
   end
+
+  it "defaults name to the scenario's name when not provided" do
+    scenario = create(:scenario, name: "The Duel")
+    game = create(:game, scenario: scenario, name: nil)
+    expect(game.name).to eq("The Duel")
+  end
+
+  it "keeps an explicitly provided name" do
+    game = create(:game, name: "Rivals in the Rain")
+    expect(game.name).to eq("Rivals in the Rain")
+  end
 end
 
 # == Schema Information
@@ -24,6 +35,7 @@ end
 #  board_size                :string
 #  ducat_limit               :integer          not null
 #  join_code                 :string           not null
+#  name                      :string
 #  status                    :string           default("pending"), not null
 #  created_at                :datetime         not null
 #  updated_at                :datetime         not null

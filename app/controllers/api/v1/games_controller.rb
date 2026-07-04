@@ -15,6 +15,7 @@ module Api
         scenario = Scenario.find(params[:scenario_id])
         game = Game.new(
           scenario: scenario,
+          name: params[:name].presence,
           ducat_limit: params[:ducat_limit].presence || scenario.ducats,
           board_size: params[:board_size]
         )
