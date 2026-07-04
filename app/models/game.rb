@@ -3,8 +3,6 @@ class Game < ApplicationRecord
   AGENDA_BUCKET_WEIGHTS = %w[1-3 1-3 1-3 4-6 4-6 4-6 7-9 7-9 7-9 10].freeze
 
   belongs_to :scenario
-  belongs_to :role_roll_winner, class_name: "GamePlayer", optional: true
-  belongs_to :deployment_roll_winner, class_name: "GamePlayer", optional: true
 
   has_many :game_players, dependent: :destroy
 
@@ -24,8 +22,16 @@ class Game < ApplicationRecord
     players = game_players.reload.to_a
     return unless players.size == 2
 
-    update!(role_roll_winner: players.sample) if scenario.asymmetric?
-    update!(deployment_roll_winner: players.sample)
+    players.sample.update!(won_role_roll: true) if scenario.asymmetric?
+    players.sample.update!(won_deployment_roll: true)
+  end
+
+  def role_roll_winner
+    game_players.find(&:won_role_roll?)
+  end
+
+  def deployment_roll_winner
+    game_players.find(&:won_deployment_roll?)
   end
 
   # Winner's choice is assigned to `chooser`; the complementary option is auto-assigned to the
@@ -56,8 +62,6 @@ class Game < ApplicationRecord
       ducat_limit: ducat_limit,
       board_size: board_size,
       scenario: scenario.as_json_for_game,
-      role_roll_winner_id: role_roll_winner_id,
-      deployment_roll_winner_id: deployment_roll_winner_id,
       viewer_visibility: viewer_game_player&.visibility,
       players: game_players.map { |gp| gp.as_json_for(viewer_game_player) }
     }
@@ -101,28 +105,22 @@ end
 #
 # Table name: games
 #
-#  id                        :bigint           not null, primary key
-#  board_size                :string
-#  ducat_limit               :integer          not null
-#  join_code                 :string           not null
-#  name                      :string
-#  status                    :string           default("pending"), not null
-#  created_at                :datetime         not null
-#  updated_at                :datetime         not null
-#  deployment_roll_winner_id :bigint
-#  role_roll_winner_id       :bigint
-#  scenario_id               :bigint           not null
+#  id          :bigint           not null, primary key
+#  board_size  :string
+#  ducat_limit :integer          not null
+#  join_code   :string           not null
+#  name        :string
+#  status      :string           default("pending"), not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  scenario_id :bigint           not null
 #
 # Indexes
 #
-#  index_games_on_deployment_roll_winner_id  (deployment_roll_winner_id)
-#  index_games_on_join_code                  (join_code) UNIQUE
-#  index_games_on_role_roll_winner_id        (role_roll_winner_id)
-#  index_games_on_scenario_id                (scenario_id)
+#  index_games_on_join_code    (join_code) UNIQUE
+#  index_games_on_scenario_id  (scenario_id)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (deployment_roll_winner_id => game_players.id)
-#  fk_rails_...  (role_roll_winner_id => game_players.id)
 #  fk_rails_...  (scenario_id => scenarios.id)
 #

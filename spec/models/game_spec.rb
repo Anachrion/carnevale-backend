@@ -25,34 +25,61 @@ RSpec.describe Game, type: :model do
     game = create(:game, name: "Rivals in the Rain")
     expect(game.name).to eq("Rivals in the Rain")
   end
+
+  describe "#assign_roll_winners!" do
+    it "assigns exactly one deployment roll winner once both players have joined" do
+      game = create(:game, scenario: create(:scenario, asymmetric: false))
+      create_list(:game_player, 2, game: game)
+
+      game.assign_roll_winners!
+
+      expect(game.deployment_roll_winner).to be_present
+      expect(game.game_players.count(&:won_deployment_roll?)).to eq(1)
+    end
+
+    it "only assigns a role roll winner for asymmetric scenarios" do
+      symmetric = create(:game, scenario: create(:scenario, asymmetric: false))
+      create_list(:game_player, 2, game: symmetric)
+      symmetric.assign_roll_winners!
+      expect(symmetric.role_roll_winner).to be_nil
+
+      asymmetric = create(:game, scenario: create(:scenario, asymmetric: true))
+      create_list(:game_player, 2, game: asymmetric)
+      asymmetric.assign_roll_winners!
+      expect(asymmetric.role_roll_winner).to be_present
+    end
+
+    it "does nothing until both players have joined" do
+      game = create(:game)
+      create(:game_player, game: game)
+
+      game.assign_roll_winners!
+
+      expect(game.deployment_roll_winner).to be_nil
+    end
+  end
 end
 
 # == Schema Information
 #
 # Table name: games
 #
-#  id                        :bigint           not null, primary key
-#  board_size                :string
-#  ducat_limit               :integer          not null
-#  join_code                 :string           not null
-#  name                      :string
-#  status                    :string           default("pending"), not null
-#  created_at                :datetime         not null
-#  updated_at                :datetime         not null
-#  deployment_roll_winner_id :bigint
-#  role_roll_winner_id       :bigint
-#  scenario_id               :bigint           not null
+#  id          :bigint           not null, primary key
+#  board_size  :string
+#  ducat_limit :integer          not null
+#  join_code   :string           not null
+#  name        :string
+#  status      :string           default("pending"), not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  scenario_id :bigint           not null
 #
 # Indexes
 #
-#  index_games_on_deployment_roll_winner_id  (deployment_roll_winner_id)
-#  index_games_on_join_code                  (join_code) UNIQUE
-#  index_games_on_role_roll_winner_id        (role_roll_winner_id)
-#  index_games_on_scenario_id                (scenario_id)
+#  index_games_on_join_code    (join_code) UNIQUE
+#  index_games_on_scenario_id  (scenario_id)
 #
 # Foreign Keys
 #
-#  fk_rails_...  (deployment_roll_winner_id => game_players.id)
-#  fk_rails_...  (role_roll_winner_id => game_players.id)
 #  fk_rails_...  (scenario_id => scenarios.id)
 #

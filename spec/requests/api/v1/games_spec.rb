@@ -93,7 +93,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.get "/api/v1/games/#{game_id}", headers: h
       expect(json(host)["status"]).to eq("deployment_rolloff")
 
-      winner_id = json(host)["deployment_roll_winner_id"]
+      winner_id = json(host)["players"].find { |p| p["won_deployment_roll"] }&.fetch("id")
       expect(winner_id).to be_present
 
       winner_user = GamePlayer.find(winner_id).user
@@ -131,7 +131,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host.response).to have_http_status(:unprocessable_entity)
 
       host.get "/api/v1/games/#{game_id}", headers: h
-      winner_id = json(host)["role_roll_winner_id"]
+      winner_id = json(host)["players"].find { |p| p["won_role_roll"] }&.fetch("id")
       expect(winner_id).to be_present
 
       winner_user = GamePlayer.find(winner_id).user

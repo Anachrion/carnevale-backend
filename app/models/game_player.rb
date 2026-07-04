@@ -7,9 +7,6 @@ class GamePlayer < ApplicationRecord
   belongs_to :user
   belongs_to :list, optional: true
 
-  has_many :won_role_rolls, class_name: "Game", foreign_key: :role_roll_winner_id, dependent: :nullify, inverse_of: :role_roll_winner
-  has_many :won_deployment_rolls, class_name: "Game", foreign_key: :deployment_roll_winner_id, dependent: :nullify, inverse_of: :deployment_roll_winner
-
   enum :visibility, VISIBILITIES.index_with(&:itself), default: "active"
 
   validates :user_id, uniqueness: { scope: :game_id }
@@ -26,6 +23,8 @@ class GamePlayer < ApplicationRecord
       role: role,
       deployment_zone: deployment_zone,
       ready: ready,
+      won_role_roll: won_role_roll,
+      won_deployment_roll: won_deployment_roll,
       # Drawn agendas are private — only ever revealed to the player who drew them.
       agendas: viewer_game_player&.id == id ? Agenda.where(id: agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : []
     }
@@ -36,25 +35,29 @@ end
 #
 # Table name: game_players
 #
-#  id              :bigint           not null, primary key
-#  agenda_ids      :json             not null
-#  deployment_zone :string
-#  host            :boolean          default(FALSE), not null
-#  ready           :boolean          default(FALSE), not null
-#  role            :string
-#  visibility      :string           default("active"), not null
-#  created_at      :datetime         not null
-#  updated_at      :datetime         not null
-#  game_id         :bigint           not null
-#  list_id         :bigint
-#  user_id         :bigint           not null
+#  id                  :bigint           not null, primary key
+#  agenda_ids          :json             not null
+#  deployment_zone     :string
+#  host                :boolean          default(FALSE), not null
+#  ready               :boolean          default(FALSE), not null
+#  role                :string
+#  visibility          :string           default("active"), not null
+#  won_deployment_roll :boolean          default(FALSE), not null
+#  won_role_roll       :boolean          default(FALSE), not null
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  game_id             :bigint           not null
+#  list_id             :bigint
+#  user_id             :bigint           not null
 #
 # Indexes
 #
-#  index_game_players_on_game_id              (game_id)
-#  index_game_players_on_game_id_and_user_id  (game_id,user_id) UNIQUE
-#  index_game_players_on_list_id              (list_id)
-#  index_game_players_on_user_id              (user_id)
+#  index_game_players_on_game_id                            (game_id)
+#  index_game_players_on_game_id_and_user_id                (game_id,user_id) UNIQUE
+#  index_game_players_on_game_id_where_won_deployment_roll  (game_id) UNIQUE WHERE won_deployment_roll
+#  index_game_players_on_game_id_where_won_role_roll        (game_id) UNIQUE WHERE won_role_roll
+#  index_game_players_on_list_id                            (list_id)
+#  index_game_players_on_user_id                            (user_id)
 #
 # Foreign Keys
 #
