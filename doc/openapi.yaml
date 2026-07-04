@@ -418,11 +418,20 @@ paths:
   /games:
     get:
       operationId: getGames
-      summary: List the current user's active games (to resume/reopen)
-      description: Excludes games the current user has archived or deleted, regardless of the other player's state.
+      summary: List the current user's games (to resume/reopen)
+      description: Never includes games the current user has deleted, regardless of the other player's state.
       tags: [Games]
       security:
         - bearerAuth: []
+      parameters:
+        - name: visibility
+          in: query
+          required: false
+          description: Which of the current user's games to return.
+          schema:
+            type: string
+            enum: [active, archived]
+            default: active
       responses:
         "200":
           description: OK

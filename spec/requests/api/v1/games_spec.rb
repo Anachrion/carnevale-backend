@@ -150,11 +150,17 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.get "/api/v1/games", headers: h
       expect(json(host)).to be_empty
 
+      host.get "/api/v1/games?visibility=archived", headers: h
+      expect(json(host).map { |g| g["id"] }).to eq([ game_id ])
+
       host.get "/api/v1/games/#{game_id}", headers: h
       expect(host.response).to have_http_status(:ok)
 
       guest.get "/api/v1/games", headers: g
       expect(json(guest).size).to eq(1)
+
+      guest.get "/api/v1/games?visibility=archived", headers: g
+      expect(json(guest)).to be_empty
     end
 
     it "soft-deletes a game for one user only, making it inaccessible to them but not the opponent" do
