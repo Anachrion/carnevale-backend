@@ -51,8 +51,9 @@ module Api
       end
 
       def role
-        return render_error("Role roll-off not resolved yet") unless @game.role_roll_winner_id
-        return render_error("Only the roll-off winner picks a role") unless @game.role_roll_winner_id == @game_player.id
+        winner = @game.role_roll_winner
+        return render_error("Role roll-off not resolved yet") unless winner
+        return render_error("Only the roll-off winner picks a role") unless winner.id == @game_player.id
         return render_error("Invalid role") unless @game.assign_paired_choice!(:role, @game_player, params[:role], GamePlayer::ROLES)
 
         @game.broadcast_state!
@@ -84,8 +85,9 @@ module Api
       end
 
       def deployment_zone
-        return render_error("Deployment roll-off not resolved yet") unless @game.deployment_roll_winner_id
-        return render_error("Only the roll-off winner picks a zone") unless @game.deployment_roll_winner_id == @game_player.id
+        winner = @game.deployment_roll_winner
+        return render_error("Deployment roll-off not resolved yet") unless winner
+        return render_error("Only the roll-off winner picks a zone") unless winner.id == @game_player.id
         return render_error("Invalid zone") unless @game.assign_paired_choice!(:deployment_zone, @game_player, params[:zone], GamePlayer::DEPLOYMENT_ZONES)
 
         @game.update!(status: "deploying")

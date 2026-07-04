@@ -606,9 +606,9 @@ paths:
       summary: Pick Attacker or Defender (role roll-off winner only)
       description: |
         The roll-off winner is picked at random, server-side, as soon as the second player
-        joins the game — there's no client-triggered roll. `role_roll_winner_id` on the Game
-        is only revealed to clients once this step of the flow is reached. The other player
-        is automatically assigned the remaining role.
+        joins the game — there's no client-triggered roll. `won_role_roll` on the winner's
+        GamePlayer entry is only revealed to clients once this step of the flow is reached.
+        The other player is automatically assigned the remaining role.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -738,9 +738,9 @@ paths:
       summary: Pick a Deployment Zone (deployment roll-off winner only)
       description: |
         The roll-off winner is picked at random, server-side, as soon as the second player
-        joins the game — there's no client-triggered roll. `deployment_roll_winner_id` on the
-        Game is only revealed to clients once this step of the flow is reached. The other
-        player is automatically assigned the remaining zone.
+        joins the game — there's no client-triggered roll. `won_deployment_roll` on the
+        winner's GamePlayer entry is only revealed to clients once this step of the flow is
+        reached. The other player is automatically assigned the remaining zone.
       tags: [Games]
       security:
         - bearerAuth: []
@@ -1267,7 +1267,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, deployment_zone, ready, agendas]
+      required: [id, user_id, username, host, list, role, deployment_zone, ready, won_role_roll, won_deployment_roll, agendas]
       properties:
         id:
           type: integer
@@ -1291,6 +1291,12 @@ components:
           nullable: true
         ready:
           type: boolean
+        won_role_roll:
+          type: boolean
+          description: True for the role roll-off winner (asymmetric scenarios only). Picked at random as soon as the second player joins.
+        won_deployment_roll:
+          type: boolean
+          description: True for the deployment roll-off winner. Picked at random as soon as the second player joins.
         agendas:
           type: array
           description: Only populated for the requesting player's own entry — always empty for the opponent's.
@@ -1299,7 +1305,7 @@ components:
 
     Game:
       type: object
-      required: [id, name, join_code, status, ducat_limit, board_size, scenario, role_roll_winner_id, deployment_roll_winner_id, viewer_visibility, players]
+      required: [id, name, join_code, status, ducat_limit, board_size, scenario, viewer_visibility, players]
       properties:
         id:
           type: integer
@@ -1317,14 +1323,6 @@ components:
           nullable: true
         scenario:
           $ref: "#/components/schemas/Scenario"
-        role_roll_winner_id:
-          type: integer
-          nullable: true
-          description: game_player id of the role roll-off winner (asymmetric scenarios only). Picked at random as soon as the second player joins.
-        deployment_roll_winner_id:
-          type: integer
-          nullable: true
-          description: game_player id of the deployment roll-off winner. Picked at random as soon as the second player joins.
         viewer_visibility:
           type: string
           enum: [active, archived, deleted]

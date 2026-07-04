@@ -18,31 +18,43 @@ RSpec.describe GamePlayer, type: :model do
     game_player = build(:game_player, deployment_zone: "north")
     expect(game_player).not_to be_valid
   end
+
+  it "only allows one deployment roll winner per game at the database level" do
+    game = create(:game)
+    create(:game_player, game: game, won_deployment_roll: true)
+    other = build(:game_player, game: game, won_deployment_roll: true)
+
+    expect { other.save!(validate: false) }.to raise_error(ActiveRecord::RecordNotUnique)
+  end
 end
 
 # == Schema Information
 #
 # Table name: game_players
 #
-#  id              :bigint           not null, primary key
-#  agenda_ids      :json             not null
-#  deployment_zone :string
-#  host            :boolean          default(FALSE), not null
-#  ready           :boolean          default(FALSE), not null
-#  role            :string
-#  visibility      :string           default("active"), not null
-#  created_at      :datetime         not null
-#  updated_at      :datetime         not null
-#  game_id         :bigint           not null
-#  list_id         :bigint
-#  user_id         :bigint           not null
+#  id                  :bigint           not null, primary key
+#  agenda_ids          :json             not null
+#  deployment_zone     :string
+#  host                :boolean          default(FALSE), not null
+#  ready               :boolean          default(FALSE), not null
+#  role                :string
+#  visibility          :string           default("active"), not null
+#  won_deployment_roll :boolean          default(FALSE), not null
+#  won_role_roll       :boolean          default(FALSE), not null
+#  created_at          :datetime         not null
+#  updated_at          :datetime         not null
+#  game_id             :bigint           not null
+#  list_id             :bigint
+#  user_id             :bigint           not null
 #
 # Indexes
 #
-#  index_game_players_on_game_id              (game_id)
-#  index_game_players_on_game_id_and_user_id  (game_id,user_id) UNIQUE
-#  index_game_players_on_list_id              (list_id)
-#  index_game_players_on_user_id              (user_id)
+#  index_game_players_on_game_id                            (game_id)
+#  index_game_players_on_game_id_and_user_id                (game_id,user_id) UNIQUE
+#  index_game_players_on_game_id_where_won_deployment_roll  (game_id) UNIQUE WHERE won_deployment_roll
+#  index_game_players_on_game_id_where_won_role_roll        (game_id) UNIQUE WHERE won_role_roll
+#  index_game_players_on_list_id                            (list_id)
+#  index_game_players_on_user_id                            (user_id)
 #
 # Foreign Keys
 #
