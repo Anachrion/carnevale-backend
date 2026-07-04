@@ -14,11 +14,6 @@ RSpec.describe GamePlayer, type: :model do
     expect(game_player).not_to be_valid
   end
 
-  it "rejects a deployment_zone outside A/B" do
-    game_player = build(:game_player, deployment_zone: "north")
-    expect(game_player).not_to be_valid
-  end
-
   it "only allows one deployment roll winner per game at the database level" do
     game = create(:game)
     create(:game_player, game: game, won_deployment_roll: true)
@@ -34,7 +29,6 @@ end
 #
 #  id                  :bigint           not null, primary key
 #  agenda_ids          :json             not null
-#  deployment_zone     :string
 #  host                :boolean          default(FALSE), not null
 #  ready               :boolean          default(FALSE), not null
 #  role                :string

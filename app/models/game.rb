@@ -1,5 +1,5 @@
 class Game < ApplicationRecord
-  STATUSES = %w[pending gang_selection agenda_draw deployment_rolloff deploying in_progress completed].freeze
+  STATUSES = %w[pending gang_selection agenda_draw deploying in_progress completed].freeze
   AGENDA_BUCKET_WEIGHTS = %w[1-3 1-3 1-3 4-6 4-6 4-6 7-9 7-9 7-9 10].freeze
 
   belongs_to :scenario
@@ -16,9 +16,9 @@ class Game < ApplicationRecord
   before_validation :default_name_to_scenario, on: :create
 
   # Picks the roll-off winners as soon as both players are in the game, so nothing depends on
-  # a client action: deployment_roll_winner is always assigned, role_roll_winner only for
-  # asymmetric scenarios (where it matters). Each screen only reveals the outcome once the
-  # game reaches the corresponding step.
+  # a client action: deployment_roll_winner is always assigned (shown for reference; the
+  # deployment zone itself is chosen at the table, not in-app), role_roll_winner only for
+  # asymmetric scenarios (where it matters).
   def assign_roll_winners!
     players = game_players.reload.to_a
     return unless players.size == 2
@@ -36,7 +36,7 @@ class Game < ApplicationRecord
   end
 
   # Winner's choice is assigned to `chooser`; the complementary option is auto-assigned to the
-  # other player. Used for both attacker/defender and deployment zone A/B.
+  # other player. Used for the attacker/defender role pick.
   def assign_paired_choice!(attribute, chooser, chosen, options)
     return false unless options.include?(chosen)
 

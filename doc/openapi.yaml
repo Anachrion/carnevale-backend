@@ -480,7 +480,9 @@ paths:
       description: |
         Idempotent if the current user has already joined. Returns 422 if the game is already
         full. Once the second player joins, the role and deployment roll-off winners are
-        picked at random server-side (not revealed to clients until each corresponding step).
+        picked at random server-side. The role winner is revealed once that step of the flow
+        is reached; the deployment winner is informational only (the zone itself is chosen at
+        the table, not in-app).
       tags: [Games]
       security:
         - bearerAuth: []
@@ -729,45 +731,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
-  /games/{id}/deployment_zone:
-    parameters:
-      - $ref: "#/components/parameters/Id"
-
-    patch:
-      operationId: pickDeploymentZone
-      summary: Pick a Deployment Zone (deployment roll-off winner only)
-      description: |
-        The roll-off winner is picked at random, server-side, as soon as the second player
-        joins the game — there's no client-triggered roll. `won_deployment_roll` on the
-        winner's GamePlayer entry is only revealed to clients once this step of the flow is
-        reached. The other player is automatically assigned the remaining zone.
-      tags: [Games]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/DeploymentZoneInput"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Game"
-        "401":
-          description: Not authenticated
-        "404":
-          description: Not found
-        "422":
-          description: Roll-off not resolved yet, or not the winner
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ValidationErrors"
-
   /games/{id}/ready:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -960,14 +923,6 @@ components:
         role:
           type: string
           enum: [attacker, defender]
-
-    DeploymentZoneInput:
-      type: object
-      required: [zone]
-      properties:
-        zone:
-          type: string
-          enum: [A, B]
 
     # ── Responses ───────────────────────────────────────────────────────────────
 
@@ -1267,7 +1222,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, deployment_zone, ready, won_role_roll, won_deployment_roll, agendas]
+      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, agendas]
       properties:
         id:
           type: integer
@@ -1285,10 +1240,6 @@ components:
           type: string
           enum: [attacker, defender]
           nullable: true
-        deployment_zone:
-          type: string
-          enum: [A, B]
-          nullable: true
         ready:
           type: boolean
         won_role_roll:
@@ -1296,7 +1247,7 @@ components:
           description: True for the role roll-off winner (asymmetric scenarios only). Picked at random as soon as the second player joins.
         won_deployment_roll:
           type: boolean
-          description: True for the deployment roll-off winner. Picked at random as soon as the second player joins.
+          description: True for the deployment roll-off winner. Picked at random as soon as the second player joins. Informational only — the deployment zone itself is chosen at the table, not in-app.
         agendas:
           type: array
           description: Only populated for the requesting player's own entry — always empty for the opponent's.
@@ -1315,7 +1266,7 @@ components:
           type: string
         status:
           type: string
-          enum: [pending, gang_selection, agenda_draw, deployment_rolloff, deploying, in_progress, completed]
+          enum: [pending, gang_selection, agenda_draw, deploying, in_progress, completed]
         ducat_limit:
           type: integer
         board_size:

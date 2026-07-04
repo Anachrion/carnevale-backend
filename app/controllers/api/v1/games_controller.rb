@@ -79,20 +79,9 @@ module Api
         return render_error("Agendas already drawn") if @game_player.agenda_ids.any?
 
         @game.draw_agendas!(@game_player)
-        maybe_advance_to_deployment_rolloff!
+        maybe_advance_to_deploying!
         @game.broadcast_state!
         render json: { agendas: @game_player.reload.as_json_for(@game_player)[:agendas] }
-      end
-
-      def deployment_zone
-        winner = @game.deployment_roll_winner
-        return render_error("Deployment roll-off not resolved yet") unless winner
-        return render_error("Only the roll-off winner picks a zone") unless winner.id == @game_player.id
-        return render_error("Invalid zone") unless @game.assign_paired_choice!(:deployment_zone, @game_player, params[:zone], GamePlayer::DEPLOYMENT_ZONES)
-
-        @game.update!(status: "deploying")
-        @game.broadcast_state!
-        render json: @game.as_json_for(@game_player)
       end
 
       def ready
@@ -143,11 +132,11 @@ module Api
         @game.update!(status: "agenda_draw")
       end
 
-      def maybe_advance_to_deployment_rolloff!
+      def maybe_advance_to_deploying!
         return unless @game.status == "agenda_draw"
         return unless @game.game_players.reload.all? { |p| p.agenda_ids.any? }
 
-        @game.update!(status: "deployment_rolloff")
+        @game.update!(status: "deploying")
       end
     end
   end
