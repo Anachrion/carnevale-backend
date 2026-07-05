@@ -346,6 +346,65 @@ paths:
         "404":
           description: Not found
 
+  /list_entries/{id}/spells:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: setListEntrySpells
+      summary: Set the spells (and Discipline) a Mage model knows
+      description: >
+        Replaces the model's committed Discipline and full set of known spells (rulebook p24).
+        Only Mage models may know spells; the selection still saves if it breaks the rules, but
+        the returned list will report selection_valid: false with the reason. Returns 404 if the
+        entry's list doesn't belong to the current user.
+      tags: [ListEntries]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetEntrySpellsInput"
+      responses:
+        "200":
+          description: OK — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+  /spells:
+    get:
+      operationId: getSpells
+      summary: List all spells, optionally filtered by Discipline
+      tags: [Spells]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: discipline
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Spell"
+        "401":
+          description: Not authenticated
+
   /profiles:
     get:
       operationId: getProfiles
@@ -1139,6 +1198,24 @@ components:
               type: integer
               minimum: 1
 
+    SetEntrySpellsInput:
+      type: object
+      required: [entry]
+      properties:
+        entry:
+          type: object
+          properties:
+            discipline:
+              type: string
+              nullable: true
+              description: The Discipline the model commits to; all known spells must belong to it. Null clears the selection.
+              enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+            spell_ids:
+              type: array
+              items:
+                type: integer
+              description: The exact set of known spell ids. Replaces any previous selection.
+
     CreateGameInput:
       type: object
       required: [scenario_id]
@@ -1292,7 +1369,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, cost]
+      required: [id, position, entry_type, entry_id, name, cost, mage, spell_slots, disciplines, spells]
       properties:
         id:
           type: integer
@@ -1312,6 +1389,54 @@ components:
             - $ref: "#/components/schemas/EntryState"
           nullable: true
           description: Present once the game has started (POST /games/{id}/ready flips it to in_progress); null beforehand and for Catalog::Equipment entries, which have no HP/WP/CP to track.
+        mage:
+          type: boolean
+          description: Whether this model is a Mage and can therefore be given spells. Always false for Equipment.
+        spell_slots:
+          type: integer
+          description: Maximum number of non-Cantrip spells the model may know (Mage X + Expert Sorcerer X). 0 for non-Mages.
+        disciplines:
+          type: array
+          items:
+            type: string
+          description: Discipline slugs the model may pick spells from, e.g. ["blood_rites", "divinity"].
+        spell_discipline:
+          type: string
+          nullable: true
+          description: The Discipline this model has committed to, or null if none picked yet.
+        cantrip:
+          allOf:
+            - $ref: "#/components/schemas/Spell"
+          nullable: true
+          description: The free Cantrip the model always knows for its committed Discipline; null when no Discipline is picked. Not counted against spell_slots.
+        spells:
+          type: array
+          items:
+            $ref: "#/components/schemas/Spell"
+          description: The non-free spells this model currently knows.
+
+    Spell:
+      type: object
+      required: [id, name, discipline, cost, difficulty, cantrip, description]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        discipline:
+          type: string
+          enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+        cost:
+          type: integer
+          description: Will Points spent to attempt the spell.
+        difficulty:
+          type: integer
+          description: Magic Roll result needed to score an Ace.
+        cantrip:
+          type: boolean
+          description: Whether this is the Discipline's free Cantrip (always known, doesn't count against spell_slots).
+        description:
+          type: string
 
     EntryState:
       type: object
@@ -1365,6 +1490,9 @@ components:
         - abilities
         - keywords
         - version
+        - mage
+        - spell_slots
+        - disciplines
         - weapons
         - special_rules
         - card_references
@@ -1407,6 +1535,17 @@ components:
             type: string
         version:
           type: string
+        mage:
+          type: boolean
+          description: Whether the profile has the Mage ability and can be given spells (rulebook p24).
+        spell_slots:
+          type: integer
+          description: Maximum number of non-Cantrip spells the model may know (Mage X + Expert Sorcerer X). 0 for non-Mages.
+        disciplines:
+          type: array
+          items:
+            type: string
+          description: Discipline slugs the model may pick spells from, e.g. ["blood_rites", "divinity"].
         weapons:
           type: array
           items:

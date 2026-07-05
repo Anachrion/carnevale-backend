@@ -20,21 +20,45 @@ module Api
           selection_errors: list.selection_errors
         }
         if with_entries
-          json[:entries] = list.list_entries.includes(:entry, :entry_state).order(:position).map do |list_entry|
-            {
-              id: list_entry.id,
-              position: list_entry.position,
-              entry_type: list_entry.entry_type,
-              entry_id: list_entry.entry_id,
-              name: list_entry.entry.name,
-              cost: list_entry.cost,
-              # Only present once the game has started (Encounter::Game#start!); nil beforehand
-              # and for equipment entries, which have no HP/WP/CP to track.
-              state: list_entry.entry_state&.as_json_for_display
-            }
-          end
+          entries = list.list_entries.includes(:entry, :entry_state, entry_spells: :spell).order(:position)
+          json[:entries] = entries.map { |list_entry| entry_json(list_entry) }
         end
         json
+      end
+
+      def entry_json(list_entry)
+        profile = list_entry.profile
+        {
+          id: list_entry.id,
+          position: list_entry.position,
+          entry_type: list_entry.entry_type,
+          entry_id: list_entry.entry_id,
+          name: list_entry.entry.name,
+          cost: list_entry.cost,
+          # Only present once the game has started (Encounter::Game#start!); nil beforehand
+          # and for equipment entries, which have no HP/WP/CP to track.
+          state: list_entry.entry_state&.as_json_for_display,
+          # Spell selection (rulebook p24). `mage` gates the Spells button in the gang builder;
+          # non-Mage entries carry mage: false and no disciplines/spells.
+          mage: profile&.mage? || false,
+          spell_slots: profile&.spell_slots || 0,
+          disciplines: profile&.disciplines || [],
+          spell_discipline: list_entry.spell_discipline,
+          cantrip: (Catalog::Spell.cantrip_for(list_entry.spell_discipline) if list_entry.spell_discipline.present?)&.then { |c| spell_json(c) },
+          spells: list_entry.entry_spells.map { |es| spell_json(es.spell) }
+        }
+      end
+
+      def spell_json(spell)
+        {
+          id: spell.id,
+          name: spell.name,
+          discipline: spell.discipline,
+          cost: spell.cost,
+          difficulty: spell.difficulty,
+          cantrip: spell.cantrip,
+          description: spell.description
+        }
       end
     end
   end

@@ -4,9 +4,17 @@ module Catalog
 
     enum :discipline, DISCIPLINES.index_with(&:itself)
 
+    scope :cantrips, -> { where(cantrip: true) }
+    scope :choosable, -> { where(cantrip: false) }
+
     validates :name, presence: true, uniqueness: { scope: :discipline }
     validates :cost, :difficulty, presence: true
     validates :discipline, presence: true
+
+    # The free Cantrip a Mage of the given Discipline always knows (rulebook p24), or nil.
+    def self.cantrip_for(discipline)
+      cantrips.find_by(discipline: discipline)
+    end
   end
 end
 

@@ -11,6 +11,42 @@ module Catalog
 
     has_many :profile_special_rules, -> { order(:position) }, class_name: "Catalog::ProfileSpecialRule"
     has_many :special_rules, through: :profile_special_rules
+
+    MAGE_ABILITY = /\AMage \((\d+)\)\z/
+    EXPERT_SORCERER_ABILITY = /\AExpert Sorcerer \((\d+)\)\z/
+    DISCIPLINE_KEYWORD = /\ADiscipline \((.+)\)\z/
+
+    # X from the "Mage (X)" ability, or nil if this profile is not a Mage. This is the number of
+    # (non-Cantrip) spells the model may know before Expert Sorcerer bonuses (rulebook p24).
+    def mage_level
+      abilities.filter_map { |a| a[MAGE_ABILITY, 1]&.to_i }.first
+    end
+
+    def mage?
+      mage_level.present?
+    end
+
+    # X from the "Expert Sorcerer (X)" ability, added to the number of spells known; 0 if absent.
+    def expert_sorcerer_level
+      abilities.filter_map { |a| a[EXPERT_SORCERER_ABILITY, 1]&.to_i }.first || 0
+    end
+
+    # Maximum number of non-Cantrip spells this model may know. Cantrips are always known for free
+    # and do not count towards this total.
+    def spell_slots
+      return 0 unless mage?
+
+      mage_level + expert_sorcerer_level
+    end
+
+    # Discipline slugs this model may pick spells from, parsed from the "Discipline (A, B)" keyword
+    # (e.g. "Discipline (Blood Rites, Divinity)" => ["blood_rites", "divinity"]). Empty if none.
+    def disciplines
+      keyword = keywords.grep(DISCIPLINE_KEYWORD).first
+      return [] unless keyword
+
+      keyword[DISCIPLINE_KEYWORD, 1].split(",").map { |name| name.strip.parameterize(separator: "_") }
+    end
   end
 end
 

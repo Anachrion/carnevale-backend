@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_04_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,6 +49,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_190000) do
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
     t.index ["profile_id"], name: "index_card_references_on_profile_id"
+  end
+
+  create_table "entry_spells", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "list_entry_id", null: false
+    t.bigint "spell_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["list_entry_id", "spell_id"], name: "index_entry_spells_on_list_entry_id_and_spell_id", unique: true
+    t.index ["list_entry_id"], name: "index_entry_spells_on_list_entry_id"
+    t.index ["spell_id"], name: "index_entry_spells_on_spell_id"
   end
 
   create_table "entry_states", force: :cascade do |t|
@@ -133,6 +143,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_190000) do
     t.string "entry_type", null: false
     t.bigint "list_id", null: false
     t.integer "position", null: false
+    t.string "spell_discipline"
     t.datetime "updated_at", null: false
     t.index ["entry_type", "entry_id"], name: "index_list_entries_on_entry_type_and_entry_id"
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
@@ -260,6 +271,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_04_190000) do
   add_foreign_key "agenda_events", "agendas"
   add_foreign_key "agenda_events", "game_players"
   add_foreign_key "card_references", "profiles"
+  add_foreign_key "entry_spells", "list_entries"
+  add_foreign_key "entry_spells", "spells"
   add_foreign_key "entry_states", "list_entries"
   add_foreign_key "game_players", "games"
   add_foreign_key "game_players", "users"

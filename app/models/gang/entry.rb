@@ -5,6 +5,8 @@ module Gang
     belongs_to :list, class_name: "Gang::List"
     belongs_to :entry, polymorphic: true
     has_one :entry_state, class_name: "Encounter::EntryState", foreign_key: "list_entry_id", dependent: :destroy
+    has_many :entry_spells, class_name: "Gang::EntrySpell", foreign_key: "list_entry_id", dependent: :destroy
+    has_many :spells, through: :entry_spells, class_name: "Catalog::Spell"
 
     delegate :cost, to: :entry
 
@@ -12,6 +14,11 @@ module Gang
     validates :position, uniqueness: { scope: :list_id }
 
     after_commit :refresh_list_selection_validity, on: %i[create update destroy]
+
+    # The Catalog::Profile behind this entry, or nil for non-model entries (e.g. Equipment).
+    def profile
+      entry.profile if entry.is_a?(Catalog::CardReference)
+    end
 
     private
 
@@ -25,13 +32,14 @@ end
 #
 # Table name: list_entries
 #
-#  id         :bigint           not null, primary key
-#  entry_type :string           not null
-#  position   :integer          not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  entry_id   :bigint           not null
-#  list_id    :bigint           not null
+#  id               :bigint           not null, primary key
+#  entry_type       :string           not null
+#  position         :integer          not null
+#  spell_discipline :string
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  entry_id         :bigint           not null
+#  list_id          :bigint           not null
 #
 # Indexes
 #

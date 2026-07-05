@@ -27,6 +27,22 @@ module Api
         render json: list_json(entry.list.reload, with_entries: true)
       end
 
+      # Replaces the spell selection for a single model: sets its committed Discipline and the exact
+      # set of known spells. Validity (Mage-only, one Discipline, spell-count limit) is enforced by
+      # ListValidationService and surfaced on the returned list, so an over-limit pick still saves
+      # but flips selection_valid to false — mirroring how hiring an illegal model behaves.
+      def spells
+        entry = find_owned_entry
+        Gang::Entry.transaction do
+          entry.update!(spell_discipline: spell_params[:discipline].presence)
+          entry.entry_spells.destroy_all
+          Array(spell_params[:spell_ids]).map(&:to_i).uniq.each do |spell_id|
+            entry.entry_spells.create!(spell_id: spell_id)
+          end
+        end
+        render json: list_json(entry.list.reload, with_entries: true)
+      end
+
       private
 
       def find_owned_entry
@@ -39,6 +55,10 @@ module Api
 
       def position_params
         params.require(:entry).permit(:position)
+      end
+
+      def spell_params
+        params.require(:entry).permit(:discipline, spell_ids: [])
       end
     end
   end

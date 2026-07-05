@@ -121,6 +121,68 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/list_entries/:id/spells" do
+    def mage_ref(cost: 20)
+      profile = create(:profile, faction: :guild, ducats: cost,
+                       abilities: ["Mage (2)", "Expert Sorcerer (1)"],
+                       keywords: ["Leader", "Discipline (Blood Rites, Divinity)"])
+      create(:card_reference, profile: profile)
+    end
+
+    def patch_spells(entry, discipline:, spell_ids:)
+      patch "/api/v1/list_entries/#{entry.id}/spells",
+            params: { entry: { discipline: discipline, spell_ids: spell_ids } }.to_json,
+            headers: headers
+    end
+
+    it "sets the discipline and known spells, exposing them on the entry" do
+      entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+      spells = create_list(:spell, 2, discipline: :blood_rites)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: spells.map(&:id))
+
+      expect(response).to have_http_status(:ok)
+      returned = JSON.parse(response.body)["entries"].first
+      expect(returned["spell_discipline"]).to eq("blood_rites")
+      expect(returned["spells"].map { |s| s["id"] }).to match_array(spells.map(&:id))
+      expect(returned["mage"]).to be true
+      expect(returned["spell_slots"]).to eq(3)
+      expect(returned["cantrip"]).to be_nil
+    end
+
+    it "replaces a previous selection rather than appending" do
+      entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+      first = create(:spell, discipline: :blood_rites)
+      second = create(:spell, discipline: :divinity)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: [first.id])
+      patch_spells(entry, discipline: "divinity", spell_ids: [second.id])
+
+      returned = JSON.parse(response.body)["entries"].first
+      expect(returned["spells"].map { |s| s["id"] }).to eq([second.id])
+    end
+
+    it "saves an illegal selection but flips the list to invalid" do
+      entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+      spells = create_list(:spell, 4, discipline: :blood_rites)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: spells.map(&:id))
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      expect(body["selection_valid"]).to be false
+      expect(body["selection_errors"]).to include(match(/too many spells/))
+    end
+
+    it "returns 404 when the entry belongs to another user" do
+      other = create(:list, faction: :guild, points: 100)
+      entry = create(:list_entry, list: other, entry: mage_ref, position: 1)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: [])
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "DELETE /api/v1/list_entries/:id" do
     it "removes the entry and returns the updated list" do
       ref = guild_ref(keywords: ["Leader"])

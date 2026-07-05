@@ -33,6 +33,10 @@ module Api
           abilities: profile.abilities,
           keywords: profile.keywords,
           version: profile.version,
+          # Spell-selection metadata derived from abilities/keywords (rulebook p24).
+          mage: profile.mage?,
+          spell_slots: profile.spell_slots,
+          disciplines: profile.disciplines,
           weapons: profile.weapons.map { |w|
             { id: w.id, name: w.name, damage: w.damage, range: w.range,
               penetration: w.penetration, evasion: w.evasion, abilities: w.abilities }

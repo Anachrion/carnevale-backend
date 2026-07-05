@@ -18,10 +18,15 @@ Rails.application.routes.draw do
       end
 
       resources :lists
-      resources :list_entries, only: %i[create update destroy]
+      resources :list_entries, only: %i[create update destroy] do
+        member do
+          patch :spells
+        end
+      end
       resources :profiles, only: %i[index show]
       resources :equipment, only: %i[index]
       resources :scenarios, only: %i[index]
+      resources :spells, only: %i[index]
 
       resources :games, only: %i[index create show destroy] do
         collection do
