@@ -140,9 +140,10 @@ Navigating away while a request is in flight throws `setState() called after dis
 It guards a `null` result, but a malformed/schema-drifted `message['game']` makes `deserializeWith` **throw**. The throw escapes the `stream.listen` callback with no `onError`. Wrap in try/catch.
 **Resolution:** wrapped the deserialize + map in a try/catch; a malformed broadcast is now logged and ignored (keeping the last-known snapshot) instead of killing the live-update stream — the next broadcast or reconnect resync recovers.
 
-### F-P1-5 · Live game updates trigger a full double network re-fetch per broadcast
+### F-P1-5 · Live game updates trigger a full double network re-fetch per broadcast — FIXED (2026-07-05)
 `gang_viewer_screen.dart:238` — `_onGameUpdate() => _load()`
 Both `_GangTab`s listen to `GameService`, so each `game_state` broadcast fires two `playerList` HTTP fetches; on a chatty game this is continuous refetching and races with `_applyEntryState`'s optimistic update (tapped counter flickers back to stale). _(Server side compounds via B-P2-1/B-P2-4.)_
+**Resolution:** `_onGameUpdate` now debounces the refetch (300ms) so a burst of broadcasts collapses into a single player-list fetch instead of one per frame. And a per-tab mutation counter (`_mutationSeq`, bumped in `_applyEntryState`) is captured at the start of each `_load`; if a local optimistic update lands while a fetch is in flight, the fetch skips its `setState` rather than clobbering the just-tapped value with a staler snapshot — killing the flicker. (The two fetches are for the two different players' lists, so they're not redundant; the real waste was the uncoalesced per-broadcast firing. A deeper fix — putting entry states in the broadcast payload — is tracked under B-P2-1/B-P2-4.)
 
 ## P2 — Maintainability / Duplication
 
