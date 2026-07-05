@@ -71,3 +71,28 @@ RSpec.describe Encounter::EntryState, type: :model do
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: entry_states
+#
+#  id                      :bigint           not null, primary key
+#  counters                :json             not null
+#  current_command_points  :integer          not null
+#  current_life_points     :integer          not null
+#  current_will_points     :integer          not null
+#  starting_command_points :integer          not null
+#  starting_life_points    :integer          not null
+#  starting_will_points    :integer          not null
+#  created_at              :datetime         not null
+#  updated_at              :datetime         not null
+#  list_entry_id           :bigint           not null
+#
+# Indexes
+#
+#  index_entry_states_on_list_entry_id  (list_entry_id) UNIQUE
+#
+# Foreign Keys
+#
+#  fk_rails_...  (list_entry_id => list_entries.id)
+#

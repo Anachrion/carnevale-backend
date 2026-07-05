@@ -216,6 +216,77 @@ RSpec.describe ListValidationService, type: :service do
       end
     end
 
+    context "spell selections" do
+      # Mage (2) + Expert Sorcerer (1) => 3 spell slots; may pick from Blood Rites or Divinity.
+      def mage_ref(cost: 20, mage: 2, expert: 1, disciplines: ["Blood Rites", "Divinity"])
+        abilities = ["Mage (#{mage})"]
+        abilities << "Expert Sorcerer (#{expert})" if expert
+        keywords = ["Leader", "Discipline (#{disciplines.join(', ')})"]
+        profile = create(:profile, faction: :guild, ducats: cost, abilities: abilities, keywords: keywords)
+        create(:card_reference, profile: profile)
+      end
+
+      def cast(entry, discipline:, spells:)
+        entry.update_column(:spell_discipline, discipline)
+        spells.each { |spell| Gang::EntrySpell.create!(list_entry: entry, spell: spell) }
+      end
+
+      it "accepts spells from an allowed Discipline within the slot limit" do
+        entry = add_entry(list, mage_ref)
+        cast(entry, discipline: "blood_rites", spells: create_list(:spell, 3, discipline: :blood_rites))
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      it "does not count Cantrips towards the slot limit" do
+        entry = add_entry(list, mage_ref(mage: 2))
+        spells = create_list(:spell, 2, discipline: :blood_rites)
+        spells << create(:spell, discipline: :blood_rites, cantrip: true)
+        cast(entry, discipline: "blood_rites", spells: spells)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      it "rejects spells on a model that is not a Mage" do
+        entry = add_entry(list, guild_ref(cost: 20, keywords: ["Leader"]))
+        cast(entry, discipline: "blood_rites", spells: [create(:spell, discipline: :blood_rites)])
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/cannot know spells because it is not a Mage/))
+      end
+
+      it "rejects a Discipline the model does not have access to" do
+        entry = add_entry(list, mage_ref(disciplines: ["Blood Rites"]))
+        cast(entry, discipline: "wild_magic", spells: [create(:spell, discipline: :wild_magic)])
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/cannot use the Wild magic Discipline/))
+      end
+
+      it "rejects spells that do not all share the committed Discipline" do
+        entry = add_entry(list, mage_ref)
+        spells = [create(:spell, discipline: :blood_rites), create(:spell, discipline: :divinity)]
+        cast(entry, discipline: "blood_rites", spells: spells)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/all spells must share one Discipline/))
+      end
+
+      it "rejects knowing more spells than the model's slots allow" do
+        entry = add_entry(list, mage_ref(mage: 2, expert: 1))
+        cast(entry, discipline: "blood_rites", spells: create_list(:spell, 4, discipline: :blood_rites))
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(%r{knows too many spells \(4/3\)}))
+      end
+    end
+
     it "reports multiple errors at once" do
       over_budget = foreign_ref(faction: :strigoi, cost: 200, keywords: ["Leader"])
       add_entry(list, over_budget)

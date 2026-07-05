@@ -23,6 +23,7 @@ class ListValidationService
     check_equipment_uniqueness
     check_leader_count
     check_hero_henchman_ratio
+    check_spell_selections
     @errors.empty?
   end
 
@@ -83,5 +84,38 @@ class ListValidationService
     return if hero_count <= henchman_count
 
     @errors << "the gang cannot have more Heroes (#{hero_count}) than Henchmen (#{henchman_count})"
+  end
+
+  # Enforces the spell-selection rules (rulebook p24): only Mages may know spells, every known
+  # spell must come from the model's committed Discipline (one of those listed in its Discipline
+  # keyword), and the number of non-Cantrip spells cannot exceed Mage (X) + Expert Sorcerer (X).
+  def check_spell_selections
+    @list.list_entries.includes(entry_spells: :spell).each do |list_entry|
+      spells = list_entry.entry_spells.map(&:spell)
+      discipline = list_entry.spell_discipline
+      next if spells.empty? && discipline.blank?
+
+      name = list_entry.entry.name
+      profile = list_entry.profile
+
+      unless profile&.mage?
+        @errors << "#{name} cannot know spells because it is not a Mage"
+        next
+      end
+
+      if discipline.present? && !profile.disciplines.include?(discipline)
+        @errors << "#{name} cannot use the #{discipline.humanize} Discipline"
+      end
+
+      off_discipline = spells.reject { |spell| spell.discipline == discipline }
+      if discipline.present? && off_discipline.any?
+        @errors << "#{name} can only know #{discipline.humanize} spells; all spells must share one Discipline"
+      end
+
+      known = spells.count { |spell| !spell.cantrip }
+      if known > profile.spell_slots
+        @errors << "#{name} knows too many spells (#{known}/#{profile.spell_slots})"
+      end
+    end
   end
 end

@@ -13,13 +13,14 @@ two:
 #
 # Table name: list_entries
 #
-#  id         :bigint           not null, primary key
-#  entry_type :string           not null
-#  position   :integer          not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
-#  entry_id   :bigint           not null
-#  list_id    :bigint           not null
+#  id               :bigint           not null, primary key
+#  entry_type       :string           not null
+#  position         :integer          not null
+#  spell_discipline :string
+#  created_at       :datetime         not null
+#  updated_at       :datetime         not null
+#  entry_id         :bigint           not null
+#  list_id          :bigint           not null
 #
 # Indexes
 #
