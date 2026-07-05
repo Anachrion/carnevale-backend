@@ -10,7 +10,11 @@ module Api
 
       def index
         visibility = params[:visibility] == "archived" ? "archived" : "active"
-        game_players = current_user.game_players.where(visibility: visibility).includes(game: [ :scenario, game_players: :user ])
+        # Preload each game's players together with their list and agenda_events so as_json_for
+        # doesn't N+1 over lists, scores, and drawn/held agendas per player (B-P2-4).
+        game_players = current_user.game_players
+                                   .where(visibility: visibility)
+                                   .includes(game: [ :scenario, { game_players: [ :user, :list, :agenda_events ] } ])
         render json: game_players.map { |gp| gp.game.as_json_for(gp) }
       end
 

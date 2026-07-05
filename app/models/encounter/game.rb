@@ -48,8 +48,7 @@ module Encounter
     end
 
     def draw_agendas!(game_player)
-      count = scenario.agendas.first.to_s[/\A(\d+)/, 1].to_i
-      count = 3 if count.zero?
+      count = scenario.initial_agenda_count
       drawn = []
       drawn << draw_one_agenda_id(drawn) while drawn.size < count
       drawn.each do |agenda_id|
@@ -137,15 +136,19 @@ module Encounter
     private
 
     def draw_one_agenda_id(already_drawn)
-      loop do
+      # Try weighted buckets first (some appear more than once in AGENDA_BUCKET_WEIGHTS, biasing the
+      # draw toward them). Sample in Ruby rather than `ORDER BY RANDOM() LIMIT 1`: identical SQL for
+      # a repeated bucket is served from the per-request query cache, which would return the same
+      # row every time. Bound the attempts so an exhausted pool can't spin forever (B-P2-9).
+      AGENDA_BUCKET_WEIGHTS.size.times do
         bucket = AGENDA_BUCKET_WEIGHTS.sample
-        # Sample in Ruby rather than `ORDER BY RANDOM() LIMIT 1`: identical SQL text for a
-        # repeated bucket gets served from the per-request query cache, which would return the
-        # same row every time and could spin forever once that row is already drawn.
         candidates = Catalog::Agenda.where(first_roll: bucket).pluck(:id) - already_drawn
-        next if candidates.empty?
-        break candidates.sample
+        return candidates.sample if candidates.any?
       end
+
+      # Weighted buckets kept coming up empty — fall back to any undrawn agenda regardless of
+      # bucket (nil only if the entire deck has been drawn, which the callers never do).
+      (Catalog::Agenda.where.not(id: already_drawn).pluck(:id)).sample
     end
 
     # Equipment entries have no profile (no HP/WP/CP), so only card-reference entries — i.e.
