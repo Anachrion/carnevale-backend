@@ -63,6 +63,21 @@ RSpec.describe "Api::V1::Lists", type: :request do
       expect(positions).to eq([1, 2])
     end
 
+    it "renders in a constant number of queries regardless of entry count (no N+1)" do
+      headers = auth_headers # authenticate first, so login isn't part of the measured block
+
+      small = create(:list, owner: user)
+      3.times { |i| create(:list_entry, list: small, entry: create(:card_reference, profile: create(:profile, faction: "guild")), position: i + 1) }
+      large = create(:list, owner: user)
+      8.times { |i| create(:list_entry, list: large, entry: create(:card_reference, profile: create(:profile, faction: "guild")), position: i + 1) }
+
+      small_queries = count_queries { get "/api/v1/lists/#{small.id}", headers: headers }
+      large_queries = count_queries { get "/api/v1/lists/#{large.id}", headers: headers }
+
+      # A profile N+1 would make the 8-entry list issue 5 more queries than the 3-entry one.
+      expect(large_queries).to eq(small_queries)
+    end
+
     it "returns 404 for unknown list" do
       get "/api/v1/lists/99999", headers: auth_headers
       expect(response).to have_http_status(:not_found)

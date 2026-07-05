@@ -6,6 +6,29 @@ RSpec.describe Gang::List, type: :model do
     create(:card_reference, profile: profile)
   end
 
+  describe "#total_cost" do
+    it "sums profile ducats for model entries and the equipment's own cost for gear" do
+      list = create(:list, faction: :guild, points: 500)
+      create(:list_entry, list: list, entry: guild_ref(cost: 30), position: 1)
+      create(:list_entry, list: list, entry: guild_ref(cost: 12), position: 2)
+      create(:list_entry, list: list, entry: create(:equipment, cost: 8), position: 3)
+
+      expect(list.total_cost).to eq(50)
+    end
+
+    it "is zero for an empty list" do
+      expect(create(:list, faction: :guild, points: 100).total_cost).to eq(0)
+    end
+
+    it "does not scale its query count with the number of entries (no N+1)" do
+      list = create(:list, faction: :guild, points: 900)
+      6.times { |i| create(:list_entry, list: list, entry: guild_ref(cost: 10), position: i + 1) }
+
+      # Two aggregate queries (models + gear), regardless of how many entries there are.
+      expect(count_queries { list.total_cost }).to eq(2)
+    end
+  end
+
   describe "#snapshot_for" do
     it "deep-copies the list and its entries under the new owner" do
       list = create(:list, faction: :guild, points: 100)

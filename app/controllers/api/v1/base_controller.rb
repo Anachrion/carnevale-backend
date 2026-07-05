@@ -33,19 +33,47 @@ module Api
           name: list.name,
           faction: list.faction,
           points: list.points,
-          total_cost: list.list_entries.sum(&:cost),
           selection_valid: list.selection_valid,
           selection_errors: list.selection_errors
         }
         if with_entries
-          entries = list.list_entries.includes(:entry, :entry_state, entry_spells: :spell).order(:position)
+          entries = list_entries_for_render(list)
+          # Sum over the already-materialised, profile-preloaded entries, so total_cost costs no
+          # extra queries and doesn't re-trigger the per-entry profile lookup (B-P2-2).
+          json[:total_cost] = entries.sum { |e| e.cost.to_i }
           json[:entries] = entries.map { |list_entry| entry_json(list_entry) }
+        else
+          json[:total_cost] = list.total_cost
         end
         json
       end
 
+      # Materialises a list's entries for rendering with everything `entry_json` needs preloaded:
+      # the polymorphic `entry`, its `entry_state` and `entry_spells`, and — since `entry` is
+      # polymorphic and only card references carry a profile — the `profile` behind each card
+      # reference, preloaded in a single query. Without that last step `entry_json` would hit
+      # CardReference#profile once per entry (the B-P2-1 N+1).
+      def list_entries_for_render(list)
+        entries = list.list_entries
+                      .includes(:entry, :entry_state, entry_spells: :spell)
+                      .order(:position)
+                      .to_a
+        card_references = entries.map(&:entry).grep(Catalog::CardReference)
+        if card_references.any?
+          ActiveRecord::Associations::Preloader.new(records: card_references, associations: :profile).call
+        end
+        entries
+      end
+
+      # The free Cantrip per discipline, loaded once per request and reused across every entry
+      # instead of a `cantrip_for` query per entry (B-P2-3). The set is tiny and static.
+      def cantrips_by_discipline
+        @cantrips_by_discipline ||= Catalog::Spell.cantrips.index_by(&:discipline)
+      end
+
       def entry_json(list_entry)
         profile = list_entry.profile
+        cantrip = cantrips_by_discipline[list_entry.spell_discipline] if list_entry.spell_discipline.present?
         {
           id: list_entry.id,
           position: list_entry.position,
@@ -62,7 +90,7 @@ module Api
           spell_slots: profile&.spell_slots || 0,
           disciplines: profile&.disciplines || [],
           spell_discipline: list_entry.spell_discipline,
-          cantrip: (Catalog::Spell.cantrip_for(list_entry.spell_discipline) if list_entry.spell_discipline.present?)&.then { |c| spell_json(c) },
+          cantrip: cantrip && spell_json(cantrip),
           spells: list_entry.entry_spells.map { |es| spell_json(es.spell) }
         }
       end

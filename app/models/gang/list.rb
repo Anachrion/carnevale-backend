@@ -19,7 +19,24 @@ module Gang
     end
 
     def as_json_summary
-      { id: id, name: name, faction: faction, points: points, total_cost: list_entries.sum(&:cost) }
+      { id: id, name: name, faction: faction, points: points, total_cost: total_cost }
+    end
+
+    # Total ducat cost of the list — profile ducats for model entries, the equipment's own cost for
+    # gear — computed in SQL so it neither loads every entry nor resolves its profile. The old
+    # Ruby-side `list_entries.sum(&:cost)` walked the polymorphic entry -> profile chain per row
+    # (the B-P2-2 N+1); two aggregate queries replace that regardless of list size.
+    def total_cost
+      model_cost = list_entries
+        .where(entry_type: "Catalog::CardReference")
+        .joins("INNER JOIN card_references ON card_references.id = list_entries.entry_id")
+        .joins("INNER JOIN profiles ON profiles.id = card_references.profile_id")
+        .sum("profiles.ducats")
+      equipment_cost = list_entries
+        .where(entry_type: "Catalog::Equipment")
+        .joins("INNER JOIN equipment ON equipment.id = list_entries.entry_id")
+        .sum("equipment.cost")
+      model_cost + equipment_cost
     end
 
     # Deep-copies this list (and its entries) into a new list owned by `owner`, so the copy stays

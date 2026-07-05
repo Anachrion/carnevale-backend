@@ -154,9 +154,10 @@ module Encounter
       game_players.each do |gp|
         next unless gp.list
 
-        gp.list.list_entries.where(entry_type: "Catalog::CardReference").find_each do |list_entry|
-          Encounter::EntryState.create_for!(list_entry)
-        end
+        # Filtered to card references, so preloading the nested profile is safe (no Equipment in
+        # the set) and spares create_for! a profile lookup per model (B-P2-1).
+        entries = gp.list.list_entries.where(entry_type: "Catalog::CardReference").includes(entry: :profile)
+        entries.each { |list_entry| Encounter::EntryState.create_for!(list_entry) }
       end
     end
 
