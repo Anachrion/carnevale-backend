@@ -738,6 +738,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/entries/{list_entry_id}/counters:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    patch:
+      operationId: updateCounters
+      summary: Update status counters on one of the current player's own models
+      description: |
+        Only available while the game is in_progress, and only for entries in the requesting
+        player's own gang — the opponent's models 404. Send just the counters to change;
+        omitted ones keep their current values. The change is broadcast to both players as a
+        `game_state` event (re-fetch the player list to see the new counters).
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCountersInput"
+      responses:
+        "200":
+          description: The model's full updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryState"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status, invalid counter values, or an entry with no state (equipment)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/agendas/draw:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -1118,6 +1162,27 @@ components:
           type: boolean
           default: false
           description: If true, immediately draws a replacement card (origin `recycle`) linked back to this discard.
+
+    UpdateCountersInput:
+      type: object
+      required: [counters]
+      properties:
+        counters:
+          type: object
+          description: Partial set of counters to change — omitted ones keep their current values.
+          properties:
+            stunned:
+              type: boolean
+            hidden:
+              type: boolean
+            guarding:
+              type: boolean
+            carrying_objective:
+              type: boolean
+            underwater_counters:
+              type: integer
+              minimum: 0
+              maximum: 2
 
     # ── Responses ───────────────────────────────────────────────────────────────
 

@@ -122,6 +122,23 @@ module Api
         render json: @game.as_json_for(@game_player)
       end
 
+      # Status counters (stunned/hidden/guarding/carrying objective/underwater) on one of the
+      # current player's own models — each player only ever edits their own gang. Accepts a
+      # partial set of counters; omitted ones keep their current value.
+      def update_counters
+        return render_error("Wrong game status for updating counters") unless @game.status == "in_progress"
+
+        state = @game_player.list.list_entries.find(params[:list_entry_id]).entry_state
+        return render_error("This entry has no state to update") unless state
+
+        if state.update(counters: state.counters.merge(counters_params))
+          @game.broadcast_state!
+          render json: state.as_json_for_display
+        else
+          render json: { errors: state.errors }, status: :unprocessable_entity
+        end
+      end
+
       def advance_turn
         return render_error("Wrong game status for advancing the turn") unless @game.status == "in_progress"
 
@@ -187,6 +204,12 @@ module Api
 
       def recycle_param
         ActiveModel::Type::Boolean.new.cast(params[:recycle])
+      end
+
+      # No type casting: JSON already carries real booleans/integers, and anything else
+      # (e.g. "true" as a string) is rejected by EntryState's counters_shape validation.
+      def counters_params
+        params.require(:counters).permit(*Encounter::EntryState::COUNTER_KEYS).to_h
       end
     end
   end

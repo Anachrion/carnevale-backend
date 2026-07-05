@@ -237,6 +237,91 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/games/:id/entries/:list_entry_id/counters" do
+    # Runs the whole setup flow (not factories straight to in_progress) so the entries the test
+    # pokes at are the snapshotted ones the endpoint actually resolves, with real entry states.
+    def start_game_with_models(ready: true)
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      create(:list_entry, list: host_list)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      create(:list_entry, list: guest_list)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      if ready
+        host.post "/api/v1/games/#{game_id}/ready", headers: h
+        guest.post "/api/v1/games/#{game_id}/ready", headers: g
+      end
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      players = json(guest)["players"]
+      host_player_id = players.find { |p| p["username"] == host_user.username }["id"]
+      guest_player_id = players.find { |p| p["username"] == guest_user.username }["id"]
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      host_entry_id = json(host)["entries"].first["id"]
+      host.get "/api/v1/games/#{game_id}/players/#{guest_player_id}/list", headers: h
+      guest_entry_id = json(host)["entries"].first["id"]
+
+      [ host, guest, h, g, game_id, host_entry_id, guest_entry_id ]
+    end
+
+    it "toggles counters on the player's own model, merging partial updates" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { stunned: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)).to include("stunned" => true, "hidden" => false, "underwater_counters" => 0)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { underwater_counters: 2, hidden: true } }.to_json, headers: h
+      expect(json(host)).to include("stunned" => true, "hidden" => true, "underwater_counters" => 2)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { stunned: false } }.to_json, headers: h
+      expect(json(host)).to include("stunned" => false, "hidden" => true, "underwater_counters" => 2)
+    end
+
+    it "returns 404 for the opponent's models" do
+      _host, guest, _h, g, game_id, host_entry_id, = start_game_with_models
+
+      guest.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                  params: { counters: { stunned: true } }.to_json, headers: g
+      expect(guest.response).to have_http_status(:not_found)
+    end
+
+    it "rejects invalid counter values" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { underwater_counters: 3 } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { stunned: "yes" } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "rejects updates while the game isn't in progress" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(ready: false)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { stunned: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe "asymmetric scenarios" do
     let!(:street_fight) { create(:scenario, name: "Street Fight", ducats: 100, asymmetric: true) }
 
