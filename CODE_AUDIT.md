@@ -65,13 +65,15 @@ A multi-row `update_columns` sequence with no wrapping transaction. A mid-way fa
 `Catalog::Spell.cantrip_for(list_entry.spell_discipline)` runs a fresh `WHERE cantrip AND discipline=?` per entry. The cantrip set is tiny/static — load once.
 **Resolution:** added a request-memoised `cantrips_by_discipline` (`Catalog::Spell.cantrips.index_by(&:discipline)`) loaded once and reused across every entry and every list in the request; `entry_json` now looks the cantrip up in that hash instead of querying per entry.
 
-### B-P2-4 · `GamesController#index` N+1 across players' lists, scores, agendas
+### B-P2-4 · `GamesController#index` N+1 across players' lists, scores, agendas — FIXED (2026-07-05)
 `games_controller.rb:11-15` + `player.rb:37-55`
 Preload omits `game_players.list`, so `list&.as_json_summary` reloads each player's list+entries+profiles. Per player also: `score` COUNT (`player.rb:33`), `hand_agenda_ids` two `pluck`s (`player.rb:28-30`), plus `Catalog::Agenda.where` for the viewer. ~O(G × players × several) queries.
+**Resolution:** the index now preloads `game_players: [:user, :list, :agenda_events]`, and `Player#drawn_agenda_ids`/`#resolved_agenda_ids`/`#score` filter the preloaded `agenda_events` in Ruby instead of a query per call — so a preloaded player resolves them with no extra query (and an unloaded one, e.g. after a mutation's `reload`, loads the small set once). Guarded by a `game_spec.rb` "#as_json_for" test asserting the query count doesn't grow with a player's agenda count. (Residual per-list `total_cost` aggregates are the B-P2-2 SQL cost, not an N+1.)
 
-### B-P2-5 · `available_lists` loads lists with no eager loading
+### B-P2-5 · `available_lists` loads lists with no eager loading — FIXED via B-P2-2 (2026-07-05)
 `games_controller.rb:66-68`
 `current_user.lists.map { … l.as_json_summary … }` — N+1 over the user's lists (compounds B-P2-2).
+**Resolution:** `as_json_summary` no longer loads entries/profiles at all — `total_cost` is now a pair of SQL aggregates (B-P2-2), so `available_lists` no longer triggers the per-entry profile N+1. Each list costs two lightweight aggregate queries; a further batch-aggregate across all of a user's lists would be the only remaining win and isn't worth the complexity here.
 
 ### B-P2-6 · Redundant re-validation storm via `after_commit` callbacks _(flagged by both backend agents)_
 `gang/list.rb:12`, `gang/entry.rb:16`, `gang/entry_spell.rb:10` → `ListValidationService.call`; amplified in `list_entries_controller.rb:34-44` (`spells`)
@@ -85,17 +87,20 @@ One model owns join-code generation, roll-off/role assignment, the whole agenda-
 `game.rb:114` `as_json_for`, `player.rb:37,59` `as_json_for`/`agenda_history_json`, `list.rb:21` `as_json_summary`, `scenario.rb:5` `as_json_for_game`, `entry_state.rb:43` `as_json_for_display`
 Presentation logic lives in models under five ad-hoc names. Move to serializers/presenters with one convention.
 
-### B-P2-9 · `draw_one_agenda_id` is an unbounded loop
+### B-P2-9 · `draw_one_agenda_id` is an unbounded loop — FIXED (2026-07-05)
 `game.rb:139-149`
 `loop do … next if candidates.empty? end` has no termination guard; if every sampled bucket is exhausted it spins forever. Add a bound/fallback.
+**Resolution:** the weighted sampling now runs a bounded number of attempts (one per `AGENDA_BUCKET_WEIGHTS` entry), then falls back to any undrawn agenda regardless of bucket — so it always terminates. Guarded by a `game_spec.rb` test that draws from a pool confined to a single bucket.
 
-### B-P2-10 · Preloads built then discarded in `ListsController`
+### B-P2-10 · Preloads built then discarded in `ListsController` — FIXED (2026-07-05)
 `lists_controller.rb:8-9,13`
 `index`/`show` build `includes(list_entries: :entry)`, but `list_json` immediately re-queries a different relation (`base_controller.rb:23`), wasting the preload every call.
+**Resolution:** removed the `includes(list_entries: :entry)` from `index` and the `.tap { … .load }` from `show`; `list_json` -> `list_entries_for_render` already loads the entries with exactly the associations it needs (B-P2-1).
 
-### B-P2-11 · Fragile count parsing (primitive obsession)
+### B-P2-11 · Fragile count parsing (primitive obsession) — FIXED (2026-07-05)
 `game.rb:51` — `scenario.agendas.first.to_s[/\A(\d+)/, 1].to_i`
 Deriving the initial draw count by regex-scraping the first JSON array element; a format change silently falls back to 3.
+**Resolution:** extracted to `Catalog::Scenario#initial_agenda_count` (with a `DEFAULT_AGENDA_DRAW` constant and a spec covering the parse + fallbacks), so the fragile format assumption lives in one named, tested place instead of inline in `Encounter::Game`. A dedicated column would be the fuller fix but requires reseeding the immutable catalog.
 
 ## P3 — Dead code / Cleanup / Consistency
 

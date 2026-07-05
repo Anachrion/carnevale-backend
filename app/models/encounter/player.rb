@@ -15,12 +15,17 @@ module Encounter
     validates :user_id, uniqueness: { scope: :game_id }
     validates :role, inclusion: { in: ROLES }, allow_nil: true
 
+    RESOLVED_ACTIONS = %w[scored discarded].freeze
+
+    # These filter the agenda_events collection in Ruby rather than issuing a WHERE per call, so a
+    # preloaded association (e.g. the games index, B-P2-4) resolves them with no extra query; an
+    # unloaded one loads the (small, per-player) set once and reuses it.
     def drawn_agenda_ids
-      agenda_events.where(action: "drawn").pluck(:agenda_id)
+      agenda_events.select { |e| e.action == "drawn" }.map(&:agenda_id)
     end
 
     def resolved_agenda_ids
-      agenda_events.where(action: %w[scored discarded]).pluck(:agenda_id)
+      agenda_events.select { |e| RESOLVED_ACTIONS.include?(e.action) }.map(&:agenda_id)
     end
 
     # Agendas currently held: drawn over the course of the game, minus whichever have since
@@ -31,7 +36,7 @@ module Encounter
 
     # Every agenda scores a flat 1 Victory Point, so the scored count is the score.
     def score
-      agenda_events.where(action: "scored").count
+      agenda_events.count { |e| e.action == "scored" }
     end
 
     def as_json_for(viewer_game_player)

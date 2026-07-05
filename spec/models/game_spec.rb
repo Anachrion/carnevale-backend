@@ -71,6 +71,52 @@ RSpec.describe Encounter::Game, type: :model do
       expect(game_player.hand_agenda_ids.size).to eq(3)
       expect(game_player.agenda_events.pluck(:origin).uniq).to eq([ "initial" ])
     end
+
+    # B-P2-9: the draw used to loop forever if the weighted buckets it sampled were all exhausted.
+    # With the whole pool confined to one bucket, the sampler keeps missing the others and must
+    # fall back to the remaining agendas rather than spinning — so this both terminates and draws.
+    it "terminates and draws distinct agendas when the pool is confined to one bucket" do
+      create_list(:agenda, 3, first_roll: "1-3")
+      scenario = create(:scenario, agendas: [ "3 agendas" ])
+      game = create(:game, scenario: scenario)
+      game_player = create(:game_player, game: game)
+
+      game.draw_agendas!(game_player)
+
+      drawn = game_player.agenda_events.where(action: "drawn").pluck(:agenda_id)
+      expect(drawn.size).to eq(3)
+      expect(drawn.uniq.size).to eq(3)
+    end
+  end
+
+  describe "#as_json_for" do
+    def game_with_agendas(per_player:)
+      game = create(:game, scenario: create(:scenario, asymmetric: false), status: "in_progress")
+      2.times do
+        gp = create(:game_player, game: game, user: create(:user))
+        list = create(:list, owner: gp, faction: "guild", points: 100)
+        create(:list_entry, list: list, entry: create(:card_reference), position: 1)
+        per_player.times { |i| create(:agenda_event, game_player: gp, action: "drawn", origin: "initial", turn: i + 1) }
+      end
+      game
+    end
+
+    def preloaded(game)
+      Encounter::Game.includes(:scenario, game_players: [ :user, :list, :agenda_events ]).find(game.id)
+    end
+
+    # B-P2-4: serializing a game read per-player list, score, and drawn/held agendas with a query
+    # each. With the associations preloaded it must not issue more queries as a player's agenda
+    # count grows.
+    it "does not issue more queries as each player's agenda count grows" do
+      small = preloaded(game_with_agendas(per_player: 1))
+      large = preloaded(game_with_agendas(per_player: 5))
+
+      small_queries = count_queries { small.as_json_for(small.game_players.first) }
+      large_queries = count_queries { large.as_json_for(large.game_players.first) }
+
+      expect(large_queries).to eq(small_queries)
+    end
   end
 
   describe "#draw_agenda!" do

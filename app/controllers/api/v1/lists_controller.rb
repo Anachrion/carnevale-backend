@@ -5,12 +5,14 @@ module Api
       before_action :set_list, only: %i[show update destroy]
 
       def index
-        lists = current_user.lists.includes(list_entries: :entry)
-        render json: lists.map { |list| list_json(list, with_entries: true) }
+        # No eager loading here: list_json -> list_entries_for_render loads each list's entries with
+        # exactly the associations it needs (incl. the card-reference profiles), so any preload here
+        # would just be re-queried and thrown away (B-P2-10).
+        render json: current_user.lists.map { |list| list_json(list, with_entries: true) }
       end
 
       def show
-        render json: list_json(@list.tap { |l| l.list_entries.includes(:entry).load }, with_entries: true)
+        render json: list_json(@list, with_entries: true)
       end
 
       def create
