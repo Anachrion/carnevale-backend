@@ -28,8 +28,12 @@ module Gang
     def snapshot_for(owner)
       List.transaction do
         List.create!(owner: owner, name: name, faction: faction, points: points).tap do |snapshot|
-          list_entries.each do |entry|
-            snapshot.list_entries.create!(entry_type: entry.entry_type, entry_id: entry.entry_id, position: entry.position)
+          list_entries.includes(:entry_spells).each do |entry|
+            copy = snapshot.list_entries.create!(
+              entry_type: entry.entry_type, entry_id: entry.entry_id,
+              position: entry.position, spell_discipline: entry.spell_discipline
+            )
+            entry.entry_spells.each { |es| copy.entry_spells.create!(spell_id: es.spell_id) }
           end
         end
       end
