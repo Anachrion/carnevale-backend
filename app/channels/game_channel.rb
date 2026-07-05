@@ -6,6 +6,6 @@ class GameChannel < ApplicationCable::Channel
     # Streamed per game_player (not per game) so each player's broadcast payload can stay
     # scoped to their own private data (drawn agendas) — see Encounter::GameBroadcaster.
     stream_for game_player
-    transmit({ event: "game_state", game: game_player.game.as_json_for(game_player) })
+    transmit({ event: "game_state", game: GameSerializer.new(game_player.game, viewer: game_player).as_json })
   end
 end

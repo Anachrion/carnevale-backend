@@ -10,12 +10,12 @@ module Api
 
       def index
         visibility = params[:visibility] == "archived" ? "archived" : "active"
-        # Preload each game's players together with their list and agenda_events so as_json_for
+        # Preload each game's players together with their list and agenda_events so serialization
         # doesn't N+1 over lists, scores, and drawn/held agendas per player (B-P2-4).
         game_players = current_user.game_players
                                    .where(visibility: visibility)
                                    .includes(game: [ :scenario, { game_players: [ :user, :list, :agenda_events ] } ])
-        render json: game_players.map { |gp| gp.game.as_json_for(gp) }
+        render json: game_players.map { |gp| GameSerializer.new(gp.game, viewer: gp).as_json }
       end
 
       def create
@@ -28,14 +28,14 @@ module Api
         )
         if game.save
           game_player = game.game_players.create!(user: current_user, host: true)
-          render json: game.as_json_for(game_player), status: :created
+          render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
         else
           render json: { errors: game.errors }, status: :unprocessable_entity
         end
       end
 
       def show
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def join
@@ -44,7 +44,7 @@ module Api
 
         if game_player
           game_player.update!(visibility: "active") unless game_player.active?
-          render json: game.as_json_for(game_player)
+          render json: GameSerializer.new(game, viewer: game_player).as_json
           return
         end
 
@@ -54,7 +54,7 @@ module Api
         game.assign_roll_winners!
         game.update!(status: "gang_selection")
         broadcast_state!(game)
-        render json: game.as_json_for(game_player)
+        render json: GameSerializer.new(game, viewer: game_player).as_json
       end
 
       def role
@@ -64,11 +64,11 @@ module Api
         return render_error("Invalid role") unless @game.assign_paired_choice!(:role, @game_player, params[:role], Encounter::Player::ROLES)
 
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def available_lists
-        render json: current_user.lists.map { |l| { list: l.as_json_summary, selectable: l.points <= @game.ducat_limit } }
+        render json: current_user.lists.map { |l| { list: ListSummarySerializer.new(l).as_json, selectable: l.points <= @game.ducat_limit } }
       end
 
       # Either player's selected gang, in full (with entries) — available for consultation by
@@ -77,7 +77,7 @@ module Api
         target = @game.game_players.find(params[:player_id])
         return render_error("List not selected yet") unless target.list.present?
 
-        render json: list_json(target.list, with_entries: true)
+        render json: ListSerializer.new(target.list).as_json
       end
 
       def select_gang
@@ -100,7 +100,7 @@ module Api
 
         maybe_advance_to_agenda_draw!
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def draw_agendas
@@ -119,7 +119,7 @@ module Api
         end
 
         broadcast_state!(@game)
-        render json: { agendas: @game_player.reload.as_json_for(@game_player)[:agendas] }
+        render json: { agendas: PlayerSerializer.new(@game_player.reload, viewer: @game_player).as_json[:agendas] }
       end
 
       def score_agenda
@@ -127,7 +127,7 @@ module Api
         return render_error("Agenda not in hand") unless @game.agenda_deck.score(@game_player, params[:agenda_id].to_i, recycle: recycle_param)
 
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def discard_agenda
@@ -136,7 +136,7 @@ module Api
         return render_error("Agenda not in hand") unless @game.agenda_deck.discard(@game_player, params[:agenda_id].to_i, origin: params[:origin], recycle: recycle_param)
 
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       # Status counters (stunned/hidden/guarding/carrying objective/underwater) on one of the
@@ -159,25 +159,25 @@ module Api
 
         @game.advance_turn!
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def ready
         @game_player.update!(ready: true)
         @game.start!
         broadcast_state!(@game)
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       # Only hides the game from the current user's own game list; the opponent is unaffected.
       def archive
         @game_player.update!(visibility: "archived")
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def unarchive
         @game_player.update!(visibility: "active")
-        render json: @game.as_json_for(@game_player)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       # Soft-deletes the game for the current user only. Once every player has done the same,
@@ -237,7 +237,7 @@ module Api
         yield state
         if state.save
           broadcast_state!(@game)
-          render json: state.as_json_for_display
+          render json: EntryStateSerializer.new(state).as_json
         else
           render json: { errors: state.errors }, status: :unprocessable_entity
         end

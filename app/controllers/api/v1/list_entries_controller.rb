@@ -9,7 +9,7 @@ module Api
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
           ListSortingService.call(@list)
-          render json: list_json(@list.reload, with_entries: true), status: :created
+          render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
           render json: { errors: entry.errors }, status: :unprocessable_entity
         end
@@ -18,13 +18,13 @@ module Api
       def update
         entry = find_owned_entry
         ListEntryReorderService.call(entry, position_params[:position].to_i)
-        render json: list_json(entry.list.reload, with_entries: true)
+        render json: ListSerializer.new(entry.list.reload).as_json
       end
 
       def destroy
         entry = find_owned_entry
         entry.destroy
-        render json: list_json(entry.list.reload, with_entries: true)
+        render json: ListSerializer.new(entry.list.reload).as_json
       end
 
       # Replaces the spell selection for a single model: sets its committed Discipline and the exact
@@ -45,7 +45,7 @@ module Api
           end
         end
         entry.list.refresh_selection_validity
-        render json: list_json(entry.list.reload, with_entries: true)
+        render json: ListSerializer.new(entry.list.reload).as_json
       end
 
       private

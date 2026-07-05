@@ -8,7 +8,7 @@ module Api
         return unless stale?(scope, public: true)
 
         expires_in 1.hour, public: true
-        render json: scope.map { |s| spell_json(s) }
+        render json: scope.map { |s| SpellSerializer.new(s).as_json }
       end
     end
   end

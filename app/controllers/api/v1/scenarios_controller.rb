@@ -6,7 +6,7 @@ module Api
         return unless stale?(scope, public: true)
 
         expires_in 1.hour, public: true
-        render json: scope.map(&:as_json_for_game)
+        render json: scope.map { |s| ScenarioSerializer.new(s).as_json }
       end
     end
   end

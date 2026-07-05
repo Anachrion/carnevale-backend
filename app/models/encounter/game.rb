@@ -79,21 +79,6 @@ module Encounter
       true
     end
 
-    def as_json_for(viewer_game_player)
-      {
-        id: id,
-        name: name,
-        join_code: join_code,
-        status: status,
-        ducat_limit: ducat_limit,
-        board_size: board_size,
-        current_turn: current_turn,
-        scenario: scenario.as_json_for_game,
-        viewer_visibility: viewer_game_player&.visibility,
-        players: game_players.map { |gp| gp.as_json_for(viewer_game_player) }
-      }
-    end
-
     private
 
     # Equipment entries have no profile (no HP/WP/CP), so only card-reference entries — i.e.
