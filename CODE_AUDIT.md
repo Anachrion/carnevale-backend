@@ -135,9 +135,10 @@ Navigating away while a request is in flight throws `setState() called after dis
 `action_cable_client.dart:80-84` reconnects/re-subscribes on `welcome`, but `GameService` fetches the full game only once in `watch()` (`game_service.dart:169-180`). Broadcasts during downtime are lost; after reconnect `currentGame` stays stale with no error. Reconnect also reuses the original (possibly expired) `?token=`.
 **Resolution:** `ActionCableClient` now fires an `onReconnect` callback on any `welcome` after the first, and `GameService` uses it to refetch the full snapshot — so state can't stay silently stale after a drop. And because the connection URL is produced fresh per attempt (see F-P1-1), each reconnect mints a new ticket rather than reusing a dead credential.
 
-### F-P1-4 · Unhandled deserialize throw inside the socket stream callback
+### F-P1-4 · Unhandled deserialize throw inside the socket stream callback — FIXED (2026-07-05)
 `game_service.dart:194` — `deserializeWith(...)` in `_onChannelMessage`
 It guards a `null` result, but a malformed/schema-drifted `message['game']` makes `deserializeWith` **throw**. The throw escapes the `stream.listen` callback with no `onError`. Wrap in try/catch.
+**Resolution:** wrapped the deserialize + map in a try/catch; a malformed broadcast is now logged and ignored (keeping the last-known snapshot) instead of killing the live-update stream — the next broadcast or reconnect resync recovers.
 
 ### F-P1-5 · Live game updates trigger a full double network re-fetch per broadcast
 `gang_viewer_screen.dart:238` — `_onGameUpdate() => _load()`
