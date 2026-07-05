@@ -167,8 +167,9 @@ Separately, global state is inconsistent: `ApiClient`/`AuthService`/`GameService
 
 ## P3 — Dead code / Cleanup / Style
 
-### F-P3-1 · `gang_validation.dart` is entirely dead + duplicates server rules
+### F-P3-1 · `gang_validation.dart` is entirely dead + duplicates server rules — FIXED (2026-07-05)
 `lib/models/gang_validation.dart` (`GangValidator`/`ValidationResult`/`canAdd`) is never imported. It re-implements ducat/faction/unique-hire rules the server already enforces and returns via `selectionValid`/`selectionErrors` (what the screens actually use, `gang_builder_screen.dart:280`). Delete.
+**Resolution:** deleted; confirmed no references anywhere in `lib/` or `test/`, `flutter analyze` unchanged.
 
 ### F-P3-2 · Other dead code
 Widgets never instantiated: `home_screen.dart` `_GoldDivider` (158-176) & `_NewsCard` (262-322); `cards_screen.dart` `_AllChip` (295-326), `_ProfileTile._statBadge` (425-432), `_factionLabel` defined twice (292 & 434), both unused. Dead hooks/params: `action_cable_client.dart:26` `onConnected` (only self-invoked); `profile_service.dart:36` `invalidateCache()` (never called — cache also never invalidates); `gang_service.dart:56` `removeEntry(listId)` param unused.
