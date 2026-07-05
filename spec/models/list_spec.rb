@@ -29,6 +29,29 @@ RSpec.describe Gang::List, type: :model do
     end
   end
 
+  describe ".defer_validation" do
+    it "suppresses refresh_selection_validity inside the block, then runs once explicitly" do
+      list = create(:list, faction: :guild, points: 100)
+      allow(ListValidationService).to receive(:call).and_return(success: true, errors: [])
+
+      Gang::List.defer_validation { list.refresh_selection_validity }
+      expect(ListValidationService).not_to have_received(:call)
+
+      list.refresh_selection_validity
+      expect(ListValidationService).to have_received(:call).once
+    end
+
+    it "restores validation after the block even if it raises" do
+      list = create(:list, faction: :guild, points: 100)
+      allow(ListValidationService).to receive(:call).and_return(success: true, errors: [])
+
+      expect { Gang::List.defer_validation { raise "boom" } }.to raise_error("boom")
+
+      list.refresh_selection_validity
+      expect(ListValidationService).to have_received(:call).once
+    end
+  end
+
   describe "#snapshot_for" do
     it "deep-copies the list and its entries under the new owner" do
       list = create(:list, faction: :guild, points: 100)

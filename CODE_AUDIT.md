@@ -75,9 +75,10 @@ Preload omits `game_players.list`, so `list&.as_json_summary` reloads each playe
 `current_user.lists.map { … l.as_json_summary … }` — N+1 over the user's lists (compounds B-P2-2).
 **Resolution:** `as_json_summary` no longer loads entries/profiles at all — `total_cost` is now a pair of SQL aggregates (B-P2-2), so `available_lists` no longer triggers the per-entry profile N+1. Each list costs two lightweight aggregate queries; a further batch-aggregate across all of a user's lists would be the only remaining win and isn't worth the complexity here.
 
-### B-P2-6 · Redundant re-validation storm via `after_commit` callbacks _(flagged by both backend agents)_
+### B-P2-6 · Redundant re-validation storm via `after_commit` callbacks _(flagged by both backend agents)_ — FIXED (2026-07-05)
 `gang/list.rb:12`, `gang/entry.rb:16`, `gang/entry_spell.rb:10` → `ListValidationService.call`; amplified in `list_entries_controller.rb:34-44` (`spells`)
 `entry.update!` + `entry_spells.destroy_all` + each `entry_spells.create!` each fire an `after_commit` running the full multi-query validation. `Gang::List#snapshot_for` (`list.rb:28-40`) re-runs it after every `entry_spells.create!`. Editing one model's spells re-validates the whole list many times instead of once.
+**Resolution:** added `Gang::List.defer_validation { … }`, a thread-local guard that makes `refresh_selection_validity` a no-op inside the block. The `spells` action and `snapshot_for` now wrap their bulk mutations in it and run a single explicit `refresh_selection_validity` at the end. The per-model `after_commit` callbacks are kept (so all other paths — e.g. hiring/removing a single model — still auto-validate, as the model specs rely on), just coalesced for the bulk cases. Correctness is guaranteed by the explicit end-of-block refresh; a `list_spec.rb` ".defer_validation" test covers the suppress-then-run-once behaviour (and restoration on error).
 
 ### B-P2-7 · `Encounter::Game` is a God object (199 lines, 5 concerns)
 `encounter/game.rb:23-135`

@@ -11,8 +11,20 @@ module Gang
 
     after_commit :refresh_selection_validity, on: %i[create update]
 
+    # Wrap a bulk edit that touches many entries/spells (replacing a model's whole spell set, or
+    # snapshotting a list) so the flurry of child `after_commit` callbacks it fires don't each
+    # re-run the full multi-query validation; the caller runs it once at the end instead (B-P2-6).
+    def self.defer_validation
+      previous = Thread.current[:carnevale_defer_list_validation]
+      Thread.current[:carnevale_defer_list_validation] = true
+      yield
+    ensure
+      Thread.current[:carnevale_defer_list_validation] = previous
+    end
+
     def refresh_selection_validity
       return if destroyed?
+      return if Thread.current[:carnevale_defer_list_validation]
 
       result = ListValidationService.call(self)
       update_columns(selection_valid: result[:success], selection_errors: result[:errors])
@@ -43,17 +55,21 @@ module Gang
     # unaffected by any future edits to this one. Used to freeze a player's gang the moment they
     # select it for a game, so a later battle report always reflects what was actually played.
     def snapshot_for(owner)
-      List.transaction do
-        List.create!(owner: owner, name: name, faction: faction, points: points).tap do |snapshot|
-          list_entries.includes(:entry_spells).each do |entry|
-            copy = snapshot.list_entries.create!(
-              entry_type: entry.entry_type, entry_id: entry.entry_id,
-              position: entry.position, spell_discipline: entry.spell_discipline
-            )
-            entry.entry_spells.each { |es| copy.entry_spells.create!(spell_id: es.spell_id) }
+      snapshot = List.defer_validation do
+        List.transaction do
+          List.create!(owner: owner, name: name, faction: faction, points: points).tap do |copy|
+            list_entries.includes(:entry_spells).each do |entry|
+              copied = copy.list_entries.create!(
+                entry_type: entry.entry_type, entry_id: entry.entry_id,
+                position: entry.position, spell_discipline: entry.spell_discipline
+              )
+              entry.entry_spells.each { |es| copied.entry_spells.create!(spell_id: es.spell_id) }
+            end
           end
         end
       end
+      snapshot.refresh_selection_validity
+      snapshot
     end
   end
 end
