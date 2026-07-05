@@ -1,7 +1,6 @@
 module Encounter
   class Game < ApplicationRecord
     STATUSES = %w[pending gang_selection agenda_draw deploying in_progress completed].freeze
-    AGENDA_BUCKET_WEIGHTS = %w[1-3 1-3 1-3 4-6 4-6 4-6 7-9 7-9 7-9 10].freeze
 
     belongs_to :scenario, class_name: "Catalog::Scenario"
 
@@ -47,40 +46,10 @@ module Encounter
       true
     end
 
-    def draw_agendas!(game_player)
-      count = scenario.initial_agenda_count
-      drawn = []
-      drawn << draw_one_agenda_id(drawn) while drawn.size < count
-      drawn.each do |agenda_id|
-        game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: "initial", turn: current_turn)
-      end
-    end
-
-    # Single card draw during play (as opposed to the initial batch above), e.g. granted by a
-    # special rule, a command point ability, or as the replacement half of a "Cycle" scenario
-    # rule (origin: "recycle", caused_by_event: the score/discard that triggered it).
-    def draw_agenda!(game_player, origin:, caused_by_event: nil)
-      raise ArgumentError, "origin must not be \"initial\" outside the initial draw" if origin == "initial"
-
-      already_drawn = game_player.drawn_agenda_ids
-      agenda_id = draw_one_agenda_id(already_drawn)
-      game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: origin, caused_by_event: caused_by_event, turn: current_turn)
-    end
-
-    def score_agenda!(game_player, agenda_id, recycle: false)
-      return false unless game_player.hand_agenda_ids.include?(agenda_id)
-
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: current_turn)
-      draw_agenda!(game_player, origin: "recycle", caused_by_event: event) if recycle
-      true
-    end
-
-    def discard_agenda!(game_player, agenda_id, origin:, recycle: false)
-      return false unless game_player.hand_agenda_ids.include?(agenda_id)
-
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: current_turn)
-      draw_agenda!(game_player, origin: "recycle", caused_by_event: event) if recycle
-      true
+    # The agenda-deck subsystem (initial/in-play draws, scoring, discarding). Lives in its own
+    # service object rather than on the model (B-P2-7).
+    def agenda_deck
+      @agenda_deck ||= AgendaDeck.new(self)
     end
 
     # Called once both players are ready on the deployment screen — flips the game live and
@@ -125,31 +94,7 @@ module Encounter
       }
     end
 
-    # Broadcasts to each connected player individually (not a single shared game-wide broadcast),
-    # so every player's payload can stay scoped to their own private data (drawn agendas).
-    def broadcast_state!
-      game_players.reload.each do |gp|
-        GameChannel.broadcast_to(gp, { event: "game_state", game: as_json_for(gp) })
-      end
-    end
-
     private
-
-    def draw_one_agenda_id(already_drawn)
-      # Try weighted buckets first (some appear more than once in AGENDA_BUCKET_WEIGHTS, biasing the
-      # draw toward them). Sample in Ruby rather than `ORDER BY RANDOM() LIMIT 1`: identical SQL for
-      # a repeated bucket is served from the per-request query cache, which would return the same
-      # row every time. Bound the attempts so an exhausted pool can't spin forever (B-P2-9).
-      AGENDA_BUCKET_WEIGHTS.size.times do
-        bucket = AGENDA_BUCKET_WEIGHTS.sample
-        candidates = Catalog::Agenda.where(first_roll: bucket).pluck(:id) - already_drawn
-        return candidates.sample if candidates.any?
-      end
-
-      # Weighted buckets kept coming up empty — fall back to any undrawn agenda regardless of
-      # bucket (nil only if the entire deck has been drawn, which the callers never do).
-      (Catalog::Agenda.where.not(id: already_drawn).pluck(:id)).sample
-    end
 
     # Equipment entries have no profile (no HP/WP/CP), so only card-reference entries — i.e.
     # actual models — get an entry state.
