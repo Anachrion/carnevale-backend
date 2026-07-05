@@ -172,8 +172,9 @@ Separately, global state is inconsistent: `ApiClient`/`AuthService`/`GameService
 `lib/models/gang_validation.dart` (`GangValidator`/`ValidationResult`/`canAdd`) is never imported. It re-implements ducat/faction/unique-hire rules the server already enforces and returns via `selectionValid`/`selectionErrors` (what the screens actually use, `gang_builder_screen.dart:280`). Delete.
 **Resolution:** deleted; confirmed no references anywhere in `lib/` or `test/`, `flutter analyze` unchanged.
 
-### F-P3-2 · Other dead code
+### F-P3-2 · Other dead code — FIXED (2026-07-05)
 Widgets never instantiated: `home_screen.dart` `_GoldDivider` (158-176) & `_NewsCard` (262-322); `cards_screen.dart` `_AllChip` (295-326), `_ProfileTile._statBadge` (425-432), `_factionLabel` defined twice (292 & 434), both unused. Dead hooks/params: `action_cable_client.dart:26` `onConnected` (only self-invoked); `profile_service.dart:36` `invalidateCache()` (never called — cache also never invalidates); `gang_service.dart:56` `removeEntry(listId)` param unused.
+**Resolution:** deleted the unused widgets (`_GoldDivider`, `_NewsCard`, `_AllChip`), the `_ProfileTile._statBadge` and both `_factionLabel` methods, and `ProfileService.invalidateCache()`; dropped the unused `listId` param from `GangService.removeEntry` (updating both call sites); `onConnected` was already removed with the F-P1-1/F-P1-3 rewrite. Also deleted the stale stock `test/widget_test.dart` (it tested a `MyApp` counter that never existed). `flutter analyze` now reports 0 errors and 0 `unused_element` warnings.
 
 ### F-P3-3 · Deprecated `Color.withOpacity` mixed with `withValues` _(flagged by both frontend agents)_
 `withValues(alpha:)` is used in newer files (`account_screen`, `settings_screen`, `reset_password_screen`, `app_toast`, `app_colors`), while `withOpacity` (deprecated, precision loss) is used 100+ times elsewhere — `gang_builder_screen` (34), `game_home_screen` (21), `app_drawer` (32-33/225), `spell_chips` (48/72-73/79/84), `themed_dialog_card:26`. Pick one.
