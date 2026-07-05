@@ -121,16 +121,18 @@ No controller renders these (all use `render json: list_json`). Also broken: `sh
 
 ## P1 — Crash / Correctness / Leak / Security
 
-### F-P1-1 · Auth token passed in the WebSocket URL query string
+### F-P1-1 · Auth token passed in the WebSocket URL query string — FIXED (2026-07-05)
 `game_service.dart:177` — `ActionCableClient('${ApiClient.cableUrl}?token=$authToken')`
 The session JWT is embedded in the WS URL, which lands in server access logs, proxy logs, and history — leaking the credential out of secure storage into plaintext. Move to a header/subprotocol or a short-lived ticket.
+**Resolution (short-lived ticket, chosen because it's the only option that's both browser-safe and makes a leak harmless):** new backend `CableTicket` model + `POST /api/v1/cable_tickets` mints a single-use, ~30s ticket over authenticated REST (JWT in the header); the connection (`ApplicationCable::Connection`) redeems `?ticket=...` instead of decoding a JWT from the URL. The client (`ApiClient.cableConnectionUrl`) fetches a fresh ticket for every connect, so the reusable JWT never rides in the WS URL. Tickets are keyed per-ticket (not per-user), so the same game can be open on several devices at once. Covered by `spec/models/cable_ticket_spec.rb`, `spec/channels/application_cable/connection_spec.rb`, `spec/requests/api/v1/cable_tickets_spec.rb`.
 
 ### F-P1-2 · `setState` after `await` with no `mounted` check — pervasive
 Gang builder: `gang_builder_screen.dart` `_loadData` (l.89), `_add` (129/131), `_addEquipment` (139/141), `_remove` (152/154), `_removeEntry` (163/165), `_editSpells` (107/109), `_reorderEntry` (241/243). Loaders: `cards_screen.dart` `_load`/`_onSearch` (60/71), `gangs_screen.dart` `_load` (62/65), `game_home_screen.dart` `_load` (77/84) & `_CreateGameSheet._load` (621/628), `game_session_screen.dart` `_init` (64).
 Navigating away while a request is in flight throws `setState() called after dispose()`. Highest exposure on the builder (each action is one tap).
 
-### F-P1-3 · WebSocket reconnect never refetches the snapshot (silent stale state)
+### F-P1-3 · WebSocket reconnect never refetches the snapshot (silent stale state) — FIXED (2026-07-05)
 `action_cable_client.dart:80-84` reconnects/re-subscribes on `welcome`, but `GameService` fetches the full game only once in `watch()` (`game_service.dart:169-180`). Broadcasts during downtime are lost; after reconnect `currentGame` stays stale with no error. Reconnect also reuses the original (possibly expired) `?token=`.
+**Resolution:** `ActionCableClient` now fires an `onReconnect` callback on any `welcome` after the first, and `GameService` uses it to refetch the full snapshot — so state can't stay silently stale after a drop. And because the connection URL is produced fresh per attempt (see F-P1-1), each reconnect mints a new ticket rather than reusing a dead credential.
 
 ### F-P1-4 · Unhandled deserialize throw inside the socket stream callback
 `game_service.dart:194` — `deserializeWith(...)` in `_onChannelMessage`

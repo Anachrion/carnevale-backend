@@ -157,6 +157,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /cable_tickets:
+    post:
+      operationId: createCableTicket
+      summary: Mint a short-lived, single-use ticket for opening the ActionCable WebSocket
+      description: >
+        Returns a one-time ticket to pass as the `ticket` query parameter when connecting to
+        `/cable`, so the reusable JWT never travels in the (loggable) WebSocket URL. The ticket
+        expires within seconds and is consumed the first time it is redeemed.
+      tags: [Session]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "201":
+          description: Ticket issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ticket]
+                properties:
+                  ticket:
+                    type: string
+        "401":
+          description: Not authenticated
+
   /lists:
     get:
       operationId: getLists

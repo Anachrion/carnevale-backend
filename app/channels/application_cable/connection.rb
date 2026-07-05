@@ -8,16 +8,13 @@ module ApplicationCable
 
     private
 
+    # The client mints a short-lived, single-use ticket over authenticated REST (see CableTicket)
+    # and passes it as `?ticket=...`, so the reusable JWT never rides in the WebSocket URL. A leaked
+    # ticket is worthless: it is expired within seconds and consumed the moment it is redeemed.
     def find_verified_user
-      token = request.params[:token]
-      reject_unauthorized_connection unless token
-
-      payload = JWT.decode(token, Rails.application.credentials.devise_jwt_secret_key!, true, algorithm: "HS256").first
-      user = User.find_by(id: payload["sub"])
-      reject_unauthorized_connection if user.nil? || JwtDenylist.jwt_revoked?(payload, user)
+      user = CableTicket.redeem(request.params[:ticket])
+      reject_unauthorized_connection if user.nil?
       user
-    rescue JWT::DecodeError
-      reject_unauthorized_connection
     end
   end
 end
