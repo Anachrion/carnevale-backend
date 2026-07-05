@@ -12,23 +12,6 @@ module Catalog
       parsed = agendas.first.to_s[/\A(\d+)/, 1].to_i
       parsed.zero? ? DEFAULT_AGENDA_DRAW : parsed
     end
-
-    def as_json_for_game
-      {
-        id: id,
-        name: name,
-        ducats: ducats,
-        asymmetric: asymmetric,
-        setup: setup,
-        primary_objective: primary_objective,
-        agendas: agendas,
-        special_rules: special_rules,
-        duration: duration,
-        turns: turns,
-        deployment_zones: deployment_zones,
-        illustration: illustration
-      }
-    end
   end
 end
 

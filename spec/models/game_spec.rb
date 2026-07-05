@@ -59,35 +59,6 @@ RSpec.describe Encounter::Game, type: :model do
     end
   end
 
-  describe "#as_json_for" do
-    def game_with_agendas(per_player:)
-      game = create(:game, scenario: create(:scenario, asymmetric: false), status: "in_progress")
-      2.times do
-        gp = create(:game_player, game: game, user: create(:user))
-        list = create(:list, owner: gp, faction: "guild", points: 100)
-        create(:list_entry, list: list, entry: create(:card_reference), position: 1)
-        per_player.times { |i| create(:agenda_event, game_player: gp, action: "drawn", origin: "initial", turn: i + 1) }
-      end
-      game
-    end
-
-    def preloaded(game)
-      Encounter::Game.includes(:scenario, game_players: [ :user, :list, :agenda_events ]).find(game.id)
-    end
-
-    # B-P2-4: serializing a game read per-player list, score, and drawn/held agendas with a query
-    # each. With the associations preloaded it must not issue more queries as a player's agenda
-    # count grows.
-    it "does not issue more queries as each player's agenda count grows" do
-      small = preloaded(game_with_agendas(per_player: 1))
-      large = preloaded(game_with_agendas(per_player: 5))
-
-      small_queries = count_queries { small.as_json_for(small.game_players.first) }
-      large_queries = count_queries { large.as_json_for(large.game_players.first) }
-
-      expect(large_queries).to eq(small_queries)
-    end
-  end
 
   describe "#start!" do
     it "flips the game to in_progress once both players are ready" do

@@ -38,40 +38,6 @@ module Encounter
     def score
       agenda_events.count { |e| e.action == "scored" }
     end
-
-    def as_json_for(viewer_game_player)
-      viewing_self = viewer_game_player&.id == id
-
-      {
-        id: id,
-        user_id: user_id,
-        username: user.username,
-        host: host,
-        list: list&.as_json_summary,
-        role: role,
-        ready: ready,
-        won_role_roll: won_role_roll,
-        won_deployment_roll: won_deployment_roll,
-        score: score,
-        # Drawn agendas and their history are private — only ever revealed to the player who drew them.
-        agendas: viewing_self ? Catalog::Agenda.where(id: hand_agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } } : [],
-        agenda_history: viewing_self ? agenda_history_json : []
-      }
-    end
-
-    private
-
-    def agenda_history_json
-      agenda_events.includes(:agenda).order(:turn, :id).map do |event|
-        {
-          turn: event.turn,
-          action: event.action,
-          origin: event.origin,
-          caused_by_event_id: event.caused_by_event_id,
-          agenda: { id: event.agenda.id, name: event.agenda.name }
-        }
-      end
-    end
   end
 end
 

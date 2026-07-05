@@ -30,10 +30,6 @@ module Gang
       update_columns(selection_valid: result[:success], selection_errors: result[:errors])
     end
 
-    def as_json_summary
-      { id: id, name: name, faction: faction, points: points, total_cost: total_cost }
-    end
-
     # Total ducat cost of the list — profile ducats for model entries, the equipment's own cost for
     # gear — computed in SQL so it neither loads every entry nor resolves its profile. The old
     # Ruby-side `list_entries.sum(&:cost)` walked the polymorphic entry -> profile chain per row

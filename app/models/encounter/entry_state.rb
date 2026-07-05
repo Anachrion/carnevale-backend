@@ -40,19 +40,6 @@ module Encounter
       counters["underwater_counters"]
     end
 
-    def as_json_for_display
-      {
-        life_points: { current: current_life_points, starting: starting_life_points },
-        will_points: { current: current_will_points, starting: starting_will_points },
-        command_points: { current: current_command_points, starting: starting_command_points },
-        stunned: stunned?,
-        hidden: hidden?,
-        guarding: guarding?,
-        carrying_objective: carrying_objective?,
-        underwater_counters: underwater_counters
-      }
-    end
-
     private
 
     def counters_shape

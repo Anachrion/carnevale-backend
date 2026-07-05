@@ -61,15 +61,6 @@ RSpec.describe Encounter::EntryState, type: :model do
     end
   end
 
-  describe "#as_json_for_display" do
-    it "pairs each stat's current value with its starting value" do
-      entry_state = build(:entry_state, current_life_points: 6, starting_life_points: 10)
-
-      json = entry_state.as_json_for_display
-
-      expect(json[:life_points]).to eq(current: 6, starting: 10)
-    end
-  end
 end
 
 # == Schema Information

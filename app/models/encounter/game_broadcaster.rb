@@ -10,7 +10,7 @@ module Encounter
 
     def broadcast_state!
       @game.game_players.reload.each do |game_player|
-        GameChannel.broadcast_to(game_player, { event: "game_state", game: @game.as_json_for(game_player) })
+        GameChannel.broadcast_to(game_player, { event: "game_state", game: GameSerializer.new(@game, viewer: game_player).as_json })
       end
     end
   end
