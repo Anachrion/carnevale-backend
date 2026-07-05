@@ -53,7 +53,7 @@ module Api
         game_player = game.game_players.create!(user: current_user, host: false)
         game.assign_roll_winners!
         game.update!(status: "gang_selection")
-        game.broadcast_state!
+        broadcast_state!(game)
         render json: game.as_json_for(game_player)
       end
 
@@ -63,7 +63,7 @@ module Api
         return render_error("Only the roll-off winner picks a role") unless winner.id == @game_player.id
         return render_error("Invalid role") unless @game.assign_paired_choice!(:role, @game_player, params[:role], Encounter::Player::ROLES)
 
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
@@ -99,7 +99,7 @@ module Api
         end
 
         maybe_advance_to_agenda_draw!
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
@@ -108,34 +108,34 @@ module Api
         when "agenda_draw"
           return render_error("Agendas already drawn") if @game_player.drawn_agenda_ids.any?
 
-          @game.draw_agendas!(@game_player)
+          @game.agenda_deck.draw_initial(@game_player)
           maybe_advance_to_deploying!
         when "in_progress"
           return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
 
-          @game.draw_agenda!(@game_player, origin: params[:origin])
+          @game.agenda_deck.draw(@game_player, origin: params[:origin])
         else
           return render_error("Wrong game status for drawing agendas")
         end
 
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: { agendas: @game_player.reload.as_json_for(@game_player)[:agendas] }
       end
 
       def score_agenda
         return render_error("Wrong game status for scoring agendas") unless @game.status == "in_progress"
-        return render_error("Agenda not in hand") unless @game.score_agenda!(@game_player, params[:agenda_id].to_i, recycle: recycle_param)
+        return render_error("Agenda not in hand") unless @game.agenda_deck.score(@game_player, params[:agenda_id].to_i, recycle: recycle_param)
 
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
       def discard_agenda
         return render_error("Wrong game status for discarding agendas") unless @game.status == "in_progress"
         return render_error("Invalid origin") unless DISCARD_ORIGINS.include?(params[:origin])
-        return render_error("Agenda not in hand") unless @game.discard_agenda!(@game_player, params[:agenda_id].to_i, origin: params[:origin], recycle: recycle_param)
+        return render_error("Agenda not in hand") unless @game.agenda_deck.discard(@game_player, params[:agenda_id].to_i, origin: params[:origin], recycle: recycle_param)
 
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
@@ -158,14 +158,14 @@ module Api
         return render_error("Wrong game status for advancing the turn") unless @game.status == "in_progress"
 
         @game.advance_turn!
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
       def ready
         @game_player.update!(ready: true)
         @game.start!
-        @game.broadcast_state!
+        broadcast_state!(@game)
         render json: @game.as_json_for(@game_player)
       end
 
@@ -193,6 +193,10 @@ module Api
       def set_game_and_player
         @game_player = current_user.game_players.where.not(visibility: "deleted").find_by!(game_id: params[:id])
         @game = @game_player.game
+      end
+
+      def broadcast_state!(game)
+        Encounter::GameBroadcaster.new(game).broadcast_state!
       end
 
       def ensure_roles_resolved!
@@ -232,7 +236,7 @@ module Api
 
         yield state
         if state.save
-          @game.broadcast_state!
+          broadcast_state!(@game)
           render json: state.as_json_for_display
         else
           render json: { errors: state.errors }, status: :unprocessable_entity
