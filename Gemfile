@@ -46,6 +46,9 @@ gem "thruster", require: false
 gem "image_processing", "~> 1.2"
 gem "rack-cors"
 
+# Rate limiting / throttling for the (partly public) API [https://github.com/rack/rack-attack]
+gem "rack-attack"
+
 group :development, :test do
   # Load environment variables from .env files [https://github.com/bkeepers/dotenv]
   gem "dotenv-rails"

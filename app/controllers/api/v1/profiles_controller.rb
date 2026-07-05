@@ -2,13 +2,20 @@ module Api
   module V1
     class ProfilesController < BaseController
       def index
-        profiles = Catalog::Profile.includes(:weapons, :special_rules, :card_references)
-        profiles = profiles.where(faction: params[:faction]) if params[:faction].present?
+        scope = Catalog::Profile.all
+        scope = scope.where(faction: params[:faction]) if params[:faction].present?
+        return unless stale?(scope, public: true)
+
+        expires_in 1.hour, public: true
+        profiles = scope.includes(:weapons, :special_rules, :card_references)
         render json: profiles.map { |p| profile_json(p) }
       end
 
       def show
         profile = Catalog::Profile.includes(:weapons, :special_rules, :card_references).find(params[:id])
+        return unless stale?(profile, public: true)
+
+        expires_in 1.hour, public: true
         render json: profile_json(profile)
       end
 
