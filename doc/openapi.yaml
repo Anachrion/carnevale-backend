@@ -782,6 +782,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/entries/{list_entry_id}/stats:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    patch:
+      operationId: updateStats
+      summary: Update current HP/WP/CP on one of the current player's own models
+      description: |
+        Only available while the game is in_progress, and only for entries in the requesting
+        player's own gang — the opponent's models 404. Send just the stats to change (absolute
+        values, not deltas); omitted ones keep their current values and none may go below 0.
+        The change is broadcast to both players as a `game_state` event.
+      tags: [Games]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatsInput"
+      responses:
+        "200":
+          description: The model's full updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryState"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status, a negative stat value, or an entry with no state (equipment)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/agendas/draw:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -1183,6 +1227,24 @@ components:
               type: integer
               minimum: 0
               maximum: 2
+
+    UpdateStatsInput:
+      type: object
+      required: [stats]
+      properties:
+        stats:
+          type: object
+          description: Partial set of current stat values to change — omitted ones keep their current values. Absolute values, not deltas.
+          properties:
+            life_points:
+              type: integer
+              minimum: 0
+            will_points:
+              type: integer
+              minimum: 0
+            command_points:
+              type: integer
+              minimum: 0
 
     # ── Responses ───────────────────────────────────────────────────────────────
 

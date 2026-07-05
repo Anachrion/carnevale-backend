@@ -126,16 +126,14 @@ module Api
       # current player's own models — each player only ever edits their own gang. Accepts a
       # partial set of counters; omitted ones keep their current value.
       def update_counters
-        return render_error("Wrong game status for updating counters") unless @game.status == "in_progress"
+        update_entry_state! { |state| state.counters = state.counters.merge(counters_params) }
+      end
 
-        state = @game_player.list.list_entries.find(params[:list_entry_id]).entry_state
-        return render_error("This entry has no state to update") unless state
-
-        if state.update(counters: state.counters.merge(counters_params))
-          @game.broadcast_state!
-          render json: state.as_json_for_display
-        else
-          render json: { errors: state.errors }, status: :unprocessable_entity
+      # Current HP/WP/CP on one of the current player's own models. Accepts a partial set (absolute
+      # values, not deltas); omitted stats keep their current value, and none can drop below 0.
+      def update_stats
+        update_entry_state! do |state|
+          stats_params.each { |stat, value| state.public_send("current_#{stat}=", value) }
         end
       end
 
@@ -206,10 +204,32 @@ module Api
         ActiveModel::Type::Boolean.new.cast(params[:recycle])
       end
 
+      # Shared body for the two entry-state PATCH endpoints: gate on status, resolve one of the
+      # current player's own models (the opponent's entries 404, since the list is scoped to the
+      # requesting player), apply the caller's mutation, then persist and broadcast.
+      def update_entry_state!
+        return render_error("Wrong game status for updating a model") unless @game.status == "in_progress"
+
+        state = @game_player.list.list_entries.find(params[:list_entry_id]).entry_state
+        return render_error("This entry has no state to update") unless state
+
+        yield state
+        if state.save
+          @game.broadcast_state!
+          render json: state.as_json_for_display
+        else
+          render json: { errors: state.errors }, status: :unprocessable_entity
+        end
+      end
+
       # No type casting: JSON already carries real booleans/integers, and anything else
       # (e.g. "true" as a string) is rejected by EntryState's counters_shape validation.
       def counters_params
         params.require(:counters).permit(*Encounter::EntryState::COUNTER_KEYS).to_h
+      end
+
+      def stats_params
+        params.require(:stats).permit(:life_points, :will_points, :command_points).to_h
       end
     end
   end
