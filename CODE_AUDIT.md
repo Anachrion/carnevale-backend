@@ -50,17 +50,20 @@ A multi-row `update_columns` sequence with no wrapping transaction. A mid-way fa
 
 ## P2 — Performance / Maintainability
 
-### B-P2-1 · N+1 on `profile` for every rendered entry _(flagged by both backend agents)_
+### B-P2-1 · N+1 on `profile` for every rendered entry _(flagged by both backend agents)_ — FIXED (2026-07-05)
 `base_controller.rb:29-48` (`entry_json`)
 `list_json` eager-loads `includes(:entry, :entry_state, entry_spells: :spell)` but `list_entry.profile` resolves via `CardReference#profile` (`gang/entry.rb:19`), which is **not** preloaded. N models = N extra profile queries on every list render (create/update/destroy/spells/player_list/index). This same chain also powers `create_entry_states!` (`game.rb:153-161`, N+1 via `entry_state.rb:26`) and `ListSortingService#role_rank` (`list_sorting_service.rb:12,22-25`).
+**Resolution:** `entry` is polymorphic and only card references carry a profile, so `includes(entry: :profile)` can't be used blindly (it raises on Equipment). Added a `list_entries_for_render` helper that loads the entries then uses `ActiveRecord::Associations::Preloader` to preload `:profile` on just the CardReference entries in one query. Applied the same manual-preload pattern to `ListSortingService`, and used `includes(entry: :profile)` in `create_entry_states!` (safe there since the query is already filtered to card references). Guarded by a request-level query-count spec (`lists_spec.rb`, "no N+1") asserting the query count for a 3- vs 8-entry list is identical.
 
-### B-P2-2 · `total_cost` is a Ruby-side `sum(&:cost)` that re-triggers the profile N+1 _(dup-flagged)_
+### B-P2-2 · `total_cost` is a Ruby-side `sum(&:cost)` that re-triggers the profile N+1 _(dup-flagged)_ — FIXED (2026-07-05)
 `base_controller.rb:18` and `gang/list.rb:22` (`as_json_summary`)
 `list_entries.sum(&:cost)` loads each entry and delegates `cost`→`entry.cost`→`CardReference#cost`→`profile&.ducats`, compounding B-P2-1. Implemented in two places (see B-P3-6).
+**Resolution:** added a single `Gang::List#total_cost` (two SQL aggregates: profile ducats for models joined through card_references→profiles, plus equipment cost) so the summary path (`as_json_summary`) never loads rows or resolves profiles. In `list_json`, where entries are already materialised with profiles preloaded, `total_cost` is summed from that in-memory collection (0 extra queries). Removes the duplicate implementation flagged in B-P3-6. Covered by `list_spec.rb` "#total_cost" (correctness + a query-count guard asserting 2 queries regardless of entry count).
 
-### B-P2-3 · `cantrip_for` query per entry
+### B-P2-3 · `cantrip_for` query per entry — FIXED (2026-07-05)
 `base_controller.rb:47`
 `Catalog::Spell.cantrip_for(list_entry.spell_discipline)` runs a fresh `WHERE cantrip AND discipline=?` per entry. The cantrip set is tiny/static — load once.
+**Resolution:** added a request-memoised `cantrips_by_discipline` (`Catalog::Spell.cantrips.index_by(&:discipline)`) loaded once and reused across every entry and every list in the request; `entry_json` now looks the cantrip up in that hash instead of querying per entry.
 
 ### B-P2-4 · `GamesController#index` N+1 across players' lists, scores, agendas
 `games_controller.rb:11-15` + `player.rb:37-55`

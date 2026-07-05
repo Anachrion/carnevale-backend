@@ -11,6 +11,13 @@ class ListSortingService
 
   def call
     entries = @list.list_entries.includes(:entry).to_a
+    # `entry` is polymorphic and only card references have a profile; preload it on those in one
+    # query so role_rank and cost (both read the profile) don't N+1 per entry (B-P2-1).
+    card_references = entries.map(&:entry).grep(Catalog::CardReference)
+    if card_references.any?
+      ActiveRecord::Associations::Preloader.new(records: card_references, associations: :profile).call
+    end
+
     sorted = entries.sort_by { |e| [role_rank(e), e.cost.to_i] }
 
     # Two passes (temporary negative positions, then final positive ones) sidestep the
