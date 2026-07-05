@@ -37,6 +37,7 @@ Rails.application.routes.draw do
           post "agendas/:agenda_id/discard", action: :discard_agenda
           post "turns/advance", action: :advance_turn
           patch "entries/:list_entry_id/counters", action: :update_counters
+          patch "entries/:list_entry_id/stats", action: :update_stats
           post :ready
           patch :archive
           patch :unarchive
