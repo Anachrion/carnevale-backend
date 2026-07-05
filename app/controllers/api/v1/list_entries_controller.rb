@@ -33,13 +33,18 @@ module Api
       # but flips selection_valid to false — mirroring how hiring an illegal model behaves.
       def spells
         entry = find_owned_entry
-        Gang::Entry.transaction do
-          entry.update!(spell_discipline: spell_params[:discipline].presence)
-          entry.entry_spells.destroy_all
-          Array(spell_params[:spell_ids]).map(&:to_i).uniq.each do |spell_id|
-            entry.entry_spells.create!(spell_id: spell_id)
+        # Defer validation across the update + destroy_all + N creates so the whole spell edit
+        # re-validates the list once, at the end, instead of once per child callback (B-P2-6).
+        Gang::List.defer_validation do
+          Gang::Entry.transaction do
+            entry.update!(spell_discipline: spell_params[:discipline].presence)
+            entry.entry_spells.destroy_all
+            Array(spell_params[:spell_ids]).map(&:to_i).uniq.each do |spell_id|
+              entry.entry_spells.create!(spell_id: spell_id)
+            end
           end
         end
+        entry.list.refresh_selection_validity
         render json: list_json(entry.list.reload, with_entries: true)
       end
 
