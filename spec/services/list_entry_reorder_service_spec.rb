@@ -77,4 +77,21 @@ RSpec.describe ListEntryReorderService, type: :service do
     expect(@e3.reload.position).to eq(5)
     expect(ordered_positions).to eq([1, 2, 3, 4, 5])
   end
+
+  # Non-regression for B-P1-5: the shuffle must be atomic. Failing on the final write (after the
+  # entry has been parked at position 0 and its neighbours shifted) previously left the list with a
+  # gap/dupe; wrapping the shuffle in a transaction rolls the whole thing back instead.
+  it "rolls back the entire reorder if a write fails partway through" do
+    original = @e2.method(:update_columns)
+    calls = 0
+    allow(@e2).to receive(:update_columns) do |*args|
+      calls += 1
+      raise ActiveRecord::StatementInvalid, "boom" if calls == 2
+
+      original.call(*args)
+    end
+
+    expect { described_class.call(@e2, 4) }.to raise_error(ActiveRecord::StatementInvalid)
+    expect(ordered_positions).to eq([1, 2, 3, 4, 5])
+  end
 end

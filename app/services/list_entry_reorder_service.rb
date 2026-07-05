@@ -13,20 +13,25 @@ class ListEntryReorderService
   def call
     return if @old_position == @new_position
 
-    @entry.update_columns(position: 0)
+    # The whole shuffle must be atomic: the intermediate `position: 0` and the row-by-row shifts
+    # each temporarily violate the `(list_id, position)` UNIQUE index's final invariant, so a
+    # failure partway through would leave gaps/dupes and make a retry hit RecordNotUnique.
+    Gang::Entry.transaction do
+      @entry.update_columns(position: 0)
 
-    if @new_position < @old_position
-      @list.list_entries
-           .where(position: @new_position..(@old_position - 1))
-           .order(position: :desc)
-           .each { |e| e.update_columns(position: e.position + 1) }
-    else
-      @list.list_entries
-           .where(position: (@old_position + 1)..@new_position)
-           .order(position: :asc)
-           .each { |e| e.update_columns(position: e.position - 1) }
+      if @new_position < @old_position
+        @list.list_entries
+             .where(position: @new_position..(@old_position - 1))
+             .order(position: :desc)
+             .each { |e| e.update_columns(position: e.position + 1) }
+      else
+        @list.list_entries
+             .where(position: (@old_position + 1)..@new_position)
+             .order(position: :asc)
+             .each { |e| e.update_columns(position: e.position - 1) }
+      end
+
+      @entry.update_columns(position: @new_position)
     end
-
-    @entry.update_columns(position: @new_position)
   end
 end

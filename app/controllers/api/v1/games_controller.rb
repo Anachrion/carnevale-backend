@@ -77,10 +77,23 @@ module Api
       end
 
       def select_gang
+        # Only selectable while the game is still in gang selection; once both players have locked
+        # in the game advances past this status and gangs are frozen for the rest of the match.
+        return render_error("Gangs can no longer be changed") unless @game.gang_selection?
+
         list = current_user.lists.find(params[:list_id])
         return render_error("List exceeds this game's ducat limit") if list.points > @game.ducat_limit
 
-        @game_player.list = list.snapshot_for(@game_player)
+        # Re-selecting is allowed during gang selection (a player can change their mind before the
+        # game advances). Destroy any previous snapshot first, in a transaction, so we neither leave
+        # an orphaned snapshot nor hit the `owner_id NOT NULL` constraint that a bare has_one
+        # reassignment would trigger.
+        Gang::List.transaction do
+          @game_player.list&.destroy!
+          @game_player.association(:list).reset
+          @game_player.list = list.snapshot_for(@game_player)
+        end
+
         maybe_advance_to_agenda_draw!
         @game.broadcast_state!
         render json: @game.as_json_for(@game_player)
