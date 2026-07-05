@@ -10,6 +10,11 @@ servers:
   - url: https://your-production-domain.com/api/v1
     description: Production
 
+# Applies to every operation unless overridden. Endpoints that also need a user session declare
+# both ApiKeyAuth and bearerAuth; the public catalogue endpoints inherit this ApiKeyAuth-only rule.
+security:
+  - ApiKeyAuth: []
+
 paths:
   /signup:
     post:
@@ -69,7 +74,8 @@ paths:
       summary: Revoke the current JWT
       tags: [Session]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "204":
           description: No content
@@ -127,7 +133,8 @@ paths:
       summary: Update the current user's username
       tags: [Session]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -156,7 +163,8 @@ paths:
       summary: List the current user's lists
       tags: [Lists]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -174,7 +182,8 @@ paths:
       summary: Create a list owned by the current user
       tags: [Lists]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -207,7 +216,8 @@ paths:
       description: Returns 404 if the list doesn't belong to the current user.
       tags: [Lists]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -226,7 +236,8 @@ paths:
       description: Returns 404 if the list doesn't belong to the current user.
       tags: [Lists]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -257,7 +268,8 @@ paths:
       description: Returns 404 if the list doesn't belong to the current user.
       tags: [Lists]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "204":
           description: No content
@@ -273,7 +285,8 @@ paths:
       description: Returns 404 if the list doesn't belong to the current user.
       tags: [ListEntries]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -308,7 +321,8 @@ paths:
       description: Returns 404 if the entry's list doesn't belong to the current user.
       tags: [ListEntries]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -333,7 +347,8 @@ paths:
       description: Returns 404 if the entry's list doesn't belong to the current user.
       tags: [ListEntries]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK — returns the updated list
@@ -360,7 +375,8 @@ paths:
         entry's list doesn't belong to the current user.
       tags: [ListEntries]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -385,7 +401,8 @@ paths:
       summary: List all spells, optionally filtered by Discipline
       tags: [Spells]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       parameters:
         - name: discipline
           in: query
@@ -481,7 +498,8 @@ paths:
       description: Never includes games the current user has deleted, regardless of the other player's state.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       parameters:
         - name: visibility
           in: query
@@ -509,7 +527,8 @@ paths:
       description: ducat_limit and name default from the scenario if omitted.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -544,7 +563,8 @@ paths:
         the table, not in-app).
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -579,7 +599,8 @@ paths:
       description: Returns 404 if the game doesn't exist or the current user isn't a participant. Agendas are only ever populated for the requesting player's own game_player entry.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -601,7 +622,8 @@ paths:
         has deleted the game, it is hard-deleted server-side.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "204":
           description: Deleted
@@ -622,7 +644,8 @@ paths:
         reachable via `GET /games/{id}`. Purely per-user — the other player's view is unaffected.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -645,7 +668,8 @@ paths:
       description: Reverses `archive` for the current user only.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -672,7 +696,8 @@ paths:
         The other player is automatically assigned the remaining role.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -706,7 +731,8 @@ paths:
       summary: The current user's lists, flagged selectable against this game's ducat_limit
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -736,7 +762,8 @@ paths:
       summary: Select a list as the current user's gang for this game
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -778,7 +805,8 @@ paths:
         regardless of whose turn it currently is — gang lists aren't secret once selected.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -816,7 +844,8 @@ paths:
         `game_state` event (re-fetch the player list to see the new counters).
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -860,7 +889,8 @@ paths:
         The change is broadcast to both players as a `game_state` event.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -901,7 +931,8 @@ paths:
         hand, scored, or discarded — can never be drawn again by that same player.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: false
         content:
@@ -940,7 +971,8 @@ paths:
         which immediately draws a replacement card (origin `recycle`, linked back to this score).
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: false
         content:
@@ -981,7 +1013,8 @@ paths:
         `recycle`, linked back to this discard).
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       requestBody:
         required: true
         content:
@@ -1019,7 +1052,8 @@ paths:
         turn, this instead marks the game `completed`.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -1048,7 +1082,8 @@ paths:
       description: Once both players are ready, the game's status becomes in_progress and an EntryState (current/starting HP, WP, CP, and status counters) is created for every model (Catalog::CardReference entry) in each player's list.
       tags: [Games]
       security:
-        - bearerAuth: []
+        - ApiKeyAuth: []
+          bearerAuth: []
       responses:
         "200":
           description: OK
@@ -1082,6 +1117,15 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+      description: >
+        Shared client key identifying an official Carnevale frontend. Required on every request
+        when the server has API_KEY configured (production); requests without it get 401. It is
+        enforced in addition to any bearer token. When API_KEY is unset (local/dev) the check is
+        skipped.
 
   schemas:
     # ── Requests ────────────────────────────────────────────────────────────────
