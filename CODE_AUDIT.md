@@ -28,9 +28,10 @@ Cross-cutting themes: **N+1 queries all funnel through the polymorphic `entry`�
 `profiles_controller.rb:1`, `equipment_controller.rb:1`, `scenarios_controller.rb:1`, `spells_controller.rb:1`
 These four inherit `BaseController`, which does **not** call `authenticate_user!` (unlike `GamesController`/`ListsController`/`ListEntriesController`). All catalog data is served to anonymous callers. Either an access-control gap or an undocumented, silently divergent intent — decide and make it explicit.
 
-### B-P1-2 · Re-selecting a gang can 500 / orphan a snapshot list
+### B-P1-2 · Re-selecting a gang can 500 / orphan a snapshot list — FIXED (2026-07-05)
 `games_controller.rb:79-87` (`select_gang`)
 No game-status guard; only `ensure_roles_resolved!`. Calling it again reassigns `has_one :list`. Because `list.owner_id` is `NOT NULL`, nullifying the previous snapshot's FK raises `RecordNotSaved`, or leaves an orphaned snapshot list. Needs an idempotency/status guard.
+**Resolution:** `select_gang` now guards on `@game.gang_selection?` (gangs are frozen once the game advances) and, when re-selecting during selection, destroys the previous snapshot inside a transaction before creating the new one — no orphan, no NOT-NULL violation. Covered by request specs in `spec/requests/api/v1/games_spec.rb` ("re-selecting a gang").
 
 ### B-P1-3 · Polymorphic `entry` association has no FK or cleanup → orphaned list entries — WON'T FIX (by design, 2026-07-05)
 `gang/entry.rb:6` (`belongs_to :entry, polymorphic: true`)
@@ -41,9 +42,10 @@ No DB foreign key. In theory, destroying a `Catalog::CardReference`/`Catalog::Eq
 `catalog/profile.rb:5-13` (`card_references`, `illustrations`, `profile_weapons`, `profile_special_rules`), `catalog/weapon.rb:3`, `catalog/special_rule.rb:3`, and `catalog/spell.rb` (no `has_many :entry_spells`).
 **Resolution:** same as B-P1-3 — catalog records are never destroyed, so the `InvalidForeignKey`/orphan paths are unreachable. Left as-is intentionally.
 
-### B-P1-5 · Position reordering/sorting run outside a transaction
+### B-P1-5 · Position reordering/sorting run outside a transaction — FIXED (2026-07-05)
 `list_entry_reorder_service.rb:13-31`, `list_sorting_service.rb:12-17`
 A multi-row `update_columns` sequence with no wrapping transaction. A mid-way failure leaves positions inconsistent (gaps/dupes); because `(list_id, position)` is UNIQUE, a retry can hit `RecordNotUnique`.
+**Resolution:** both services now wrap the full multi-row shuffle in a `Gang::Entry.transaction`, so a mid-way failure rolls the whole thing back to the original ordering. Covered by atomicity specs in each service's spec ("rolls back … if a write fails partway through").
 
 ## P2 — Performance / Maintainability
 

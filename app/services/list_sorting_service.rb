@@ -12,8 +12,14 @@ class ListSortingService
   def call
     entries = @list.list_entries.includes(:entry).to_a
     sorted = entries.sort_by { |e| [role_rank(e), e.cost.to_i] }
-    sorted.each_with_index { |entry, index| entry.update_columns(position: -(index + 1)) }
-    sorted.each_with_index { |entry, index| entry.update_columns(position: index + 1) }
+
+    # Two passes (temporary negative positions, then final positive ones) sidestep the
+    # `(list_id, position)` UNIQUE index mid-shuffle; wrap both in a transaction so a failure can't
+    # leave the list stranded with negative/duplicate positions.
+    Gang::Entry.transaction do
+      sorted.each_with_index { |entry, index| entry.update_columns(position: -(index + 1)) }
+      sorted.each_with_index { |entry, index| entry.update_columns(position: index + 1) }
+    end
   end
 
   private

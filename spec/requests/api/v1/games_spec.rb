@@ -560,6 +560,56 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  # Non-regression for B-P1-2: re-selecting a gang used to reassign a NOT-NULL-owned has_one,
+  # which either 500'd or orphaned the previous snapshot, and there was no status guard at all.
+  describe "re-selecting a gang" do
+    def start_selection
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+      [ host, guest, h, g, game_id ]
+    end
+
+    it "cleanly replaces the previous snapshot without a 500 or an orphaned list" do
+      host, _guest, h, _g, game_id = start_selection
+      first_list = create(:list, owner: host_user, faction: "guild", points: 100, name: "First Choice")
+      second_list = create(:list, owner: host_user, faction: "doctors", points: 100, name: "Second Choice")
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: first_list.id }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      first_snapshot_id = json(host)["players"].find { |p| p["username"] == host_user.username }["list"]["id"]
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: second_list.id }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      current = json(host)["players"].find { |p| p["username"] == host_user.username }["list"]
+      expect(current["name"]).to eq("Second Choice")
+      # The old snapshot is gone (not orphaned), and the game-player owns exactly one snapshot.
+      expect(Gang::List.exists?(first_snapshot_id)).to be false
+      player = Encounter::Game.find(game_id).game_players.find_by(user: host_user)
+      expect(Gang::List.where(owner: player).count).to eq(1)
+    end
+
+    it "rejects changing a gang once selection is complete and the game has advanced" do
+      host, guest, h, g, game_id = start_selection
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      other_list = create(:list, owner: host_user, faction: "doctors", points: 100)
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+      expect(json(guest)["status"]).to eq("agenda_draw")
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: other_list.id }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe "guard rails" do
     it "rejects selecting a gang that exceeds the ducat limit" do
       host = open_session

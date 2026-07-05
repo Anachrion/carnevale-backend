@@ -83,5 +83,25 @@ RSpec.describe ListSortingService, type: :service do
       end
       expect(keywords_in_order.first).to include("Leader")
     end
+
+    # Non-regression for B-P1-5: sorting parks every entry at a temporary negative position before
+    # rewriting the final positive ones. A failure between the two passes previously left the list
+    # stranded with negative positions; the transaction rolls it back to the original ordering.
+    it "rolls back all position changes if a write fails partway through" do
+      entry_with(keywords: ["Henchman"], cost: 10, position: 1)
+      entry_with(keywords: ["Leader"],   cost: 10, position: 2)
+      entry_with(keywords: ["Hero"],     cost: 10, position: 3)
+
+      calls = 0
+      allow_any_instance_of(Gang::Entry).to receive(:update_columns).and_wrap_original do |m, *args|
+        calls += 1
+        raise ActiveRecord::StatementInvalid, "boom" if calls == 4 # first write of the positive pass
+
+        m.call(*args)
+      end
+
+      expect { described_class.call(list) }.to raise_error(ActiveRecord::StatementInvalid)
+      expect(list.list_entries.order(:position).pluck(:position)).to eq([1, 2, 3])
+    end
   end
 end
