@@ -24,9 +24,10 @@ Cross-cutting themes: **N+1 queries all funnel through the polymorphic `entry`�
 
 ## P1 — Correctness / Security / Data integrity
 
-### B-P1-1 · Catalog endpoints have no authentication
+### B-P1-1 · Catalog endpoints have no authentication — FIXED (2026-07-05)
 `profiles_controller.rb:1`, `equipment_controller.rb:1`, `scenarios_controller.rb:1`, `spells_controller.rb:1`
 These four inherit `BaseController`, which does **not** call `authenticate_user!` (unlike `GamesController`/`ListsController`/`ListEntriesController`). All catalog data is served to anonymous callers. Either an access-control gap or an undocumented, silently divergent intent — decide and make it explicit.
+**Resolution (intent: catalog stays public — no login to browse cards):** protected with layered defense instead of user auth — Rack::Attack per-IP throttling (`config/initializers/rack_attack.rb`), a shared `X-Api-Key` client key baked into the frontends (`base_controller.rb#authenticate_client!`, fail-open when `API_KEY` unset so dev/test keep working), CORS restricted to configured origins (`config/initializers/cors.rb`), and `stale?`/`expires_in` cache headers on the catalog endpoints. Honest limits: a static client key is discoverable by anyone inspecting the app's traffic, and a true volumetric DDoS still has to be absorbed at the edge (CDN/WAF). Covered by `spec/requests/api/v1/{client_authentication,catalog_caching,rate_limiting}_spec.rb`. Shipped in commit `aff0040`.
 
 ### B-P1-2 · Re-selecting a gang can 500 / orphan a snapshot list — FIXED (2026-07-05)
 `games_controller.rb:79-87` (`select_gang`)
