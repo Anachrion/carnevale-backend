@@ -21,6 +21,24 @@ RSpec.describe Gang::List, type: :model do
       expect(snapshot.list_entries.first.entry).to eq(list.list_entries.first.entry)
     end
 
+    it "copies each Mage's committed Discipline and known spells" do
+      list = create(:list, faction: :guild, points: 100)
+      profile = create(:profile, faction: :guild, ducats: 20,
+                       abilities: ["Mage (2)"], keywords: ["Discipline (Blood Rites)"])
+      ref = create(:card_reference, profile: profile)
+      entry = create(:list_entry, list: list, entry: ref, position: 1)
+      entry.update!(spell_discipline: "blood_rites")
+      spells = create_list(:spell, 2, discipline: :blood_rites)
+      spells.each { |s| entry.entry_spells.create!(spell: s) }
+      game_player = create(:game_player)
+
+      snapshot = list.snapshot_for(game_player)
+
+      copied = snapshot.list_entries.first
+      expect(copied.spell_discipline).to eq("blood_rites")
+      expect(copied.spells.map(&:id)).to match_array(spells.map(&:id))
+    end
+
     it "stays unaffected by later edits to the original list" do
       list = create(:list, faction: :guild, points: 100)
       create(:list_entry, list: list, entry: guild_ref, position: 1)
