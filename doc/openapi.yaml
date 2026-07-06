@@ -814,6 +814,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+    delete:
+      operationId: deselectGang
+      summary: Clear the current user's gang selection for this game (still in gang selection)
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Gangs can no longer be changed, or role roll-off not resolved yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/players/{player_id}/list:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -1546,6 +1571,10 @@ components:
       properties:
         id:
           type: integer
+        source_list_id:
+          type: integer
+          nullable: true
+          description: The source list this gang was snapshotted from when selected for a game; null for a source list itself. Lets a client match a player's in-game gang to their available-lists picker.
         name:
           type: string
           nullable: true
@@ -1952,6 +1981,10 @@ components:
       properties:
         id:
           type: integer
+        source_list_id:
+          type: integer
+          nullable: true
+          description: The source list this gang was snapshotted from when selected for a game; null for a source list itself (e.g. entries in the available-lists picker). Lets a client match a player's in-game gang to the picker.
         name:
           type: string
           nullable: true

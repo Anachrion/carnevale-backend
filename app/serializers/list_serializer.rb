@@ -10,6 +10,9 @@ class ListSerializer
     entries = list_entries_for_render
     {
       id: @list.id,
+      # The source list this was snapshotted from (null for a source list itself) — lets the client
+      # match a player's in-game gang back to the entry in their available-lists picker.
+      source_list_id: @list.source_list_id,
       name: @list.name,
       faction: @list.faction,
       points: @list.points,
