@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_07_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -284,7 +284,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_120000) do
     t.datetime "updated_at", null: false
   end
 
-  add_foreign_key "agenda_events", "agenda_events", column: "caused_by_event_id"
+  add_foreign_key "agenda_events", "agenda_events", column: "caused_by_event_id", on_delete: :nullify
   add_foreign_key "agenda_events", "agendas"
   add_foreign_key "agenda_events", "game_players"
   add_foreign_key "cable_tickets", "users"
