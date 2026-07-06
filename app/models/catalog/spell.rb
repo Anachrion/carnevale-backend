@@ -5,7 +5,6 @@ module Catalog
     enum :discipline, DISCIPLINES.index_with(&:itself)
 
     scope :cantrips, -> { where(cantrip: true) }
-    scope :choosable, -> { where(cantrip: false) }
 
     validates :name, presence: true, uniqueness: { scope: :discipline }
     validates :cost, :difficulty, presence: true

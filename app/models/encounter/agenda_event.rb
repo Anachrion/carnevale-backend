@@ -11,8 +11,14 @@ module Encounter
     belongs_to :agenda, class_name: "Catalog::Agenda"
     belongs_to :caused_by_event, class_name: "Encounter::AgendaEvent", optional: true
 
+    # `action` uses inclusion rather than an `enum`: the enum-generated scopes/predicates aren't
+    # needed here, and inclusion keeps a bad value a validation error consistent with `origin` and
+    # the other agenda-event checks below (see the same note on Player#role).
     validates :action, inclusion: { in: ACTIONS }
     validates :turn, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    # Mirror the DB's (game_player_id, agenda_id, action) UNIQUE index at the model level so a
+    # duplicate surfaces as a validation error instead of a raw RecordNotUnique (500).
+    validates :agenda_id, uniqueness: { scope: %i[game_player_id action] }
     validate :origin_matches_action
     validate :caused_by_event_only_for_recycle
 

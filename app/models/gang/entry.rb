@@ -1,5 +1,7 @@
 module Gang
   class Entry < ApplicationRecord
+    include RefreshesListSelectionValidity
+
     self.table_name = "list_entries"
 
     belongs_to :list, class_name: "Gang::List"
@@ -13,8 +15,6 @@ module Gang
     validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
     validates :position, uniqueness: { scope: :list_id }
 
-    after_commit :refresh_list_selection_validity, on: %i[create update destroy]
-
     # The Catalog::Profile behind this entry, or nil for non-model entries (e.g. Equipment).
     def profile
       entry.profile if entry.is_a?(Catalog::CardReference)
@@ -22,8 +22,8 @@ module Gang
 
     private
 
-    def refresh_list_selection_validity
-      list.refresh_selection_validity
+    def selection_validity_list
+      list
     end
   end
 end

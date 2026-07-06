@@ -1,11 +1,15 @@
 class ListValidationService
-  def initialize(list, adding: nil)
+  # Gangs at or below this ducat limit are small skirmish forces and are exempt from the
+  # exactly-one-Leader requirement (rulebook: a warband must include a Leader once it grows past
+  # this size).
+  LEADER_REQUIRED_ABOVE_POINTS = 75
+
+  def initialize(list)
     @list = list
-    @adding = adding
   end
 
-  def self.call(list, adding: nil)
-    new(list, adding: adding).call
+  def self.call(list)
+    new(list).call
   end
 
   def call
@@ -32,10 +36,7 @@ class ListValidationService
   end
 
   def projected_items
-    @projected_items ||= begin
-      items = @list.list_entries.includes(:entry).map(&:entry)
-      @adding ? items + [@adding] : items
-    end
+    @projected_items ||= @list.list_entries.includes(:entry).map(&:entry)
   end
 
   def projected_card_references
@@ -72,7 +73,7 @@ class ListValidationService
 
   def check_leader_count
     return if projected_items.empty?
-    return if @list.points <= 75
+    return if @list.points <= LEADER_REQUIRED_ABOVE_POINTS
 
     leader_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Leader") }
     @errors << "the gang must have exactly one Leader (found #{leader_count})" unless leader_count == 1

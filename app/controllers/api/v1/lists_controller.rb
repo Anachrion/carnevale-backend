@@ -22,7 +22,7 @@ module Api
         if @list.save
           render json: ListSerializer.new(@list).as_json, status: :created
         else
-          render json: { errors: @list.errors }, status: :unprocessable_entity
+          render_error(@list.errors)
         end
       end
 
@@ -30,7 +30,7 @@ module Api
         if @list.update(list_params)
           render json: ListSerializer.new(@list).as_json
         else
-          render json: { errors: @list.errors }, status: :unprocessable_entity
+          render_error(@list.errors)
         end
       end
 

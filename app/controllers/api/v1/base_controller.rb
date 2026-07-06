@@ -1,6 +1,8 @@
 module Api
   module V1
     class BaseController < ActionController::API
+      include RendersApiErrors
+
       rescue_from ActiveRecord::RecordNotFound, with: -> { head :not_found }
 
       # The whole API is consumed only by our own frontends, so require a shared client key on
@@ -21,10 +23,6 @@ module Api
         return if ActiveSupport::SecurityUtils.secure_compare(provided, expected)
 
         render_error("Unauthorized client", status: :unauthorized)
-      end
-
-      def render_error(message, status: :unprocessable_entity)
-        render json: { errors: { base: [ message ] } }, status: status
       end
     end
   end

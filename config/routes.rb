@@ -20,7 +20,7 @@ Rails.application.routes.draw do
       # Short-lived, single-use credential for opening the ActionCable WebSocket (see CableTicket).
       post "cable_tickets", to: "cable_tickets#create"
 
-      resources :lists
+      resources :lists, only: %i[index show create update destroy]
       resources :list_entries, only: %i[create update destroy] do
         member do
           patch :spells

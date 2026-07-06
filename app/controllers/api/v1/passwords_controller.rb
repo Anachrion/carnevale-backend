@@ -1,6 +1,8 @@
 module Api
   module V1
     class PasswordsController < Devise::PasswordsController
+      include RendersApiErrors
+
       skip_before_action :verify_authenticity_token, raise: false
       respond_to :json
 
@@ -10,7 +12,7 @@ module Api
         if successfully_sent?(resource)
           render json: {}, status: :ok
         else
-          render json: { errors: resource.errors }, status: :unprocessable_entity
+          render_error(resource.errors)
         end
       end
 
@@ -18,16 +20,10 @@ module Api
         self.resource = resource_class.reset_password_by_token(resource_params)
 
         if resource.errors.empty?
-          render json: { user: user_json(resource) }, status: :ok
+          render json: { user: UserSerializer.new(resource).as_json }, status: :ok
         else
-          render json: { errors: resource.errors }, status: :unprocessable_entity
+          render_error(resource.errors)
         end
-      end
-
-      private
-
-      def user_json(user)
-        { id: user.id, email: user.email, username: user.username }
       end
     end
   end

@@ -11,7 +11,7 @@ module Api
           ListSortingService.call(@list)
           render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
-          render json: { errors: entry.errors }, status: :unprocessable_entity
+          render_error(entry.errors)
         end
       end
 

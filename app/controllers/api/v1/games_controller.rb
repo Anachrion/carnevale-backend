@@ -1,8 +1,11 @@
 module Api
   module V1
     class GamesController < BaseController
-      DRAW_ORIGINS = %w[special_rule command_point].freeze
-      DISCARD_ORIGINS = %w[special_rule command_point].freeze
+      # Origins a client may request, derived from the single source of truth on the model so they
+      # can't drift. The model's "drawn" list also includes server-internal origins (the opening
+      # `initial` draw and `recycle`) that aren't client-initiated, so those are excluded here.
+      DRAW_ORIGINS = (Encounter::AgendaEvent::ORIGINS_BY_ACTION.fetch("drawn") - %w[initial recycle]).freeze
+      DISCARD_ORIGINS = Encounter::AgendaEvent::ORIGINS_BY_ACTION.fetch("discarded")
 
       before_action :authenticate_user!
       before_action :set_game_and_player, except: %i[index create join]
@@ -30,7 +33,7 @@ module Api
           game_player = game.game_players.create!(user: current_user, host: true)
           render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
         else
-          render json: { errors: game.errors }, status: :unprocessable_entity
+          render_error(game.errors)
         end
       end
 
@@ -119,6 +122,9 @@ module Api
         end
 
         broadcast_state!(@game)
+        # Intentionally narrower than the other game actions (which return the full game): both
+        # players already receive the full updated state via broadcast_state!, so the acting player's
+        # HTTP response only needs to carry back the delta it asked for — the drawn agendas.
         render json: { agendas: PlayerSerializer.new(@game_player.reload, viewer: @game_player).as_json[:agendas] }
       end
 
@@ -237,9 +243,13 @@ module Api
         yield state
         if state.save
           broadcast_state!(@game)
+          # Returns just the mutated entry state, not the whole game: the full state reaches both
+          # players via broadcast_state!, and the client applies this slim payload as an optimistic
+          # update on the tapped model (see the Flutter _applyEntryState path). Intentional deviation
+          # from the game-returning actions — keep it in sync with the client if it ever changes.
           render json: EntryStateSerializer.new(state).as_json
         else
-          render json: { errors: state.errors }, status: :unprocessable_entity
+          render_error(state.errors)
         end
       end
 
