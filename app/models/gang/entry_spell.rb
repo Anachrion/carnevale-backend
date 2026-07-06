@@ -11,8 +11,12 @@ module Gang
 
     private
 
+    # Nil-safe because the after_commit refresh also fires on destroy: when an entry_spell is
+    # removed as part of tearing down its whole list (e.g. deleting a game and its snapshot), the
+    # parent list_entry is already gone by the time this runs, so reaching through it must no-op
+    # rather than raise (there's no surviving list left to refresh).
     def selection_validity_list
-      list_entry.list
+      list_entry&.list
     end
   end
 end
