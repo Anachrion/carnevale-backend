@@ -624,6 +624,24 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(Encounter::Game.exists?(game_id)).to be false
     end
 
+    it "returns 204 (not 500) when the game is already gone as the last delete lands (concurrent race)" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      # Stand in for the other player's concurrent delete winning the race and tearing the game down
+      # between this request loading it and taking the row lock.
+      allow_any_instance_of(Encounter::Game).to receive(:with_lock).and_raise(ActiveRecord::RecordNotFound)
+
+      host.delete "/api/v1/games/#{game_id}", headers: h
+      expect(host.response).to have_http_status(:no_content)
+    end
+
     it "unarchives a game for one user only, restoring it to their list" do
       host = open_session
       guest = open_session
