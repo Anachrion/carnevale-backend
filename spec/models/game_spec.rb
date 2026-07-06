@@ -112,29 +112,30 @@ RSpec.describe Encounter::Game, type: :model do
     end
   end
 
-  describe "#advance_turn!" do
-    it "increments current_turn while turns remain" do
-      scenario = create(:scenario, turns: 2)
-      game = create(:game, scenario: scenario, status: "in_progress")
+  describe "#refresh_completion!" do
+    it "completes only when every player has finished, and reverts when one hasn't" do
+      game = create(:game, status: "in_progress")
+      host = create(:game_player, game: game, host: true, finished: true)
+      guest = create(:game_player, game: game, finished: false)
 
-      expect { game.advance_turn! }.to change { game.current_turn }.from(1).to(2)
-    end
+      game.refresh_completion!
+      expect(game.status).to eq("in_progress") # guest not finished
 
-    it "completes the game instead of exceeding the scenario's turn count" do
-      scenario = create(:scenario, turns: 1)
-      game = create(:game, scenario: scenario, status: "in_progress")
-
-      game.advance_turn!
-
+      guest.update!(finished: true)
+      game.refresh_completion!
       expect(game.status).to eq("completed")
-      expect(game.current_turn).to eq(1)
+
+      host.update!(finished: false)
+      game.refresh_completion!
+      expect(game.status).to eq("in_progress")
     end
 
-    it "does nothing outside in_progress" do
-      game = create(:game, status: "pending")
+    it "does nothing outside the in-play phases" do
+      game = create(:game, status: "deploying")
+      create(:game_player, game: game, finished: true)
 
-      expect(game.advance_turn!).to be false
-      expect(game.reload.current_turn).to eq(1)
+      game.refresh_completion!
+      expect(game.status).to eq("deploying")
     end
   end
 end

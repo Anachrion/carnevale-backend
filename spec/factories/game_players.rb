@@ -11,6 +11,8 @@ end
 # Table name: game_players
 #
 #  id                  :bigint           not null, primary key
+#  current_turn        :integer          default(1), not null
+#  finished            :boolean          default(FALSE), not null
 #  host                :boolean          default(FALSE), not null
 #  ready               :boolean          default(FALSE), not null
 #  role                :string

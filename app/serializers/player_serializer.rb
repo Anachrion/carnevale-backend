@@ -21,6 +21,8 @@ class PlayerSerializer
       won_role_roll: player.won_role_roll,
       won_deployment_roll: player.won_deployment_roll,
       score: player.score,
+      current_turn: player.current_turn,
+      finished: player.finished,
       # Hand agendas are open information by default (rulebook: "all players can see other players'
       # Agendas"); the Secret rule keeps them hidden from the opponent until achieved. Either way a
       # player always sees their own hand.

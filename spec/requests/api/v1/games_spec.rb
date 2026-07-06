@@ -170,23 +170,28 @@ RSpec.describe "Api::V1::Games", type: :request do
       [ host, guest, h, g, game_id ]
     end
 
-    it "draws, scores (auto-recycling under Cycle), discards, and advances turns through to completion" do
+    def entry_for(payload, username)
+      payload["players"].find { |p| p["username"] == username }
+    end
+
+    it "draws, scores (auto-recycling under Cycle), and discards" do
       host, _guest, h, _g, game_id = start_in_progress_game(turns: 2, agenda_rules: [ "cycle" ])
 
-      expect(json(host)["current_turn"]).to eq(1)
+      host.get "/api/v1/games/#{game_id}", headers: h
+      expect(entry_for(json(host), host_user.username)["current_turn"]).to eq(1)
 
       host.post "/api/v1/games/#{game_id}/agendas/draw", params: { origin: "special_rule" }.to_json, headers: h
       expect(host.response).to have_http_status(:ok)
       expect(json(host)["agendas"].size).to eq(4)
 
       host.get "/api/v1/games/#{game_id}", headers: h
-      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      host_entry = entry_for(json(host), host_user.username)
       scored_agenda_id = host_entry["agendas"].first["id"]
 
       # No recycle flag in the body — the scenario's Cycle rule drives the replacement draw.
       host.post "/api/v1/games/#{game_id}/agendas/#{scored_agenda_id}/score", headers: h
       expect(host.response).to have_http_status(:ok)
-      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      host_entry = entry_for(json(host), host_user.username)
       expect(host_entry["score"]).to eq(1)
       expect(host_entry["agendas"].size).to eq(4)
       expect(host_entry["agenda_history"].map { |e| e["action"] }).to include("scored")
@@ -195,12 +200,90 @@ RSpec.describe "Api::V1::Games", type: :request do
       discard_agenda_id = host_entry["agendas"].first["id"]
       host.post "/api/v1/games/#{game_id}/agendas/#{discard_agenda_id}/discard", params: { origin: "command_point" }.to_json, headers: h
       expect(host.response).to have_http_status(:ok)
+    end
+
+    it "moves only the requesting player's turn cursor, rewinds, and clamps at both ends" do
+      host, _guest, h, _g, game_id = start_in_progress_game(turns: 2)
 
       host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
-      expect(json(host)["current_turn"]).to eq(2)
+      expect(entry_for(json(host), host_user.username)["current_turn"]).to eq(2)
+      # The opponent's cursor is untouched.
+      expect(entry_for(json(host), guest_user.username)["current_turn"]).to eq(1)
+
+      # Already on the last turn — advancing further is rejected (clamped).
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+
+      host.post "/api/v1/games/#{game_id}/turns/rewind", headers: h
+      expect(entry_for(json(host), host_user.username)["current_turn"]).to eq(1)
+
+      # Already at turn 1 — rewinding further is rejected.
+      host.post "/api/v1/games/#{game_id}/turns/rewind", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "stamps a scored agenda with the player's rewound turn, then lets them advance back" do
+      host, _guest, h, _g, game_id = start_in_progress_game(turns: 4)
 
       host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
-      expect(json(host)["status"]).to eq("completed")
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h # now on turn 4
+
+      # Forgot a turn-2 score — rewind to turn 2, score, then jump back to turn 4.
+      host.post "/api/v1/games/#{game_id}/turns/rewind", headers: h
+      host.post "/api/v1/games/#{game_id}/turns/rewind", headers: h # back to turn 2
+      host.get "/api/v1/games/#{game_id}", headers: h
+      agenda_id = entry_for(json(host), host_user.username)["agendas"].first["id"]
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/score", headers: h
+
+      scored = entry_for(json(host), host_user.username)["agenda_history"].find { |e| e["action"] == "scored" }
+      expect(scored["turn"]).to eq(2)
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(entry_for(json(host), host_user.username)["current_turn"]).to eq(4)
+    end
+
+    it "ends the game per player: one finish archives it for that player and leaves the game live" do
+      host, guest, h, g, game_id = start_in_progress_game(turns: 2)
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h # host on the last turn
+
+      # Finish is only allowed on the final turn — the guest (still turn 1) can't yet.
+      guest.post "/api/v1/games/#{game_id}/finish", headers: g
+      expect(guest.response).to have_http_status(:unprocessable_entity)
+
+      host.post "/api/v1/games/#{game_id}/finish", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["status"]).to eq("in_progress") # guest hasn't finished — game stays live
+      expect(entry_for(json(host), host_user.username)["finished"]).to be true
+      expect(json(host)["viewer_visibility"]).to eq("archived") # finishing archives it for that player
+
+      # The guest keeps playing at their own pace, then finishes → game derives to completed.
+      guest.post "/api/v1/games/#{game_id}/turns/advance", headers: g
+      guest.post "/api/v1/games/#{game_id}/finish", headers: g
+      expect(json(guest)["status"]).to eq("completed")
+
+      # Undo reopens (and un-archives) for the host, reverting completion.
+      host.post "/api/v1/games/#{game_id}/unfinish", headers: h
+      expect(json(host)["status"]).to eq("in_progress")
+      expect(json(host)["viewer_visibility"]).to eq("active")
+      expect(entry_for(json(host), host_user.username)["finished"]).to be false
+    end
+
+    it "soft-locks a finished player's scoring until they undo" do
+      host, _guest, h, _g, game_id = start_in_progress_game(turns: 1) # already on the last turn
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      agenda_id = entry_for(json(host), host_user.username)["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/finish", headers: h
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/score", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+
+      host.post "/api/v1/games/#{game_id}/unfinish", headers: h
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/score", headers: h
+      expect(host.response).to have_http_status(:ok)
     end
 
     it "does not auto-recycle when scoring under a scenario without the Cycle rule" do

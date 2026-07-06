@@ -9,16 +9,15 @@ end
 #
 # Table name: games
 #
-#  id           :bigint           not null, primary key
-#  board_size   :string
-#  current_turn :integer          default(1), not null
-#  ducat_limit  :integer          not null
-#  join_code    :string           not null
-#  name         :string           not null
-#  status       :string           default("pending"), not null
-#  created_at   :datetime         not null
-#  updated_at   :datetime         not null
-#  scenario_id  :bigint           not null
+#  id          :bigint           not null, primary key
+#  board_size  :string
+#  ducat_limit :integer          not null
+#  join_code   :string           not null
+#  name        :string           not null
+#  status      :string           default("pending"), not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  scenario_id :bigint           not null
 #
 # Indexes
 #

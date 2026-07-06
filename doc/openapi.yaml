@@ -1068,11 +1068,12 @@ paths:
 
     post:
       operationId: advanceTurn
-      summary: Advance the game's shared turn counter
+      summary: Advance the requesting player's turn cursor
       description: |
-        Callable by either player — like the roll winners and role pick, this app tracks the
-        physical game rather than refereeing whose turn it is to act. On the scenario's final
-        turn, this instead marks the game `completed`.
+        Moves only the requesting player's own turn cursor forward by one (never the opponent's),
+        clamped to the scenario's turn count. The cursor is per-player and rewindable so a player
+        can drop back to record a forgotten past-turn score, then step forward again. Blocked while
+        the game isn't `in_progress` or the player has ended the game (see `finish`).
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1089,7 +1090,107 @@ paths:
         "404":
           description: Not found
         "422":
-          description: Wrong game status for advancing the turn
+          description: Can't advance the turn right now (not in progress, already at the last turn, or ended)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/turns/rewind:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: rewindTurn
+      summary: Rewind the requesting player's turn cursor
+      description: |
+        Moves only the requesting player's own turn cursor back by one, clamped to turn 1. Used to
+        drop back and record a forgotten past-turn score before advancing forward again. Blocked
+        while the game isn't `in_progress` or the player has ended the game.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Can't rewind the turn right now (not in progress, already at turn 1, or ended)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/finish:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: finishGame
+      summary: End the game from the requesting player's side
+      description: |
+        Marks the requesting player as finished and archives the game for them (moving it to their
+        archived list); the opponent is untouched and keeps playing at their own pace. Only allowed
+        on the scenario's final turn. Once both players finish, the game's `status` derives to
+        `completed`. Reversible via `unfinish`.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: You can only end the game on the final turn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/unfinish:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: unfinishGame
+      summary: Undo ending the game for the requesting player
+      description: |
+        Clears the requesting player's finished flag and un-archives the game (returning it to their
+        active list), reopening play. If the game had derived to `completed`, it reverts to
+        `in_progress`.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: You haven't ended the game
           content:
             application/json:
               schema:
@@ -1828,7 +1929,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, score, agendas, agenda_history]
+      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, score, current_turn, finished, agendas, agenda_history]
       properties:
         id:
           type: integer
@@ -1857,6 +1958,12 @@ components:
         score:
           type: integer
           description: Total Victory Points scored from Agendas so far (every Agenda scores a flat 1 VP). Always visible for both players.
+        current_turn:
+          type: integer
+          description: This player's own turn cursor (starts at 1). Rewindable via the turns/advance and turns/rewind endpoints; agenda events are stamped with whatever turn the player is pointed at. Independent of the opponent's.
+        finished:
+          type: boolean
+          description: Whether this player has ended the game from their side (see the finish/unfinish endpoints). When both players are finished the game's status derives to `completed`.
         agendas:
           type: array
           description: This player's current hand. Always populated for the requesting player's own entry. For the opponent's entry it is populated too, unless the scenario has the `secret` agenda rule, in which case it is empty (the hand stays hidden until achieved).
@@ -1870,7 +1977,7 @@ components:
 
     Game:
       type: object
-      required: [id, name, join_code, status, ducat_limit, board_size, current_turn, scenario, viewer_visibility, players]
+      required: [id, name, join_code, status, ducat_limit, board_size, scenario, viewer_visibility, players]
       properties:
         id:
           type: integer
@@ -1881,14 +1988,12 @@ components:
         status:
           type: string
           enum: [pending, gang_selection, agenda_draw, deploying, in_progress, completed]
+          description: "`completed` is derived: reached only once both players have `finished`, and reverts to `in_progress` if either undoes."
         ducat_limit:
           type: integer
         board_size:
           type: string
           nullable: true
-        current_turn:
-          type: integer
-          description: The shared turn counter, starting at 1. Advanced by either player via POST /games/{id}/turns/advance.
         scenario:
           $ref: "#/components/schemas/Scenario"
         viewer_visibility:
