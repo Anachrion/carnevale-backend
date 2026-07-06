@@ -1,16 +1,28 @@
 module Catalog
   class Scenario < ApplicationRecord
-    DEFAULT_AGENDA_DRAW = 3
+    # The agenda special rules a scenario can carry (rulebook p.36). Stored structurally in the
+    # `agenda_rules` JSON column rather than sniffed from the free-text `agendas` array (B-P2-11),
+    # so the game logic (Secret visibility, Cycle auto-draw, …) reads a single sturdy source.
+    AGENDA_RULES = %w[cycle secondary double secret total].freeze
 
     validates :name, presence: true, uniqueness: true
+    validates :agenda_count, numericality: { only_integer: true, greater_than: 0 }
+    validate :agenda_rules_subset
 
-    # Initial agenda hand size, read from the leading number of the first `agendas` entry
-    # (e.g. "3 agendas ..."), falling back to DEFAULT_AGENDA_DRAW when it's absent or unparseable.
-    # Centralised here so the fragile format assumption lives in one named, tested place rather than
-    # inline in Encounter::Game (B-P2-11).
-    def initial_agenda_count
-      parsed = agendas.first.to_s[/\A(\d+)/, 1].to_i
-      parsed.zero? ? DEFAULT_AGENDA_DRAW : parsed
+    # Predicates for each rule, used by the encounter subsystem and serializers. Endless-method
+    # form keeps them a readable one-liner apiece rather than a metaprogrammed loop.
+    def cycle_agendas? = agenda_rules.include?("cycle")
+    def secondary_agendas? = agenda_rules.include?("secondary")
+    def double_agendas? = agenda_rules.include?("double")
+    def secret_agendas? = agenda_rules.include?("secret")
+    def total_agendas? = agenda_rules.include?("total")
+
+    private
+
+    def agenda_rules_subset
+      return if agenda_rules.is_a?(Array) && (agenda_rules - AGENDA_RULES).empty?
+
+      errors.add(:agenda_rules, "must be a subset of #{AGENDA_RULES.join(', ')}")
     end
   end
 end
@@ -20,6 +32,8 @@ end
 # Table name: scenarios
 #
 #  id                :bigint           not null, primary key
+#  agenda_count      :integer          default(3), not null
+#  agenda_rules      :json             not null
 #  agendas           :json             not null
 #  asymmetric        :boolean          default(FALSE), not null
 #  deployment_zones  :json             not null

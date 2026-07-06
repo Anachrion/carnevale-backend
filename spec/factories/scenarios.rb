@@ -5,6 +5,8 @@ FactoryBot.define do
     setup { "3'x3' board." }
     primary_objective { "Each friendly character on the board at the end of the game scores 1 Victory Point." }
     agendas { ["3 scoring 1 Victory Point each."] }
+    agenda_count { 3 }
+    agenda_rules { [] }
     special_rules { [] }
     duration { "5 rounds." }
     turns { 5 }
@@ -17,6 +19,8 @@ end
 # Table name: scenarios
 #
 #  id                :bigint           not null, primary key
+#  agenda_count      :integer          default(3), not null
+#  agenda_rules      :json             not null
 #  agendas           :json             not null
 #  asymmetric        :boolean          default(FALSE), not null
 #  deployment_zones  :json             not null

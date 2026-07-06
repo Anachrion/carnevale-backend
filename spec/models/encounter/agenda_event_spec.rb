@@ -13,6 +13,10 @@ RSpec.describe Encounter::AgendaEvent, type: :model do
     expect(build(:agenda_event, action: "discarded", origin: "initial")).not_to be_valid
   end
 
+  it "accepts unachievable as an origin for discarded events (the pre-game mulligan)" do
+    expect(build(:agenda_event, action: "discarded", origin: "unachievable")).to be_valid
+  end
+
   it "requires origin to be blank for scored events" do
     expect(build(:agenda_event, action: "scored", origin: "special_rule")).not_to be_valid
   end

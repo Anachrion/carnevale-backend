@@ -5,7 +5,10 @@ module Api
       # can't drift. The model's "drawn" list also includes server-internal origins (the opening
       # `initial` draw and `recycle`) that aren't client-initiated, so those are excluded here.
       DRAW_ORIGINS = (Encounter::AgendaEvent::ORIGINS_BY_ACTION.fetch("drawn") - %w[initial recycle]).freeze
-      DISCARD_ORIGINS = Encounter::AgendaEvent::ORIGINS_BY_ACTION.fetch("discarded")
+      # The mulligan origin (`unachievable`) belongs to the pre-game setup window; the rest are the
+      # in-play discards granted by a special rule or command point.
+      MULLIGAN_ORIGIN = "unachievable".freeze
+      IN_PLAY_DISCARD_ORIGINS = (Encounter::AgendaEvent::ORIGINS_BY_ACTION.fetch("discarded") - [ MULLIGAN_ORIGIN ]).freeze
 
       before_action :authenticate_user!
       before_action :set_game_and_player, except: %i[index create join]
@@ -130,16 +133,30 @@ module Api
 
       def score_agenda
         return render_error("Wrong game status for scoring agendas") unless @game.status == "in_progress"
-        return render_error("Agenda not in hand") unless @game.agenda_deck.score(@game_player, params[:agenda_id].to_i, recycle: recycle_param)
+        # Cycle-driven recycling is decided by the scenario inside AgendaDeck#score, not the client.
+        return render_error("Agenda not in hand") unless @game.agenda_deck.score(@game_player, params[:agenda_id].to_i)
 
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
+      # Two distinct discards share this endpoint, gated by status:
+      #  • the pre-game "mulligan" (origin `unachievable`) — during agenda_draw/deploying a player
+      #    tosses an impossible or duplicated agenda and always draws a replacement; and
+      #  • in-play discards (special_rule/command_point) while the game is in_progress, which redraw
+      #    only when the caller asks (`recycle`).
       def discard_agenda
-        return render_error("Wrong game status for discarding agendas") unless @game.status == "in_progress"
-        return render_error("Invalid origin") unless DISCARD_ORIGINS.include?(params[:origin])
-        return render_error("Agenda not in hand") unless @game.agenda_deck.discard(@game_player, params[:agenda_id].to_i, origin: params[:origin], recycle: recycle_param)
+        origin = params[:origin]
+        recycle =
+          if @game.mulligan_window? && origin == MULLIGAN_ORIGIN
+            true
+          elsif @game.in_progress? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
+            recycle_param
+          else
+            return render_error("Wrong game status or invalid origin for discarding agendas")
+          end
+
+        return render_error("Agenda not in hand") unless @game.agenda_deck.discard(@game_player, params[:agenda_id].to_i, origin: origin, recycle: recycle)
 
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
