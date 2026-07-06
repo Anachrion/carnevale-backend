@@ -1,5 +1,7 @@
 module Gang
   class EntrySpell < ApplicationRecord
+    include RefreshesListSelectionValidity
+
     self.table_name = "entry_spells"
 
     belongs_to :list_entry, class_name: "Gang::Entry"
@@ -7,12 +9,10 @@ module Gang
 
     validates :spell_id, uniqueness: { scope: :list_entry_id }
 
-    after_commit :refresh_list_selection_validity, on: %i[create update destroy]
-
     private
 
-    def refresh_list_selection_validity
-      list_entry.list.refresh_selection_validity
+    def selection_validity_list
+      list_entry.list
     end
   end
 end

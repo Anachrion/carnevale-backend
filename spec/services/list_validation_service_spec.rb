@@ -44,12 +44,11 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:errors].first).to match(/exceeds the 100 points limit/)
       end
 
-      it "includes the projected entry cost when adding:" do
-        ref = guild_ref(cost: 50)
-        add_entry(list, ref)
-        new_ref = guild_ref(cost: 60)
+      it "sums the cost of every entry against the limit" do
+        add_entry(list, guild_ref(cost: 50), position: 1)
+        add_entry(list, guild_ref(cost: 60), position: 2)
 
-        result = described_class.call(list, adding: new_ref)
+        result = described_class.call(list)
         expect(result[:success]).to be false
         expect(result[:errors].first).to match(/exceeds the 100 points limit/)
       end
@@ -76,14 +75,6 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be false
         expect(result[:errors].first).to match(/strigoi.*cannot join a guild list/)
       end
-
-      it "checks the projected entry faction when adding:" do
-        ref = foreign_ref(faction: :patricians, cost: 10)
-
-        result = described_class.call(list, adding: ref)
-        expect(result[:success]).to be false
-        expect(result[:errors].first).to match(/patricians/)
-      end
     end
 
     context "unique constraint" do
@@ -97,15 +88,6 @@ RSpec.describe ListValidationService, type: :service do
 
         result = described_class.call(list)
         expect(result[:success]).to be true
-      end
-
-      it "fails when a Unique card is already in the list and is being added again" do
-        ref = guild_ref(cost: 10, keywords: ["Unique"])
-        add_entry(list, ref)
-
-        result = described_class.call(list, adding: ref)
-        expect(result[:success]).to be false
-        expect(result[:errors].first).to match(/Unique and can only be hired once/)
       end
 
       it "fails when two Unique entries for the same card exist in the list" do

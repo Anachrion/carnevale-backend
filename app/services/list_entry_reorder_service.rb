@@ -13,11 +13,13 @@ class ListEntryReorderService
   def call
     return if @old_position == @new_position
 
-    # The whole shuffle must be atomic: the intermediate `position: 0` and the row-by-row shifts
-    # each temporarily violate the `(list_id, position)` UNIQUE index's final invariant, so a
-    # failure partway through would leave gaps/dupes and make a retry hit RecordNotUnique.
+    # The whole shuffle must be atomic: parking the moved row at a temporary negative position and
+    # the row-by-row shifts each temporarily violate the `(list_id, position)` UNIQUE index's final
+    # invariant, so a failure partway through would leave gaps/dupes and make a retry hit
+    # RecordNotUnique. Negative temp positions match ListSortingService's convention (they sit
+    # outside the valid 1..N range, so they never collide with a real row mid-shuffle).
     Gang::Entry.transaction do
-      @entry.update_columns(position: 0)
+      @entry.update_columns(position: -1)
 
       if @new_position < @old_position
         @list.list_entries

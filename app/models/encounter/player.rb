@@ -13,6 +13,9 @@ module Encounter
     enum :visibility, VISIBILITIES.index_with(&:itself), default: "active"
 
     validates :user_id, uniqueness: { scope: :game_id }
+    # `role` uses inclusion rather than an `enum` (unlike `visibility` above): it is nullable until
+    # the role roll-off resolves, and an out-of-range value coming from the client must surface as a
+    # validation error, not the ArgumentError an enum raises on assignment.
     validates :role, inclusion: { in: ROLES }, allow_nil: true
 
     RESOLVED_ACTIONS = %w[scored discarded].freeze
