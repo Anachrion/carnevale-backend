@@ -75,38 +75,107 @@ def seed_dev_list(username:, list_name:, faction:, identifiers:)
   puts "Seeded dev list '#{list.name}' (#{faction}) for #{username} with #{list.list_entries.count} entries, valid: #{list.reload.selection_valid}."
 end
 
-seed_dev_list(
-  username: "player1",
-  list_name: "Player1 Guild List",
-  faction: "guild",
-  identifiers: %w[
-    guild-king-for-a-day
-    guild-arbalest-a
-    guild-citizen-a
-    guild-gondolier-a
-    guild-harlot-a
-    guild-indebted-a
-    guild-mariner-a
-    guild-beggar-a
-    guild-blooded-a
-    guild-dog-a
-    guild-pulcinella-a
+# Each dev player gets several lists across different factions so multi-list flows (list picker,
+# switching gangs between games) have real data to exercise. Every list is a valid 100pt gang:
+# exactly one Leader, Heroes never outnumber Henchmen, total cost within the limit, no duplicated
+# Unique models.
+DEV_PLAYER_LISTS = {
+  "player1" => [
+    {
+      list_name: "Player1 Guild List",
+      faction: "guild",
+      identifiers: %w[
+        guild-king-for-a-day
+        guild-arbalest-a
+        guild-citizen-a
+        guild-gondolier-a
+        guild-harlot-a
+        guild-indebted-a
+        guild-mariner-a
+        guild-beggar-a
+        guild-blooded-a
+        guild-dog-a
+        guild-pulcinella-a
+      ]
+    },
+    {
+      list_name: "Player1 Rashaar List",
+      faction: "rashaar",
+      identifiers: %w[
+        rashaar-voice-of-dagon
+        rashaar-half-breed
+        rashaar-cymothoan-crusher
+        rashaar-advanced-hybrid-a
+        rashaar-advanced-hybrid-b
+        rashaar-aglaope
+        rashaar-wet-nurse
+      ]
+    },
+    {
+      list_name: "Player1 Strigoi List",
+      faction: "strigoi",
+      identifiers: %w[
+        strigoi-blood-crone
+        strigoi-rotter-a
+        strigoi-rotter-b
+        strigoi-common-strigoi-a
+        strigoi-common-strigoi-b
+        strigoi-nosferatu-a
+        strigoi-giurgiu-guard-a
+      ]
+    }
+  ],
+  "player2" => [
+    {
+      list_name: "Player2 Vatican List",
+      faction: "vatican",
+      identifiers: %w[
+        vatican-exorcist
+        vatican-altar-boy-a
+        vatican-bishop-guard-a
+        vatican-crucifier
+        vatican-inquisitorial-spy
+        vatican-martyr-a
+        vatican-knight-of-malta-a
+        vatican-reliquary-page
+        vatican-chevaleresse-a
+      ]
+    },
+    {
+      list_name: "Player2 Patricians List",
+      faction: "patricians",
+      identifiers: %w[
+        patricians-sopracomito
+        patricians-city-guard-a
+        patricians-city-guard-b
+        patricians-butler-a
+        patricians-household-staff-a
+        patricians-naval-recruit-a
+        patricians-ottoman-archer
+        patricians-hired-muscle
+        patricians-hunting-hound-a
+      ]
+    },
+    {
+      list_name: "Player2 Doctors List",
+      faction: "doctors",
+      identifiers: %w[
+        doctors-master-of-zoology
+        doctors-husk-a
+        doctors-husk-b
+        doctors-madman-a
+        doctors-madman-b
+        doctors-ghoul-a
+        doctors-ghoul-b
+        doctors-hollowman-a
+        doctors-nurse-a
+        doctors-monstrosity
+        doctors-carrion-a
+      ]
+    }
   ]
-)
+}
 
-seed_dev_list(
-  username: "player2",
-  list_name: "Player2 Vatican List",
-  faction: "vatican",
-  identifiers: %w[
-    vatican-exorcist
-    vatican-altar-boy-a
-    vatican-bishop-guard-a
-    vatican-crucifier
-    vatican-inquisitorial-spy
-    vatican-martyr-a
-    vatican-knight-of-malta-a
-    vatican-reliquary-page
-    vatican-chevaleresse-a
-  ]
-)
+DEV_PLAYER_LISTS.each do |username, lists|
+  lists.each { |attrs| seed_dev_list(username: username, **attrs) }
+end
