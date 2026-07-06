@@ -71,6 +71,6 @@ end
 # Foreign Keys
 #
 #  fk_rails_...  (agenda_id => agendas.id)
-#  fk_rails_...  (caused_by_event_id => agenda_events.id)
+#  fk_rails_...  (caused_by_event_id => agenda_events.id) ON DELETE => nullify
 #  fk_rails_...  (game_player_id => game_players.id)
 #
