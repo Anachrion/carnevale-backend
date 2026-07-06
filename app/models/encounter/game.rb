@@ -46,6 +46,13 @@ module Encounter
       true
     end
 
+    # The setup window in which a player may mulligan an impossible/duplicated agenda (discard +
+    # redraw): after the initial draw and up until the game goes live. The status auto-advances from
+    # agenda_draw to deploying once both players have drawn, so both count as the same window.
+    def mulligan_window?
+      agenda_draw? || deploying?
+    end
+
     # The agenda-deck subsystem (initial/in-play draws, scoring, discarding). Lives in its own
     # service object rather than on the model (B-P2-7).
     def agenda_deck

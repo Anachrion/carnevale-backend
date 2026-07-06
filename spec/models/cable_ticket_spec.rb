@@ -44,3 +44,25 @@ RSpec.describe CableTicket do
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: cable_tickets
+#
+#  id         :bigint           not null, primary key
+#  expires_at :datetime         not null
+#  token      :string           not null
+#  created_at :datetime         not null
+#  updated_at :datetime         not null
+#  user_id    :bigint           not null
+#
+# Indexes
+#
+#  index_cable_tickets_on_expires_at  (expires_at)
+#  index_cable_tickets_on_token       (token) UNIQUE
+#  index_cable_tickets_on_user_id     (user_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (user_id => users.id)
+#

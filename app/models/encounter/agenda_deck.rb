@@ -14,7 +14,7 @@ module Encounter
 
     # The initial hand each player draws at the start of the agenda-draw phase.
     def draw_initial(game_player)
-      count = @game.scenario.initial_agenda_count
+      count = @game.scenario.agenda_count
       drawn = []
       drawn << draw_one(drawn) while drawn.size < count
       drawn.each do |agenda_id|
@@ -32,11 +32,14 @@ module Encounter
       game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: origin, caused_by_event: caused_by_event, turn: @game.current_turn)
     end
 
-    def score(game_player, agenda_id, recycle: false)
+    # Scoring is worth a flat 1 VP. When the scenario carries the "Cycle" rule, scoring immediately
+    # draws a replacement (rulebook: "When you score Victory Points for an Agenda, immediately draw
+    # another one") — driven by the scenario rather than a client flag so it can't be misreported.
+    def score(game_player, agenda_id)
       return false unless game_player.hand_agenda_ids.include?(agenda_id)
 
       event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: @game.current_turn)
-      draw(game_player, origin: "recycle", caused_by_event: event) if recycle
+      draw(game_player, origin: "recycle", caused_by_event: event) if @game.scenario.cycle_agendas?
       true
     end
 

@@ -146,13 +146,13 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "agenda scoring and turn tracking" do
-    def start_in_progress_game(turns: 5)
+    def start_in_progress_game(turns: 5, agenda_rules: [])
       host = open_session
       guest = open_session
       h = headers_for(host, host_user)
       g = headers_for(guest, guest_user)
 
-      short_scenario = create(:scenario, name: "Short Scenario", ducats: 100, turns: turns)
+      short_scenario = create(:scenario, name: "Short Scenario", ducats: 100, turns: turns, agenda_rules: agenda_rules)
       host.post "/api/v1/games", params: { scenario_id: short_scenario.id }.to_json, headers: h
       game_id = json(host)["id"]
       guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
@@ -170,8 +170,8 @@ RSpec.describe "Api::V1::Games", type: :request do
       [ host, guest, h, g, game_id ]
     end
 
-    it "draws, scores (with recycle), discards, and advances turns through to completion" do
-      host, _guest, h, _g, game_id = start_in_progress_game(turns: 2)
+    it "draws, scores (auto-recycling under Cycle), discards, and advances turns through to completion" do
+      host, _guest, h, _g, game_id = start_in_progress_game(turns: 2, agenda_rules: [ "cycle" ])
 
       expect(json(host)["current_turn"]).to eq(1)
 
@@ -183,7 +183,8 @@ RSpec.describe "Api::V1::Games", type: :request do
       host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
       scored_agenda_id = host_entry["agendas"].first["id"]
 
-      host.post "/api/v1/games/#{game_id}/agendas/#{scored_agenda_id}/score", params: { recycle: true }.to_json, headers: h
+      # No recycle flag in the body — the scenario's Cycle rule drives the replacement draw.
+      host.post "/api/v1/games/#{game_id}/agendas/#{scored_agenda_id}/score", headers: h
       expect(host.response).to have_http_status(:ok)
       host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
       expect(host_entry["score"]).to eq(1)
@@ -200,6 +201,19 @@ RSpec.describe "Api::V1::Games", type: :request do
 
       host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
       expect(json(host)["status"]).to eq("completed")
+    end
+
+    it "does not auto-recycle when scoring under a scenario without the Cycle rule" do
+      host, _guest, h, _g, game_id = start_in_progress_game
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      agenda_id = host_entry["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/score", headers: h
+      host_entry = json(host)["players"].find { |p| p["username"] == host_user.username }
+      expect(host_entry["agendas"].size).to eq(2)
+      expect(host_entry["agenda_history"].any? { |e| e["origin"] == "recycle" }).to be false
     end
 
     it "rejects scoring an agenda not in the player's hand" do
@@ -233,6 +247,102 @@ RSpec.describe "Api::V1::Games", type: :request do
       game_id = json(host)["id"]
 
       host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
+  describe "agenda visibility and the pre-game mulligan" do
+    # create → join → gang select → initial draw, leaving the game in the setup window (status
+    # `deploying`, since both players have drawn). Returns the sessions, headers, game id, and ids.
+    def setup_through_draw(agenda_rules: [])
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      vis_scenario = create(:scenario, name: "Vis Scenario #{agenda_rules.join('-')}", ducats: 100, agenda_rules: agenda_rules)
+      host.post "/api/v1/games", params: { scenario_id: vis_scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      players = json(guest)["players"]
+      host_pid = players.find { |p| p["username"] == host_user.username }["id"]
+      guest_pid = players.find { |p| p["username"] == guest_user.username }["id"]
+      [ host, guest, h, g, game_id, host_pid, guest_pid ]
+    end
+
+    def go_live(host, guest, h, g, game_id)
+      host.post "/api/v1/games/#{game_id}/ready", headers: h
+      guest.post "/api/v1/games/#{game_id}/ready", headers: g
+    end
+
+    it "shows each opponent's hand to the other when the scenario is not Secret" do
+      host, guest, h, g, game_id, host_pid, _ = setup_through_draw
+      go_live(host, guest, h, g, game_id)
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      host_entry = json(guest)["players"].find { |p| p["id"] == host_pid }
+      expect(host_entry["agendas"].size).to eq(3)
+    end
+
+    it "hides an opponent's in-hand agendas under the Secret rule, but not from the owner" do
+      host, guest, h, g, game_id, host_pid, _ = setup_through_draw(agenda_rules: [ "secret" ])
+      go_live(host, guest, h, g, game_id)
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      expect(json(guest)["players"].find { |p| p["id"] == host_pid }["agendas"]).to be_empty
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      expect(json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].size).to eq(3)
+    end
+
+    it "reveals a Secret opponent's scored and discarded agendas but not their remaining hand" do
+      host, guest, h, g, game_id, host_pid, _ = setup_through_draw(agenda_rules: [ "secret" ])
+      go_live(host, guest, h, g, game_id)
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      hand = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"]
+      host.post "/api/v1/games/#{game_id}/agendas/#{hand[0]['id']}/score", headers: h
+      host.post "/api/v1/games/#{game_id}/agendas/#{hand[1]['id']}/discard", params: { origin: "command_point" }.to_json, headers: h
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      host_entry = json(guest)["players"].find { |p| p["id"] == host_pid }
+      expect(host_entry["agendas"]).to be_empty
+      actions = host_entry["agenda_history"].map { |e| e["action"] }
+      expect(actions).to include("scored", "discarded")
+      expect(actions).not_to include("drawn")
+    end
+
+    it "lets a player mulligan an unachievable agenda during setup and redraws a replacement" do
+      host, _guest, h, _g, game_id, host_pid, _ = setup_through_draw
+      host.get "/api/v1/games/#{game_id}", headers: h
+      discard_id = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{discard_id}/discard", params: { origin: "unachievable" }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host_entry = json(host)["players"].find { |p| p["id"] == host_pid }
+      expect(host_entry["agendas"].size).to eq(3)
+      expect(host_entry["agendas"].map { |a| a["id"] }).not_to include(discard_id)
+      expect(host_entry["agenda_history"].any? { |e| e["origin"] == "unachievable" }).to be true
+      expect(host_entry["agenda_history"].any? { |e| e["origin"] == "recycle" }).to be true
+    end
+
+    it "rejects the unachievable mulligan once the game is in progress" do
+      host, guest, h, g, game_id, host_pid, _ = setup_through_draw
+      go_live(host, guest, h, g, game_id)
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      agenda_id = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].first["id"]
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/discard", params: { origin: "unachievable" }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
   end

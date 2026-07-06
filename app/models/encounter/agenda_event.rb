@@ -3,7 +3,7 @@ module Encounter
     ACTIONS = %w[drawn scored discarded].freeze
     ORIGINS_BY_ACTION = {
       "drawn" => %w[initial special_rule command_point recycle],
-      "discarded" => %w[special_rule command_point],
+      "discarded" => %w[unachievable special_rule command_point],
       "scored" => []
     }.freeze
 

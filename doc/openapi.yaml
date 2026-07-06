@@ -993,18 +993,13 @@ paths:
       summary: Score an Agenda from this player's hand (flat 1 Victory Point)
       description: |
         Only valid while the game is `in_progress`, and only for an agenda currently in the
-        requesting player's hand. Set `recycle: true` if the scenario's "Cycle" rule applies,
-        which immediately draws a replacement card (origin `recycle`, linked back to this score).
+        requesting player's hand. Takes no body. If the scenario carries the "Cycle" rule, scoring
+        automatically draws a replacement card (origin `recycle`, linked back to this score) — this
+        is driven by the scenario, not requested by the client.
       tags: [Games]
       security:
         - ApiKeyAuth: []
           bearerAuth: []
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/ScoreAgendaInput"
       responses:
         "200":
           description: OK
@@ -1032,11 +1027,13 @@ paths:
       operationId: discardAgenda
       summary: Discard an Agenda from this player's hand
       description: |
-        Only valid while the game is `in_progress`, and only for an agenda currently in the
-        requesting player's hand. Requires `origin` (`special_rule` or `command_point` — an
-        agenda is never freely discarded, only via one of those). Set `recycle: true` if the
-        scenario's "Cycle" rule applies, which immediately draws a replacement card (origin
-        `recycle`, linked back to this discard).
+        Discards an agenda currently in the requesting player's hand. The valid `origin` depends on
+        the game status:
+          * during setup (`agenda_draw`/`deploying`), `unachievable` — the pre-game mulligan for an
+            impossible or duplicated agenda, which always draws a replacement (origin `recycle`); or
+          * while `in_progress`, `special_rule` or `command_point` — an in-play discard granted by
+            one of those, which draws a replacement only when `recycle: true`.
+        A discarded agenda is always visible to the opponent (even under the Secret rule).
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1334,25 +1331,22 @@ components:
           type: string
           enum: [special_rule, command_point]
 
-    ScoreAgendaInput:
-      type: object
-      properties:
-        recycle:
-          type: boolean
-          default: false
-          description: If true, immediately draws a replacement card (origin `recycle`) linked back to this score.
-
     DiscardAgendaInput:
       type: object
       required: [origin]
       properties:
         origin:
           type: string
-          enum: [special_rule, command_point]
+          enum: [unachievable, special_rule, command_point]
+          description: |
+            `unachievable` is the pre-game mulligan (valid during `agenda_draw`/`deploying`);
+            `special_rule`/`command_point` are in-play discards (valid while `in_progress`).
         recycle:
           type: boolean
           default: false
-          description: If true, immediately draws a replacement card (origin `recycle`) linked back to this discard.
+          description: |
+            Whether to immediately draw a replacement card (origin `recycle`) linked back to this
+            discard. Only honoured for in-play discards; the `unachievable` mulligan always redraws.
 
     UpdateCountersInput:
       type: object
@@ -1725,6 +1719,8 @@ components:
         - setup
         - primary_objective
         - agendas
+        - agenda_rules
+        - agenda_count
         - special_rules
         - duration
         - turns
@@ -1748,6 +1744,16 @@ components:
           type: array
           items:
             type: string
+          description: Free-text rendering of the scenario's agenda instructions (e.g. "3 scoring 1 Victory Point each.", "Secret, Cycle, Double."). See `agenda_rules`/`agenda_count` for the structured form.
+        agenda_rules:
+          type: array
+          items:
+            type: string
+            enum: [cycle, secondary, double, secret, total]
+          description: The agenda special rules in effect for this scenario (rulebook p.36). `secret` hides opponents' in-hand agendas; `cycle` auto-draws a replacement when an agenda is scored.
+        agenda_count:
+          type: integer
+          description: How many agendas each player draws for their initial hand.
         special_rules:
           type: array
           items:
@@ -1789,8 +1795,8 @@ components:
         origin:
           type: string
           nullable: true
-          enum: [initial, special_rule, command_point, recycle]
-          description: Why this event happened. Always null for `scored` events — scoring just resolves the Agenda's own printed condition, it isn't granted by an external rule the way drawing/discarding mid-game is.
+          enum: [initial, unachievable, special_rule, command_point, recycle]
+          description: Why this event happened. Always null for `scored` events — scoring just resolves the Agenda's own printed condition, it isn't granted by an external rule the way drawing/discarding is. `unachievable` marks a pre-game mulligan discard.
         caused_by_event_id:
           type: integer
           nullable: true
@@ -1850,15 +1856,15 @@ components:
           description: True for the deployment roll-off winner. Picked at random as soon as the second player joins. Informational only — the deployment zone itself is chosen at the table, not in-app.
         score:
           type: integer
-          description: Total Victory Points scored from Agendas so far (every Agenda scores a flat 1 VP). Visible for both players, unlike the hidden hand.
+          description: Total Victory Points scored from Agendas so far (every Agenda scores a flat 1 VP). Always visible for both players.
         agendas:
           type: array
-          description: This player's current hand. Only populated for the requesting player's own entry — always empty for the opponent's.
+          description: This player's current hand. Always populated for the requesting player's own entry. For the opponent's entry it is populated too, unless the scenario has the `secret` agenda rule, in which case it is empty (the hand stays hidden until achieved).
           items:
             $ref: "#/components/schemas/Agenda"
         agenda_history:
           type: array
-          description: Every draw/score/discard event for this player, in turn order. Only populated for the requesting player's own entry — always empty for the opponent's.
+          description: Draw/score/discard events for this player, in turn order. Full history for the requesting player's own entry. For the opponent's entry under the `secret` rule it is trimmed to resolved events only (scored + discarded), so the hidden hand doesn't leak; otherwise it is the full history.
           items:
             $ref: "#/components/schemas/AgendaHistoryEntry"
 

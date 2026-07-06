@@ -94,19 +94,30 @@ RSpec.describe Encounter::AgendaDeck, type: :model do
       expect(deck_for(game).discard(game_player, agenda.id, origin: "command_point")).to be false
     end
 
-    it "recycle: true draws a replacement card linked back to the triggering event" do
+    it "auto-draws a replacement linked back to the score when the scenario has the Cycle rule" do
       %w[1-3 4-6 7-9 10].each { |bucket| create_list(:agenda, 3, first_roll: bucket) }
-      game = create(:game, status: "in_progress")
+      game = create(:game, status: "in_progress", scenario: create(:scenario, agenda_rules: [ "cycle" ]))
       game_player = create(:game_player, game: game)
       agenda = create(:agenda, first_roll: "1-3")
       game_player.agenda_events.create!(agenda: agenda, action: "drawn", origin: "initial", turn: 1)
 
-      deck_for(game).score(game_player, agenda.id, recycle: true)
+      deck_for(game).score(game_player, agenda.id)
 
       recycle_event = game_player.agenda_events.find_by(origin: "recycle")
       expect(recycle_event).to be_present
       expect(recycle_event.caused_by_event.action).to eq("scored")
       expect(recycle_event.caused_by_event.agenda_id).to eq(agenda.id)
+    end
+
+    it "does not draw a replacement on score when the scenario lacks the Cycle rule" do
+      game = create(:game, status: "in_progress")
+      game_player = create(:game_player, game: game)
+      agenda = create(:agenda)
+      game_player.agenda_events.create!(agenda: agenda, action: "drawn", origin: "initial", turn: 1)
+
+      deck_for(game).score(game_player, agenda.id)
+
+      expect(game_player.agenda_events.where(origin: "recycle")).to be_empty
     end
   end
 end

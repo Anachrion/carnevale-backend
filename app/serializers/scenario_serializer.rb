@@ -13,6 +13,8 @@ class ScenarioSerializer
       setup: s.setup,
       primary_objective: s.primary_objective,
       agendas: s.agendas,
+      agenda_rules: s.agenda_rules,
+      agenda_count: s.agenda_count,
       special_rules: s.special_rules,
       duration: s.duration,
       turns: s.turns,

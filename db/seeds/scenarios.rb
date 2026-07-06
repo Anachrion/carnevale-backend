@@ -10,6 +10,8 @@
       "3 scoring 1 Victory Point each.",
       "Double."
     ],
+    agenda_count: 3,
+    agenda_rules: [ "double" ],
     special_rules: [
       "Each player sets up 1 gondola anywhere on the board in water when setting up scenery."
     ],
@@ -29,6 +31,8 @@
       "5 scoring 1 Victory Point each.",
       "Secondary."
     ],
+    agenda_count: 5,
+    agenda_rules: [ "secondary" ],
     special_rules: [
       "Any character within 3\" of an Objective gains the Expert Offence (2) and Expert Marksman (2) special rules."
     ],
@@ -48,6 +52,8 @@
       "3 scoring 1 Victory Point each.",
       "Secret, Cycle, Double."
     ],
+    agenda_count: 3,
+    agenda_rules: [ "secret", "cycle", "double" ],
     special_rules: [
       "When choosing gangs, players do not have to include a character with the Leader keyword."
     ],
@@ -67,6 +73,8 @@
       "3 scoring 1 Victory Point each.",
       "Cycle."
     ],
+    agenda_count: 3,
+    agenda_rules: [ "cycle" ],
     special_rules: [
       "Every friendly character gains the Brave special rule if they are within line of sight of a friendly character carrying an Objective."
     ],
@@ -86,6 +94,8 @@
     agendas: [
       "3 scoring 1 Victory Point each."
     ],
+    agenda_count: 3,
+    agenda_rules: [],
     special_rules: [
       "Defending players choose one friendly character in each of their gangs with Command Points to gain 3 additional Command Points at the start of the game."
     ],

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -216,6 +216,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_130000) do
   end
 
   create_table "scenarios", force: :cascade do |t|
+    t.integer "agenda_count", default: 3, null: false
+    t.json "agenda_rules", default: [], null: false
     t.json "agendas", default: [], null: false
     t.boolean "asymmetric", default: false, null: false
     t.datetime "created_at", null: false
