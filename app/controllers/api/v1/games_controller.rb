@@ -204,10 +204,18 @@ module Api
       end
 
       # Soft-deletes the game for the current user only. Once every player has done the same,
-      # there's nothing left for either side to see, so the game is hard-deleted.
+      # there's nothing left for either side to see, so the game is hard-deleted. The teardown is
+      # serialized with a row lock and the reload happens under it, so two players deleting at once
+      # can't both pass the all-deleted check and both call destroy! — the loser would otherwise
+      # hit the already-gone row and 500. If the other request won the race, the row is already
+      # gone (RecordNotFound), which is exactly the outcome we wanted.
       def destroy
         @game_player.update!(visibility: "deleted")
-        @game.destroy! if @game.game_players.reload.all?(&:deleted?)
+        @game.with_lock do
+          @game.destroy! if @game.game_players.reload.all?(&:deleted?)
+        end
+        head :no_content
+      rescue ActiveRecord::RecordNotFound
         head :no_content
       end
 
