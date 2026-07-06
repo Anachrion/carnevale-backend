@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_06_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -172,8 +172,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_06_170000) do
     t.integer "points", default: 100, null: false
     t.json "selection_errors", default: [], null: false
     t.boolean "selection_valid", default: false, null: false
+    t.bigint "source_list_id"
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id"], name: "index_lists_on_owner"
+    t.index ["source_list_id"], name: "index_lists_on_source_list_id"
   end
 
   create_table "profile_special_rules", force: :cascade do |t|

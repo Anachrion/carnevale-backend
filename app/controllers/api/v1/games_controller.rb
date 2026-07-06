@@ -12,7 +12,7 @@ module Api
 
       before_action :authenticate_user!
       before_action :set_game_and_player, except: %i[index create join]
-      before_action :ensure_roles_resolved!, only: %i[available_lists select_gang]
+      before_action :ensure_roles_resolved!, only: %i[available_lists select_gang deselect_gang]
 
       def index
         visibility = params[:visibility] == "archived" ? "archived" : "active"
@@ -105,6 +105,22 @@ module Api
         end
 
         maybe_advance_to_agenda_draw!
+        broadcast_state!(@game)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
+      end
+
+      def deselect_gang
+        # Clearing a pick is only meaningful while still choosing — once both players have locked in,
+        # the game has advanced past gang_selection and gangs are frozen.
+        return render_error("Gangs can no longer be changed") unless @game.gang_selection?
+
+        # Mirror select_gang's snapshot teardown: destroy the frozen copy and reset the association so
+        # the has_one is genuinely empty (not just detached), leaving the player with no gang again.
+        Gang::List.transaction do
+          @game_player.list&.destroy!
+          @game_player.association(:list).reset
+        end
+
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end

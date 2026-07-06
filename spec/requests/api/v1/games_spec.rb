@@ -867,6 +867,31 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: other_list.id }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
+
+    it "tags the snapshot with the source list id so the client can match it back" do
+      host, _guest, h, _g, game_id = start_selection
+      list = create(:list, owner: host_user, faction: "guild", points: 100)
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: list.id }.to_json, headers: h
+      snapshot = json(host)["players"].find { |p| p["username"] == host_user.username }["list"]
+      expect(snapshot["source_list_id"]).to eq(list.id)
+      expect(snapshot["id"]).not_to eq(list.id)
+    end
+
+    it "clears the pick on DELETE, leaving the player gang-less and still in gang_selection" do
+      host, _guest, h, _g, game_id = start_selection
+      list = create(:list, owner: host_user, faction: "guild", points: 100)
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: list.id }.to_json, headers: h
+      snapshot_id = json(host)["players"].find { |p| p["username"] == host_user.username }["list"]["id"]
+
+      host.delete "/api/v1/games/#{game_id}/select_gang", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["status"]).to eq("gang_selection")
+      expect(json(host)["players"].find { |p| p["username"] == host_user.username }["list"]).to be_nil
+      # The snapshot is destroyed, not orphaned.
+      expect(Gang::List.exists?(snapshot_id)).to be false
+    end
   end
 
   describe "guard rails" do

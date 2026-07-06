@@ -53,7 +53,7 @@ module Gang
     def snapshot_for(owner)
       snapshot = List.defer_validation do
         List.transaction do
-          List.create!(owner: owner, name: name, faction: faction, points: points).tap do |copy|
+          List.create!(owner: owner, name: name, faction: faction, points: points, source_list_id: id).tap do |copy|
             list_entries.includes(:entry_spells).each do |entry|
               copied = copy.list_entries.create!(
                 entry_type: entry.entry_type, entry_id: entry.entry_id,
@@ -84,8 +84,10 @@ end
 #  created_at       :datetime         not null
 #  updated_at       :datetime         not null
 #  owner_id         :bigint           not null
+#  source_list_id   :bigint
 #
 # Indexes
 #
-#  index_lists_on_owner  (owner_type,owner_id)
+#  index_lists_on_owner           (owner_type,owner_id)
+#  index_lists_on_source_list_id  (source_list_id)
 #

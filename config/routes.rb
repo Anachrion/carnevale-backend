@@ -39,6 +39,7 @@ Rails.application.routes.draw do
           patch :role
           get :available_lists
           patch :select_gang
+          delete :select_gang, action: :deselect_gang
           get "players/:player_id/list", action: :player_list
           post "agendas/draw", action: :draw_agendas
           post "agendas/confirm", action: :confirm_agendas
