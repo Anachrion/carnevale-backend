@@ -950,7 +950,9 @@ paths:
       summary: Privately draw this player's Agenda cards
       description: |
         Never broadcast or visible to the opponent. Behavior depends on game status: while
-        `agenda_draw`, draws the scenario's full initial hand (no request body). While
+        `agenda_draw`, draws the scenario's full initial hand (no request body). Drawing does
+        not advance the phase — the player then reviews (and optionally mulligans) the hand and
+        posts to `agendas/confirm`. While
         `in_progress`, draws a single replacement card and requires `origin` in the body
         (`special_rule` or `command_point` — a card is never freely drawn mid-game, only
         granted by one of those). Every agenda a player has ever drawn — whether still in
@@ -978,6 +980,39 @@ paths:
           description: Not found
         "422":
           description: Wrong game status, agendas already drawn, or invalid/missing origin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/agendas/confirm:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: confirmAgendas
+      summary: Confirm this player's opening Agenda hand
+      description: |
+        Marks the player done with the `agenda_draw` phase after they've reviewed and optionally
+        mulliganed their hand. Requires the player to have already drawn. Once both players
+        confirm, the game advances to `deploying`.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Wrong game status or agendas not yet drawn
           content:
             application/json:
               schema:
@@ -1929,7 +1964,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, ready, won_role_roll, won_deployment_roll, score, current_turn, finished, agendas, agenda_history]
+      required: [id, user_id, username, host, list, role, ready, agendas_confirmed, won_role_roll, won_deployment_roll, score, current_turn, finished, agendas, agenda_history]
       properties:
         id:
           type: integer
@@ -1949,6 +1984,9 @@ components:
           nullable: true
         ready:
           type: boolean
+        agendas_confirmed:
+          type: boolean
+          description: True once the player has confirmed their opening Agenda hand (agenda_draw phase). Both players confirming advances the game to deploying.
         won_role_roll:
           type: boolean
           description: True for the role roll-off winner (asymmetric scenarios only). Picked at random as soon as the second player joins.

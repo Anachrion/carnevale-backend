@@ -23,3 +23,25 @@ RSpec.describe Gang::EntrySpell, type: :model do
     expect { entry_spell.send(:refresh_list_selection_validity) }.not_to raise_error
   end
 end
+
+# == Schema Information
+#
+# Table name: entry_spells
+#
+#  id            :bigint           not null, primary key
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
+#  list_entry_id :bigint           not null
+#  spell_id      :bigint           not null
+#
+# Indexes
+#
+#  index_entry_spells_on_list_entry_id               (list_entry_id)
+#  index_entry_spells_on_list_entry_id_and_spell_id  (list_entry_id,spell_id) UNIQUE
+#  index_entry_spells_on_spell_id                    (spell_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (list_entry_id => list_entries.id)
+#  fk_rails_...  (spell_id => spells.id)
+#

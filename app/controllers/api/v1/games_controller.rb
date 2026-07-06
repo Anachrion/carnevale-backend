@@ -114,8 +114,9 @@ module Api
         when "agenda_draw"
           return render_error("Agendas already drawn") if @game_player.drawn_agenda_ids.any?
 
+          # Drawing no longer advances the phase — the player reviews (and optionally mulligans)
+          # their hand, then confirms via #confirm_agendas.
           @game.agenda_deck.draw_initial(@game_player)
-          maybe_advance_to_deploying!
         when "in_progress"
           return render_error("You've ended the game") if @game_player.finished?
           return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
@@ -130,6 +131,18 @@ module Api
         # players already receive the full updated state via broadcast_state!, so the acting player's
         # HTTP response only needs to carry back the delta it asked for — the drawn agendas.
         render json: { agendas: PlayerSerializer.new(@game_player.reload, viewer: @game_player).as_json[:agendas] }
+      end
+
+      # The player has reviewed (and optionally mulliganed) their opening hand and is done with the
+      # agenda_draw phase. Once both players confirm, the game advances to deploying.
+      def confirm_agendas
+        return render_error("Wrong game status for confirming agendas") unless @game.agenda_draw?
+        return render_error("Draw your agendas first") if @game_player.drawn_agenda_ids.empty?
+
+        @game_player.update!(agendas_confirmed: true)
+        maybe_advance_to_deploying!
+        broadcast_state!(@game)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def score_agenda
@@ -273,7 +286,7 @@ module Api
 
       def maybe_advance_to_deploying!
         return unless @game.status == "agenda_draw"
-        return unless @game.game_players.reload.all? { |p| p.drawn_agenda_ids.any? }
+        return unless @game.game_players.reload.all?(&:agendas_confirmed?)
 
         @game.update!(status: "deploying")
       end

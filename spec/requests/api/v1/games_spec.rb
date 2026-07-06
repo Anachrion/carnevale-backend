@@ -43,6 +43,8 @@ RSpec.describe "Api::V1::Games", type: :request do
     guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
     host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
     guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+    host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+    guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
     if ready
       host.post "/api/v1/games/#{game_id}/ready", headers: h
       guest.post "/api/v1/games/#{game_id}/ready", headers: g
@@ -130,10 +132,16 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(json(host)["agendas"].size).to eq(3)
 
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      # Drawing does not advance the phase — both players must confirm their hand first.
       host.get "/api/v1/games/#{game_id}", headers: h
-      expect(json(host)["status"]).to eq("deploying")
+      expect(json(host)["status"]).to eq("agenda_draw")
 
-      winner_id = json(host)["players"].find { |p| p["won_deployment_roll"] }&.fetch("id")
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      expect(json(host)["status"]).to eq("agenda_draw")
+      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
+      expect(json(guest)["status"]).to eq("deploying")
+
+      winner_id = json(guest)["players"].find { |p| p["won_deployment_roll"] }&.fetch("id")
       expect(winner_id).to be_present
 
       host.post "/api/v1/games/#{game_id}/ready", headers: h
@@ -164,6 +172,8 @@ RSpec.describe "Api::V1::Games", type: :request do
 
       host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
       host.post "/api/v1/games/#{game_id}/ready", headers: h
       guest.post "/api/v1/games/#{game_id}/ready", headers: g
 
@@ -335,8 +345,9 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "agenda visibility and the pre-game mulligan" do
-    # create → join → gang select → initial draw, leaving the game in the setup window (status
-    # `deploying`, since both players have drawn). Returns the sessions, headers, game id, and ids.
+    # create → join → gang select → initial draw → confirm, leaving the game in the setup window
+    # (status `deploying`, since both players have confirmed their hand). Returns the sessions,
+    # headers, game id, and ids.
     def setup_through_draw(agenda_rules: [])
       host = open_session
       guest = open_session
@@ -354,6 +365,8 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
       host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
 
       guest.get "/api/v1/games/#{game_id}", headers: g
       players = json(guest)["players"]
@@ -417,6 +430,41 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host_entry["agendas"].map { |a| a["id"] }).not_to include(discard_id)
       expect(host_entry["agenda_history"].any? { |e| e["origin"] == "unachievable" }).to be true
       expect(host_entry["agenda_history"].any? { |e| e["origin"] == "recycle" }).to be true
+    end
+
+    it "keeps the surviving agendas in their original order when one is mulliganed" do
+      host, _guest, h, _g, game_id, host_pid, _ = setup_through_draw
+      host.get "/api/v1/games/#{game_id}", headers: h
+      original = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].map { |a| a["id"] }
+      discard_id = original.first
+      survivors = original.drop(1)
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{discard_id}/discard", params: { origin: "unachievable" }.to_json, headers: h
+
+      after = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].map { |a| a["id"] }
+      # Survivors stay put at the front (no re-sort around the replacement); the redraw lands last.
+      expect(after.first(survivors.size)).to eq(survivors)
+      expect(after.last).not_to eq(discard_id)
+      expect(after.size).to eq(original.size)
+    end
+
+    it "requires a player to have drawn before confirming their hand" do
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+
+      # In agenda_draw but this player hasn't drawn yet.
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
     end
 
     it "rejects the unachievable mulligan once the game is in progress" do

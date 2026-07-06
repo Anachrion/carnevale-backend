@@ -23,8 +23,11 @@ module Encounter
     # These filter the agenda_events collection in Ruby rather than issuing a WHERE per call, so a
     # preloaded association (e.g. the games index, B-P2-4) resolves them with no extra query; an
     # unloaded one loads the (small, per-player) set once and reuses it.
+    # Sorted by event id so the result is in chronological draw order regardless of how the
+    # association was loaded (the has_many has no default order clause). The serializer relies on
+    # this to keep the hand from re-sorting when an agenda is mulliganed.
     def drawn_agenda_ids
-      agenda_events.select { |e| e.action == "drawn" }.map(&:agenda_id)
+      agenda_events.select { |e| e.action == "drawn" }.sort_by(&:id).map(&:agenda_id)
     end
 
     def resolved_agenda_ids
@@ -104,6 +107,7 @@ end
 # Table name: game_players
 #
 #  id                  :bigint           not null, primary key
+#  agendas_confirmed   :boolean          default(FALSE), not null
 #  current_turn        :integer          default(1), not null
 #  finished            :boolean          default(FALSE), not null
 #  host                :boolean          default(FALSE), not null

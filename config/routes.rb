@@ -41,6 +41,7 @@ Rails.application.routes.draw do
           patch :select_gang
           get "players/:player_id/list", action: :player_list
           post "agendas/draw", action: :draw_agendas
+          post "agendas/confirm", action: :confirm_agendas
           post "agendas/:agenda_id/score", action: :score_agenda
           post "agendas/:agenda_id/discard", action: :discard_agenda
           post "turns/advance", action: :advance_turn

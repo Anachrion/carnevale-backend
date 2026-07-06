@@ -18,6 +18,7 @@ class PlayerSerializer
       list: player.list && ListSummarySerializer.new(player.list).as_json,
       role: player.role,
       ready: player.ready,
+      agendas_confirmed: player.agendas_confirmed,
       won_role_roll: player.won_role_roll,
       won_deployment_roll: player.won_deployment_roll,
       score: player.score,
@@ -48,8 +49,14 @@ class PlayerSerializer
     events.select { |e| Encounter::Player::RESOLVED_ACTIONS.include?(e[:action]) }
   end
 
+  # Ordered by when each agenda entered the hand (draw order), not by agenda id. `where(id: ...)`
+  # would return rows in primary-key order, so mulliganing one agenda would re-sort the whole hand
+  # around its replacement — confusing mid-review. Keeping draw order leaves the untouched agendas
+  # in place and drops the redraw at the bottom.
   def hand_agendas
-    Catalog::Agenda.where(id: @player.hand_agenda_ids).map { |a| { id: a.id, name: a.name, description: a.description } }
+    ids = @player.hand_agenda_ids
+    by_id = Catalog::Agenda.where(id: ids).index_by(&:id)
+    ids.filter_map { |id| by_id[id] }.map { |a| { id: a.id, name: a.name, description: a.description } }
   end
 
   def agenda_history
