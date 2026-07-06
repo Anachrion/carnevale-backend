@@ -41,6 +41,61 @@ module Encounter
     def score
       agenda_events.count { |e| e.action == "scored" }
     end
+
+    # The turn counter is a per-player, rewindable cursor (not a shared game value): a player can
+    # step it back to record a forgotten past-turn score, then forward again, without touching the
+    # opponent's view. Agenda events stamp whichever turn the acting player is currently pointed at.
+    # Both moves are clamped to [1, scenario.turns] and only allowed while actively playing.
+    def advance_turn!
+      return false unless playing?
+      return false if current_turn >= game.scenario.turns
+
+      update!(current_turn: current_turn + 1)
+      true
+    end
+
+    def rewind_turn!
+      return false unless playing?
+      return false if current_turn <= 1
+
+      update!(current_turn: current_turn - 1)
+      true
+    end
+
+    def on_last_turn?
+      current_turn >= game.scenario.turns
+    end
+
+    # This player ends the game from their side. Only offered on the final turn. Also archives the
+    # game for this player (drops it into their archived list); the opponent is untouched and can
+    # keep scoring at their own pace. Game-level completion is then re-derived.
+    def finish!
+      return false unless game.in_progress? && !finished? && on_last_turn?
+
+      transaction do
+        update!(finished: true, visibility: "archived")
+        game.refresh_completion!
+      end
+      true
+    end
+
+    # Undo: reopen the game for this player (and un-archive it), reverting game-level completion if
+    # the game had completed. Allowed any time this player is finished.
+    def unfinish!
+      return false unless finished?
+
+      transaction do
+        update!(finished: false, visibility: "active")
+        game.refresh_completion!
+      end
+      true
+    end
+
+    # Actively taking actions (scoring, drawing, moving the turn cursor): the game is live and this
+    # player hasn't ended it. A finished player is soft-locked until they undo.
+    def playing?
+      game.in_progress? && !finished?
+    end
   end
 end
 
@@ -49,6 +104,8 @@ end
 # Table name: game_players
 #
 #  id                  :bigint           not null, primary key
+#  current_turn        :integer          default(1), not null
+#  finished            :boolean          default(FALSE), not null
 #  host                :boolean          default(FALSE), not null
 #  ready               :boolean          default(FALSE), not null
 #  role                :string

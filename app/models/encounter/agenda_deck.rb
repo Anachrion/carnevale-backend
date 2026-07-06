@@ -18,7 +18,7 @@ module Encounter
       drawn = []
       drawn << draw_one(drawn) while drawn.size < count
       drawn.each do |agenda_id|
-        game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: "initial", turn: @game.current_turn)
+        game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: "initial", turn: game_player.current_turn)
       end
     end
 
@@ -29,7 +29,7 @@ module Encounter
       raise ArgumentError, "origin must not be \"initial\" outside the initial draw" if origin == "initial"
 
       agenda_id = draw_one(game_player.drawn_agenda_ids)
-      game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: origin, caused_by_event: caused_by_event, turn: @game.current_turn)
+      game_player.agenda_events.create!(agenda_id: agenda_id, action: "drawn", origin: origin, caused_by_event: caused_by_event, turn: game_player.current_turn)
     end
 
     # Scoring is worth a flat 1 VP. When the scenario carries the "Cycle" rule, scoring immediately
@@ -38,7 +38,7 @@ module Encounter
     def score(game_player, agenda_id)
       return false unless game_player.hand_agenda_ids.include?(agenda_id)
 
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: @game.current_turn)
+      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: game_player.current_turn)
       draw(game_player, origin: "recycle", caused_by_event: event) if @game.scenario.cycle_agendas?
       true
     end
@@ -46,7 +46,7 @@ module Encounter
     def discard(game_player, agenda_id, origin:, recycle: false)
       return false unless game_player.hand_agenda_ids.include?(agenda_id)
 
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: @game.current_turn)
+      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: game_player.current_turn)
       draw(game_player, origin: "recycle", caused_by_event: event) if recycle
       true
     end

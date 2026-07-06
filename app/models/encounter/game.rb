@@ -73,17 +73,19 @@ module Encounter
       true
     end
 
-    # Either player can advance the shared turn counter — like the roll winners and role pick,
-    # this app tracks the physical game rather than refereeing whose turn it is to act.
-    def advance_turn!
-      return false unless in_progress?
+    # Completion is derived from the players' per-player `finished` flags rather than driven by the
+    # turn counter: the game is `completed` only once both players have ended it, and reverts to
+    # `in_progress` the moment either undoes (so one player finishing never ends it for the other).
+    # Called after any finish/unfinish; a no-op outside the in-play phases.
+    def refresh_completion!
+      return unless in_progress? || completed?
 
-      if current_turn >= scenario.turns
+      all_finished = game_players.reload.all?(&:finished?)
+      if all_finished && !completed?
         update!(status: "completed")
-      else
-        update!(current_turn: current_turn + 1)
+      elsif !all_finished && completed?
+        update!(status: "in_progress")
       end
-      true
     end
 
     private
@@ -118,16 +120,15 @@ end
 #
 # Table name: games
 #
-#  id           :bigint           not null, primary key
-#  board_size   :string
-#  current_turn :integer          default(1), not null
-#  ducat_limit  :integer          not null
-#  join_code    :string           not null
-#  name         :string           not null
-#  status       :string           default("pending"), not null
-#  created_at   :datetime         not null
-#  updated_at   :datetime         not null
-#  scenario_id  :bigint           not null
+#  id          :bigint           not null, primary key
+#  board_size  :string
+#  ducat_limit :integer          not null
+#  join_code   :string           not null
+#  name        :string           not null
+#  status      :string           default("pending"), not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#  scenario_id :bigint           not null
 #
 # Indexes
 #

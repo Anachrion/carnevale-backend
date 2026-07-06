@@ -117,6 +117,7 @@ module Api
           @game.agenda_deck.draw_initial(@game_player)
           maybe_advance_to_deploying!
         when "in_progress"
+          return render_error("You've ended the game") if @game_player.finished?
           return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
 
           @game.agenda_deck.draw(@game_player, origin: params[:origin])
@@ -132,7 +133,7 @@ module Api
       end
 
       def score_agenda
-        return render_error("Wrong game status for scoring agendas") unless @game.status == "in_progress"
+        return render_error("Wrong game status for scoring agendas") unless @game_player.playing?
         # Cycle-driven recycling is decided by the scenario inside AgendaDeck#score, not the client.
         return render_error("Agenda not in hand") unless @game.agenda_deck.score(@game_player, params[:agenda_id].to_i)
 
@@ -150,7 +151,7 @@ module Api
         recycle =
           if @game.mulligan_window? && origin == MULLIGAN_ORIGIN
             true
-          elsif @game.in_progress? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
+          elsif @game_player.playing? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
             recycle_param
           else
             return render_error("Wrong game status or invalid origin for discarding agendas")
@@ -177,10 +178,35 @@ module Api
         end
       end
 
+      # The turn counter is per-player: advance/rewind move only the requesting player's cursor
+      # (clamped to [1, scenario.turns]) so one player can correct a past-turn score without moving
+      # the other's view. See Encounter::Player#advance_turn!/#rewind_turn!.
       def advance_turn
-        return render_error("Wrong game status for advancing the turn") unless @game.status == "in_progress"
+        return render_error("Can't advance the turn right now") unless @game_player.advance_turn!
 
-        @game.advance_turn!
+        broadcast_state!(@game)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
+      end
+
+      def rewind_turn
+        return render_error("Can't rewind the turn right now") unless @game_player.rewind_turn!
+
+        broadcast_state!(@game)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
+      end
+
+      # Ends the game from this player's side (only on the final turn) and archives it for them; the
+      # opponent keeps playing. `unfinish` undoes it, reopening (and un-archiving) the game.
+      def finish
+        return render_error("You can only end the game on the final turn") unless @game_player.finish!
+
+        broadcast_state!(@game)
+        render json: GameSerializer.new(@game, viewer: @game_player).as_json
+      end
+
+      def unfinish
+        return render_error("You haven't ended the game") unless @game_player.unfinish!
+
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
