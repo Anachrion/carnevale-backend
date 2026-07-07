@@ -25,10 +25,11 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  # config.assume_ssl = true
+  # (kamal-proxy terminates TLS and forwards over plain HTTP on the internal network.)
+  config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  # config.force_ssl = true
+  config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
@@ -60,10 +61,16 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: "example.com" }
 
   # Base URL of the front-end app, used to build links (e.g. password reset) in emails.
-  config.x.frontend_url = ENV.fetch("FRONTEND_URL")
+  # Required at runtime, but `assets:precompile` during the Docker image build boots the
+  # production env with no runtime ENV present (only SECRET_KEY_BASE_DUMMY), so fall back
+  # to a harmless placeholder there. Kamal injects the real value at deploy time.
+  frontend_url = ENV.fetch("FRONTEND_URL") do
+    ENV["SECRET_KEY_BASE_DUMMY"] ? "http://localhost:3000" : raise("FRONTEND_URL is required")
+  end
+  config.x.frontend_url = frontend_url
 
   # Only accept Action Cable connections that claim to come from the front-end app.
-  config.action_cable.allowed_request_origins = [ENV.fetch("FRONTEND_URL")]
+  config.action_cable.allowed_request_origins = [frontend_url]
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {

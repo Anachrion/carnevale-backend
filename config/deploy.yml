@@ -1,0 +1,83 @@
+# Kamal deploy config for carnevale_backend.
+# Single Hetzner VM: app container (Puma + Thruster + Solid Queue) + Postgres accessory.
+# Docs: https://kamal-deploy.org
+#
+# >>> Before your first deploy: find-and-replace 62.238.30.155 everywhere in this file
+#     with your Hetzner server's public IPv4 (e.g. 91.99.12.34). That single
+#     replace fixes every line, including the sslip.io host below.
+#
+# "<ip>.sslip.io" resolves to your IP automatically, so kamal-proxy can get a
+# free Let's Encrypt certificate with no domain purchase. Swap it for a real
+# domain later by editing proxy.host + FRONTEND_URL.
+
+service: carnevale_backend
+
+# Image lives in GitHub Container Registry (must be lowercase).
+image: anachrion/carnevale_backend
+
+servers:
+  web:
+    - 62.238.30.155
+
+# kamal-proxy terminates TLS and routes :443 -> the app container.
+proxy:
+  ssl: true
+  host: 62.238.30.155.sslip.io   # after replace: e.g. 91.99.12.34.sslip.io
+  # app_port defaults to 80, which is where Thruster listens. No need to set it.
+
+registry:
+  server: ghcr.io
+  username: Anachrion
+  password:
+    - KAMAL_REGISTRY_PASSWORD   # a GitHub PAT with write:packages (see .kamal/secrets)
+
+# The server is an Intel/AMD (x86) CX23, so build for amd64. Because your Mac is
+# arm64, this first build uses QEMU emulation and can be slow (a few minutes) --
+# that's expected. If it's too slow, uncomment `remote:` to build natively on the
+# server instead (no emulation).
+builder:
+  arch: amd64
+  # remote: ssh://root@62.238.30.155
+
+env:
+  clear:
+    # Run the Solid Queue worker inside Puma (single-server setup, no Redis).
+    SOLID_QUEUE_IN_PUMA: true
+    WEB_CONCURRENCY: 2
+    # The app reaches the Postgres accessory by its container name on the kamal network.
+    DB_HOST: carnevale_backend-db
+    DB_PORT: 5432
+    DB_USERNAME: carnevale_backend
+    # Used for password-reset email links + Action Cable allowed origins.
+    # Point this at your real frontend when it exists; for now it's the API's own URL.
+    FRONTEND_URL: https://62.238.30.155.sslip.io
+  secret:
+    - RAILS_MASTER_KEY
+    - CARNEVALE_BACKEND_DATABASE_PASSWORD
+
+# Persist Active Storage uploads across deploys (config.active_storage.service = :local).
+volumes:
+  - "carnevale_backend_storage:/rails/storage"
+
+accessories:
+  db:
+    image: postgres:17
+    host: 62.238.30.155
+    # Publish only to localhost on the host so Postgres isn't exposed to the internet;
+    # the app connects over the internal kamal Docker network instead.
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_USER: carnevale_backend
+        POSTGRES_DB: carnevale_backend_production
+      secret:
+        - POSTGRES_PASSWORD
+    volumes:
+      - carnevale_backend_db_data:/var/lib/postgresql/data
+
+# Handy shortcuts: `kamal console`, `kamal logs`, `kamal shell`, `kamal dbc`
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  dbc: app exec --interactive --reuse "bin/rails dbconsole"
