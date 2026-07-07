@@ -163,15 +163,16 @@ module Api
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
-      # Two distinct discards share this endpoint, gated by status:
-      #  • the pre-game "mulligan" (origin `unachievable`) — during agenda_draw a player tosses an
-      #    impossible or duplicated agenda and always draws a replacement; and
+      # Two kinds of discard share this endpoint:
+      #  • the "unachievable" discard (origin `unachievable`) — tossing an impossible or duplicated
+      #    agenda and swapping it for a fresh one. Always draws a replacement, whether during the
+      #    pre-game mulligan window (agenda_draw) or mid-game (in_progress); and
       #  • in-play discards (special_rule/command_point) while the game is in_progress, which redraw
       #    only when the caller asks (`recycle`).
       def discard_agenda
         origin = params[:origin]
         recycle =
-          if @game.mulligan_window? && origin == MULLIGAN_ORIGIN
+          if origin == MULLIGAN_ORIGIN && (@game.mulligan_window? || @game_player.playing?)
             true
           elsif @game_player.playing? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
             recycle_param
