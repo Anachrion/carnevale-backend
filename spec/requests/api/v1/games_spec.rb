@@ -458,14 +458,23 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host.response).to have_http_status(:ok)
     end
 
-    it "rejects the unachievable mulligan once the game is in progress" do
+    it "lets a player discard an unachievable agenda mid-game and always redraws a replacement" do
       host, guest, h, g, game_id, host_pid, _ = setup_through_draw
       go_live(host, guest, h, g, game_id)
 
       host.get "/api/v1/games/#{game_id}", headers: h
-      agenda_id = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"].first["id"]
-      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/discard", params: { origin: "unachievable" }.to_json, headers: h
-      expect(host.response).to have_http_status(:unprocessable_entity)
+      hand = json(host)["players"].find { |p| p["id"] == host_pid }["agendas"]
+      discard_id = hand.first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{discard_id}/discard", params: { origin: "unachievable" }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host_entry = json(host)["players"].find { |p| p["id"] == host_pid }
+      # Replacement drawn: the hand stays the same size and the discarded agenda is gone from it.
+      expect(host_entry["agendas"].size).to eq(hand.size)
+      expect(host_entry["agendas"].map { |a| a["id"] }).not_to include(discard_id)
+      expect(host_entry["agenda_history"].any? { |e| e["origin"] == "unachievable" }).to be true
+      expect(host_entry["agenda_history"].any? { |e| e["origin"] == "recycle" }).to be true
     end
   end
 
