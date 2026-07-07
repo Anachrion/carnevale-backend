@@ -55,6 +55,8 @@ env:
     # Used for password-reset email links + Action Cable allowed origins.
     # Point this at your real frontend when it exists; for now it's the API's own URL.
     FRONTEND_URL: https://62.238.30.155.sslip.io
+    # Action Cable pub/sub backend (the redis accessory below, on the kamal network).
+    REDIS_URL: redis://carnevale_backend-redis:6379/1
   secret:
     - RAILS_MASTER_KEY
     - CARNEVALE_BACKEND_DATABASE_PASSWORD
@@ -78,6 +80,13 @@ accessories:
         - POSTGRES_PASSWORD
     volumes:
       - carnevale_backend_db_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    host: 62.238.30.155
+    # Bound to localhost only; the app reaches it over the kamal network by name.
+    port: "127.0.0.1:6379:6379"
+    # Action Cable is pub/sub only, so disable persistence entirely (no volume needed).
+    cmd: redis-server --save "" --appendonly no
 
 # Handy shortcuts: `kamal console`, `kamal logs`, `kamal shell`, `kamal dbc`
 aliases:

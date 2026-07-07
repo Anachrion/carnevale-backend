@@ -69,8 +69,12 @@ Rails.application.configure do
   end
   config.x.frontend_url = frontend_url
 
-  # Only accept Action Cable connections that claim to come from the front-end app.
-  config.action_cable.allowed_request_origins = [frontend_url]
+  # Action Cable connections are authenticated by a single-use CableTicket
+  # (see ApplicationCable::Connection), not by cookies or Origin, so origin-based
+  # request-forgery protection is redundant here. Native mobile WebSocket clients also
+  # send no Origin header, which an origin allowlist would otherwise reject. Disable it
+  # and rely on the ticket, which is the actual credential.
+  config.action_cable.disable_request_forgery_protection = true
 
   # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
   # config.action_mailer.smtp_settings = {
