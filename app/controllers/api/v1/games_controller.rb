@@ -150,13 +150,14 @@ module Api
       end
 
       # The player has reviewed (and optionally mulliganed) their opening hand and is done with the
-      # agenda_draw phase. Once both players confirm, the game advances to deploying.
+      # agenda_draw phase. Once both players confirm, the game goes straight live — deployment is
+      # agreed at the table, so there's no in-app deployment step.
       def confirm_agendas
         return render_error("Wrong game status for confirming agendas") unless @game.agenda_draw?
         return render_error("Draw your agendas first") if @game_player.drawn_agenda_ids.empty?
 
         @game_player.update!(agendas_confirmed: true)
-        maybe_advance_to_deploying!
+        maybe_start_game!
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
@@ -171,8 +172,8 @@ module Api
       end
 
       # Two distinct discards share this endpoint, gated by status:
-      #  • the pre-game "mulligan" (origin `unachievable`) — during agenda_draw/deploying a player
-      #    tosses an impossible or duplicated agenda and always draws a replacement; and
+      #  • the pre-game "mulligan" (origin `unachievable`) — during agenda_draw a player tosses an
+      #    impossible or duplicated agenda and always draws a replacement; and
       #  • in-play discards (special_rule/command_point) while the game is in_progress, which redraw
       #    only when the caller asks (`recycle`).
       def discard_agenda
@@ -240,13 +241,6 @@ module Api
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
-      def ready
-        @game_player.update!(ready: true)
-        @game.start!
-        broadcast_state!(@game)
-        render json: GameSerializer.new(@game, viewer: @game_player).as_json
-      end
-
       # Only hides the game from the current user's own game list; the opponent is unaffected.
       def archive
         @game_player.update!(visibility: "archived")
@@ -300,11 +294,11 @@ module Api
         @game.update!(status: "agenda_draw")
       end
 
-      def maybe_advance_to_deploying!
+      def maybe_start_game!
         return unless @game.status == "agenda_draw"
-        return unless @game.game_players.reload.all?(&:agendas_confirmed?)
 
-        @game.update!(status: "deploying")
+        # start! re-checks both players confirmed under the status guard and creates entry states.
+        @game.start!
       end
 
       def recycle_param

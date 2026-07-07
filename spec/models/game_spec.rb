@@ -61,33 +61,33 @@ RSpec.describe Encounter::Game, type: :model do
 
 
   describe "#start!" do
-    it "flips the game to in_progress once both players are ready" do
-      game = create(:game, status: "deploying")
-      create_list(:game_player, 2, game: game, ready: true)
+    it "flips the game to in_progress once both players have confirmed their agendas" do
+      game = create(:game, status: "agenda_draw")
+      create_list(:game_player, 2, game: game, agendas_confirmed: true)
 
       expect(game.start!).to be true
       expect(game.reload.status).to eq("in_progress")
     end
 
-    it "does nothing until both players are ready" do
-      game = create(:game, status: "deploying")
-      create(:game_player, game: game, ready: true)
-      create(:game_player, game: game, ready: false)
+    it "does nothing until both players have confirmed" do
+      game = create(:game, status: "agenda_draw")
+      create(:game_player, game: game, agendas_confirmed: true)
+      create(:game_player, game: game, agendas_confirmed: false)
 
       expect(game.start!).to be false
-      expect(game.reload.status).to eq("deploying")
+      expect(game.reload.status).to eq("agenda_draw")
     end
 
     it "does not re-run once already in_progress" do
       game = create(:game, status: "in_progress")
-      create_list(:game_player, 2, game: game, ready: true)
+      create_list(:game_player, 2, game: game, agendas_confirmed: true)
 
       expect(game.start!).to be false
     end
 
     it "creates an entry state for each card-reference entry, snapshotting the profile's stats" do
-      game = create(:game, status: "deploying")
-      host, _guest = create_list(:game_player, 2, game: game, ready: true)
+      game = create(:game, status: "agenda_draw")
+      host, _guest = create_list(:game_player, 2, game: game, agendas_confirmed: true)
       profile = create(:profile, life_points: 8, will_points: 2, command_points: 1)
       list = create(:list, owner: host)
       list_entry = create(:list_entry, list: list, entry: create(:card_reference, profile: profile))
@@ -101,8 +101,8 @@ RSpec.describe Encounter::Game, type: :model do
     end
 
     it "does not create an entry state for equipment entries" do
-      game = create(:game, status: "deploying")
-      host, _guest = create_list(:game_player, 2, game: game, ready: true)
+      game = create(:game, status: "agenda_draw")
+      host, _guest = create_list(:game_player, 2, game: game, agendas_confirmed: true)
       list = create(:list, owner: host)
       list_entry = create(:list_entry, list: list, entry: create(:equipment))
 
@@ -131,11 +131,11 @@ RSpec.describe Encounter::Game, type: :model do
     end
 
     it "does nothing outside the in-play phases" do
-      game = create(:game, status: "deploying")
+      game = create(:game, status: "agenda_draw")
       create(:game_player, game: game, finished: true)
 
       game.refresh_completion!
-      expect(game.status).to eq("deploying")
+      expect(game.status).to eq("agenda_draw")
     end
   end
 end

@@ -23,7 +23,7 @@ RSpec.describe "Api::V1::Games", type: :request do
   # Runs the whole setup flow (not factories straight to in_progress) so the entries the entry-state
   # endpoints poke at are the snapshotted ones they actually resolve, with real entry states. The
   # host's model is given non-zero HP/WP/CP so stat edits have something to move.
-  def start_game_with_models(ready: true)
+  def start_game_with_models(start: true)
     host = open_session
     guest = open_session
     h = headers_for(host, host_user)
@@ -43,12 +43,11 @@ RSpec.describe "Api::V1::Games", type: :request do
     guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
     host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
     guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+    # Both players confirming their opening hand advances the game straight to in_progress (entry
+    # states created). Passing start: false leaves the guest un-confirmed, so the game stays in
+    # agenda_draw — used to assert the in-play endpoints reject before the game is live.
     host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
-    guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
-    if ready
-      host.post "/api/v1/games/#{game_id}/ready", headers: h
-      guest.post "/api/v1/games/#{game_id}/ready", headers: g
-    end
+    guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g if start
 
     guest.get "/api/v1/games/#{game_id}", headers: g
     players = json(guest)["players"]
@@ -136,20 +135,16 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.get "/api/v1/games/#{game_id}", headers: h
       expect(json(host)["status"]).to eq("agenda_draw")
 
+      # One player confirming doesn't advance the phase; both confirming takes the game straight
+      # live — deployment is agreed at the table, so there's no in-app deployment step.
       host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
       expect(json(host)["status"]).to eq("agenda_draw")
       guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
-      expect(json(guest)["status"]).to eq("deploying")
+      expect(json(guest)["status"]).to eq("in_progress")
 
+      # The deployment-roll winner is assigned for the client's at-the-table popup.
       winner_id = json(guest)["players"].find { |p| p["won_deployment_roll"] }&.fetch("id")
       expect(winner_id).to be_present
-
-      host.post "/api/v1/games/#{game_id}/ready", headers: h
-      guest.get "/api/v1/games/#{game_id}", headers: g
-      expect(json(guest)["status"]).to eq("deploying")
-
-      guest.post "/api/v1/games/#{game_id}/ready", headers: g
-      expect(json(guest)["status"]).to eq("in_progress")
     end
   end
 
@@ -174,8 +169,6 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
       host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
       guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
-      host.post "/api/v1/games/#{game_id}/ready", headers: h
-      guest.post "/api/v1/games/#{game_id}/ready", headers: g
 
       [ host, guest, h, g, game_id ]
     end
@@ -345,9 +338,8 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "agenda visibility and the pre-game mulligan" do
-    # create → join → gang select → initial draw → confirm, leaving the game in the setup window
-    # (status `deploying`, since both players have confirmed their hand). Returns the sessions,
-    # headers, game id, and ids.
+    # create → join → gang select → initial draw, leaving the game in the mulligan window (status
+    # `agenda_draw`, neither player confirmed yet). Returns the sessions, headers, game id, and ids.
     def setup_through_draw(agenda_rules: [])
       host = open_session
       guest = open_session
@@ -365,8 +357,6 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
       host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
       guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
-      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
-      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
 
       guest.get "/api/v1/games/#{game_id}", headers: g
       players = json(guest)["players"]
@@ -375,9 +365,10 @@ RSpec.describe "Api::V1::Games", type: :request do
       [ host, guest, h, g, game_id, host_pid, guest_pid ]
     end
 
+    # Both players confirming their hand takes the game straight live (in_progress).
     def go_live(host, guest, h, g, game_id)
-      host.post "/api/v1/games/#{game_id}/ready", headers: h
-      guest.post "/api/v1/games/#{game_id}/ready", headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
     end
 
     it "shows each opponent's hand to the other when the scenario is not Secret" do
@@ -557,7 +548,7 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
 
     it "rejects updates while the game isn't in progress" do
-      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(ready: false)
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(start: false)
 
       host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
                  params: { counters: { stunned: true } }.to_json, headers: h
@@ -600,7 +591,7 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
 
     it "rejects updates while the game isn't in progress" do
-      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(ready: false)
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(start: false)
 
       host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/stats",
                  params: { stats: { life_points: 5 } }.to_json, headers: h
