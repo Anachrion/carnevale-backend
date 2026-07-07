@@ -316,7 +316,15 @@ Devise.setup do |config|
 
   # ==> Configuration for :jwt_authenticatable (Flutter API clients)
   config.jwt do |jwt|
-    jwt.secret = Rails.application.credentials.devise_jwt_secret_key!
+    # `assets:precompile` in the Docker image build boots the production env with
+    # SECRET_KEY_BASE_DUMMY and no master key, so credentials can't be decrypted. Use a
+    # throwaway secret there; the real one is required at runtime (Kamal sets RAILS_MASTER_KEY).
+    jwt.secret =
+      if ENV["SECRET_KEY_BASE_DUMMY"]
+        "dummy_secret_for_asset_precompile"
+      else
+        Rails.application.credentials.devise_jwt_secret_key!
+      end
     jwt.dispatch_requests = [
       [ "POST", %r{^/api/v1/login$} ]
     ]
