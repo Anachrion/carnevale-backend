@@ -26,7 +26,7 @@ RSpec.describe Encounter::Player, type: :model do
     end
 
     it "won't move while the game isn't in progress or the player has finished" do
-      pending_game = create(:game, status: "deploying")
+      pending_game = create(:game, status: "agenda_draw")
       expect(create(:game_player, game: pending_game).advance_turn!).to be false
 
       game = in_progress_game(turns: 1)
@@ -84,7 +84,6 @@ end
 #  current_turn        :integer          default(1), not null
 #  finished            :boolean          default(FALSE), not null
 #  host                :boolean          default(FALSE), not null
-#  ready               :boolean          default(FALSE), not null
 #  role                :string
 #  visibility          :string           default("active"), not null
 #  won_deployment_roll :boolean          default(FALSE), not null

@@ -15,7 +15,6 @@ end
 #  current_turn        :integer          default(1), not null
 #  finished            :boolean          default(FALSE), not null
 #  host                :boolean          default(FALSE), not null
-#  ready               :boolean          default(FALSE), not null
 #  role                :string
 #  visibility          :string           default("active"), not null
 #  won_deployment_roll :boolean          default(FALSE), not null

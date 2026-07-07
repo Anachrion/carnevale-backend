@@ -17,7 +17,6 @@ class PlayerSerializer
       host: player.host,
       list: player.list && ListSummarySerializer.new(player.list).as_json,
       role: player.role,
-      ready: player.ready,
       agendas_confirmed: player.agendas_confirmed,
       won_role_roll: player.won_role_roll,
       won_deployment_roll: player.won_deployment_roll,

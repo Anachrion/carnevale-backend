@@ -1,6 +1,6 @@
 module Encounter
   class Game < ApplicationRecord
-    STATUSES = %w[pending gang_selection agenda_draw deploying in_progress completed].freeze
+    STATUSES = %w[pending gang_selection agenda_draw in_progress completed].freeze
 
     belongs_to :scenario, class_name: "Catalog::Scenario"
 
@@ -47,10 +47,10 @@ module Encounter
     end
 
     # The setup window in which a player may mulligan an impossible/duplicated agenda (discard +
-    # redraw): after the initial draw and up until the game goes live. The status auto-advances from
-    # agenda_draw to deploying once both players have drawn, so both count as the same window.
+    # redraw): the agenda_draw phase, where each player reviews their opening hand. Once both players
+    # confirm, the game goes straight live (in_progress) and the mulligan window closes.
     def mulligan_window?
-      agenda_draw? || deploying?
+      agenda_draw?
     end
 
     # The agenda-deck subsystem (initial/in-play draws, scoring, discarding). Lives in its own
@@ -59,12 +59,13 @@ module Encounter
       @agenda_deck ||= AgendaDeck.new(self)
     end
 
-    # Called once both players are ready on the deployment screen — flips the game live and
-    # snapshots each model's HP/WP/CP into an Encounter::EntryState. Guarded by the status check
-    # so a repeated "ready" call (e.g. a duplicate request) doesn't recreate entry states.
+    # Called once both players have confirmed their opening Agenda hand — flips the game live and
+    # snapshots each model's HP/WP/CP into an Encounter::EntryState. Guarded by the status check so a
+    # repeated confirm call (e.g. a duplicate request) doesn't recreate entry states. Deployment
+    # zones are agreed at the table, so there's no separate in-app deployment step.
     def start!
       return false if in_progress? || completed?
-      return false unless game_players.reload.all?(&:ready)
+      return false unless game_players.reload.all?(&:agendas_confirmed?)
 
       transaction do
         update!(status: "in_progress")
