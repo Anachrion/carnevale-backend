@@ -41,8 +41,12 @@ builder:
 
 env:
   clear:
-    # Run the Solid Queue worker inside Puma (single-server setup, no Redis).
-    SOLID_QUEUE_IN_PUMA: true
+    # NOTE: Solid Queue is intentionally NOT started here. The app has the
+    # solid_queue/cache/cable gems and separate queue/cache/cable databases in
+    # database.yml, but their schemas were never generated (no db/queue_schema.rb,
+    # no *_migrate dirs), so the worker would crash on missing tables. Nothing uses
+    # Solid Queue as the Active Job adapter yet (defaults to in-process :async), so
+    # this is safe. Re-enable SOLID_QUEUE_IN_PUMA: true once the schemas are installed.
     WEB_CONCURRENCY: 2
     # The app reaches the Postgres accessory by its container name on the kamal network.
     DB_HOST: carnevale_backend-db
