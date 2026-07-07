@@ -972,16 +972,16 @@ paths:
 
     post:
       operationId: drawAgendas
-      summary: Privately draw this player's Agenda cards
+      summary: Draw a single in-play Agenda card
       description: |
-        Never broadcast or visible to the opponent. Behavior depends on game status: while
-        `agenda_draw`, draws the scenario's full initial hand (no request body). Drawing does
-        not advance the phase — the player then reviews (and optionally mulligans) the hand and
-        posts to `agendas/confirm`. While
-        `in_progress`, draws a single replacement card and requires `origin` in the body
-        (`special_rule` or `command_point` — a card is never freely drawn mid-game, only
-        granted by one of those). Every agenda a player has ever drawn — whether still in
-        hand, scored, or discarded — can never be drawn again by that same player.
+        Only valid while the game is `in_progress`. Draws one replacement card and requires
+        `origin` in the body (`special_rule` or `command_point` — a card is never freely drawn
+        mid-game, only granted by one of those). The opening hand is **not** drawn here: it is dealt
+        automatically the moment the game enters `agenda_draw` (both players' hands at once), so
+        there is no initial-draw call — clients read the pre-dealt hand from the player's `agendas`
+        and go straight to reviewing/mulliganing and `agendas/confirm`. Every agenda a player has
+        ever drawn — whether still in hand, scored, or discarded — can never be drawn again by that
+        same player.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1004,7 +1004,7 @@ paths:
         "404":
           description: Not found
         "422":
-          description: Wrong game status, agendas already drawn, or invalid/missing origin
+          description: Wrong game status (not in_progress) or invalid/missing origin
           content:
             application/json:
               schema:
@@ -1019,10 +1019,10 @@ paths:
       summary: Confirm this player's opening Agenda hand
       description: |
         Marks the player done with the `agenda_draw` phase after they've reviewed and optionally
-        mulliganed their hand. Requires the player to have already drawn. Once both players confirm,
-        the game goes straight to `in_progress` — deployment zones are agreed at the table, so there
-        is no separate in-app deployment step — and an EntryState (current/starting HP, WP, CP, and
-        status counters) is created for every model (Catalog::CardReference entry) in each list.
+        mulliganed their auto-dealt opening hand. Once both players confirm, the game goes straight
+        to `in_progress` — deployment zones are agreed at the table, so there is no separate in-app
+        deployment step — and an EntryState (current/starting HP, WP, CP, and status counters) is
+        created for every model (Catalog::CardReference entry) in each list.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1039,7 +1039,7 @@ paths:
         "404":
           description: Not found
         "422":
-          description: Wrong game status or agendas not yet drawn
+          description: Wrong game status
           content:
             application/json:
               schema:
@@ -1464,7 +1464,7 @@ components:
 
     DrawAgendaInput:
       type: object
-      description: Only used (and only required) while the game is `in_progress` — ignored during the initial `agenda_draw` batch draw.
+      description: Required — `origin` identifies what granted the in-play draw.
       properties:
         origin:
           type: string

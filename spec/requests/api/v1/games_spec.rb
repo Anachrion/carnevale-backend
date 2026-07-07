@@ -41,11 +41,10 @@ RSpec.describe "Api::V1::Games", type: :request do
 
     host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
     guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
-    host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
-    guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
-    # Both players confirming their opening hand advances the game straight to in_progress (entry
-    # states created). Passing start: false leaves the guest un-confirmed, so the game stays in
-    # agenda_draw — used to assert the in-play endpoints reject before the game is live.
+    # The opening hands are dealt automatically on entering agenda_draw, so there's no draw call —
+    # players go straight to confirming. Both players confirming advances the game straight to
+    # in_progress (entry states created). Passing start: false leaves the guest un-confirmed, so the
+    # game stays in agenda_draw — used to assert the in-play endpoints reject before the game is live.
     host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
     guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g if start
 
@@ -126,14 +125,11 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
       expect(json(guest)["status"]).to eq("agenda_draw")
 
-      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
-      expect(host.response).to have_http_status(:ok)
-      expect(json(host)["agendas"].size).to eq(3)
-
-      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
-      # Drawing does not advance the phase — both players must confirm their hand first.
+      # Entering agenda_draw deals both opening hands automatically — no draw call needed. Each
+      # player already has their hand under "Your Agenda" and only has to confirm.
       host.get "/api/v1/games/#{game_id}", headers: h
-      expect(json(host)["status"]).to eq("agenda_draw")
+      host_agendas = json(host)["players"].find { |p| p["username"] == host_user.username }["agendas"]
+      expect(host_agendas.size).to eq(3)
 
       # One player confirming doesn't advance the phase; both confirming takes the game straight
       # live — deployment is agreed at the table, so there's no in-app deployment step.
@@ -165,8 +161,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
 
-      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
-      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
+      # Opening hands are dealt automatically on entering agenda_draw; players only confirm.
       host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
       guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g
 
@@ -338,8 +333,9 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "agenda visibility and the pre-game mulligan" do
-    # create → join → gang select → initial draw, leaving the game in the mulligan window (status
-    # `agenda_draw`, neither player confirmed yet). Returns the sessions, headers, game id, and ids.
+    # create → join → gang select, leaving the game in the mulligan window (status `agenda_draw`,
+    # opening hands auto-dealt, neither player confirmed yet). Returns the sessions, headers, game
+    # id, and ids.
     def setup_through_draw(agenda_rules: [])
       host = open_session
       guest = open_session
@@ -355,8 +351,6 @@ RSpec.describe "Api::V1::Games", type: :request do
       guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
-      host.post "/api/v1/games/#{game_id}/agendas/draw", headers: h
-      guest.post "/api/v1/games/#{game_id}/agendas/draw", headers: g
 
       guest.get "/api/v1/games/#{game_id}", headers: g
       players = json(guest)["players"]
@@ -439,7 +433,7 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(after.size).to eq(original.size)
     end
 
-    it "requires a player to have drawn before confirming their hand" do
+    it "auto-deals both opening hands on entering agenda_draw, so confirm needs no prior draw" do
       host = open_session
       guest = open_session
       h = headers_for(host, host_user)
@@ -453,9 +447,15 @@ RSpec.describe "Api::V1::Games", type: :request do
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
       guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
 
-      # In agenda_draw but this player hasn't drawn yet.
+      # The second gang locking advances to agenda_draw and deals both hands in one shot.
+      host.get "/api/v1/games/#{game_id}", headers: h
+      players = json(host)["players"]
+      expect(players.find { |p| p["username"] == host_user.username }["agendas"].size).to eq(3)
+      expect(players.find { |p| p["username"] == guest_user.username }["agendas"].size).to eq(3)
+
+      # Confirming works immediately, with no draw call preceding it.
       host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
-      expect(host.response).to have_http_status(:unprocessable_entity)
+      expect(host.response).to have_http_status(:ok)
     end
 
     it "rejects the unachievable mulligan once the game is in progress" do
