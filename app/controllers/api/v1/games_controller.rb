@@ -125,22 +125,15 @@ module Api
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
+      # Only in-play single draws (special_rule/command_point) come through here — the opening hand is
+      # dealt automatically the moment the game enters agenda_draw (see #maybe_advance_to_agenda_draw!),
+      # since the draw carries no player choice and needs no button.
       def draw_agendas
-        case @game.status
-        when "agenda_draw"
-          return render_error("Agendas already drawn") if @game_player.drawn_agenda_ids.any?
+        return render_error("Wrong game status for drawing agendas") unless @game.in_progress?
+        return render_error("You've ended the game") if @game_player.finished?
+        return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
 
-          # Drawing no longer advances the phase — the player reviews (and optionally mulligans)
-          # their hand, then confirms via #confirm_agendas.
-          @game.agenda_deck.draw_initial(@game_player)
-        when "in_progress"
-          return render_error("You've ended the game") if @game_player.finished?
-          return render_error("Invalid origin") unless DRAW_ORIGINS.include?(params[:origin])
-
-          @game.agenda_deck.draw(@game_player, origin: params[:origin])
-        else
-          return render_error("Wrong game status for drawing agendas")
-        end
+        @game.agenda_deck.draw(@game_player, origin: params[:origin])
 
         broadcast_state!(@game)
         # Intentionally narrower than the other game actions (which return the full game): both
@@ -154,7 +147,6 @@ module Api
       # agreed at the table, so there's no in-app deployment step.
       def confirm_agendas
         return render_error("Wrong game status for confirming agendas") unless @game.agenda_draw?
-        return render_error("Draw your agendas first") if @game_player.drawn_agenda_ids.empty?
 
         @game_player.update!(agendas_confirmed: true)
         maybe_start_game!
@@ -291,7 +283,14 @@ module Api
         players = @game.game_players.reload
         return unless players.size == 2 && players.all? { |p| p.list.present? }
 
-        @game.update!(status: "agenda_draw")
+        # Deal both opening hands the instant the phase begins. The draw carries no player choice
+        # (the weighted buckets decide), so there's nothing to click — players land in agenda_draw
+        # with their hands already under "Your Agenda", then review/mulligan and confirm. Fires
+        # exactly once: the status guard above blocks re-entry once we've flipped to agenda_draw.
+        @game.transaction do
+          @game.update!(status: "agenda_draw")
+          players.each { |p| @game.agenda_deck.draw_initial(p) }
+        end
       end
 
       def maybe_start_game!
