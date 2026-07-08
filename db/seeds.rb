@@ -17,6 +17,13 @@ end
 
 puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile.count} profiles, #{Catalog::Weapon.count} weapons, #{Catalog::SpecialRule.count} special rules"
 
+# ── Version card images ────────────────────────────────────────────────────────
+# Bump internal_version for any card whose images changed (no-op when public/cards is empty),
+# so the app knows which cards to re-download. See lib/tasks/cards.rake.
+if defined?(Rake) && Rake::Task.task_defined?("cards:reversion")
+  Rake::Task["cards:reversion"].invoke
+end
+
 # ── Sample List ────────────────────────────────────────────────────────────────
 sample_user = User.find_or_create_by!(email: "demo@example.com") do |u|
   u.username = "demo"
