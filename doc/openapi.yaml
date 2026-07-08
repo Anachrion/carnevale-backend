@@ -448,6 +448,28 @@ paths:
         "401":
           description: Not authenticated
 
+  /abilities:
+    get:
+      operationId: getAbilities
+      summary: List all glossary abilities (character and weapon special rules)
+      tags: [Abilities]
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [character, weapon]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ability"
+
   /profiles:
     get:
       operationId: getProfiles
@@ -1766,6 +1788,19 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CardReference"
+
+    Ability:
+      type: object
+      required: [name, category, description]
+      properties:
+        name:
+          type: string
+          description: Base name without the "(X)" rating, e.g. "Acrobatic", "Reload".
+        category:
+          type: string
+          enum: [character, weapon]
+        description:
+          type: string
 
     Weapon:
       type: object

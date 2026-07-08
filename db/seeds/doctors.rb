@@ -274,7 +274,7 @@ master_of_arcane_security = Catalog::Profile.find_or_create_by!(name: "Master of
   p.action_points = 3; p.life_points = 22; p.will_points = 4; p.command_points = 3
   p.size = 50; p.ducats = 27; p.movement = 4; p.dexterity = 3; p.attack = 4; p.protection = 5; p.mind = 4
   p.keywords = ["Leader", "Doctor"]
-  p.abilities = ["Bulky", "Expert Offense (2)", "Expert Marksman (2)"]
+  p.abilities = ["Bulky", "Expert Offence (2)", "Expert Marksman (2)"]
 end
 Catalog::ProfileWeapon.find_or_create_by!(profile: master_of_arcane_security, weapon: arming_blade) { |pw| pw.position = 0 }
 Catalog::ProfileWeapon.find_or_create_by!(profile: master_of_arcane_security, weapon: soul_burner) { |pw| pw.position = 1 }
