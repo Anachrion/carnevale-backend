@@ -15,8 +15,10 @@ Rails.application.configure do
   # Turn on fragment caching in view templates.
   config.action_controller.perform_caching = true
 
-  # Cache assets for far-future expiry since they are all digest stamped.
-  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}" }
+  # Cache assets for far-future expiry since they are all digest stamped. Card images under
+  # /cards are immutable per internal_version (the manifest hands out ?v= busted URLs), so they
+  # can safely be marked immutable too.
+  config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}, immutable" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
   # config.asset_host = "http://assets.example.com"

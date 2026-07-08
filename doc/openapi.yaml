@@ -470,6 +470,35 @@ paths:
                 items:
                   $ref: "#/components/schemas/Ability"
 
+  /cards/manifest:
+    get:
+      operationId: getCardsManifest
+      summary: Card image sync manifest (identifier, internal_version, download URLs)
+      description: >
+        One entry per card with its current internal_version and the versioned URLs to download
+        its front/back images. Clients cache images locally and re-download only cards whose
+        internal_version is higher than the cached one. Card stats come from /profiles.
+      tags: [Cards]
+      parameters:
+        - name: faction
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cards]
+                properties:
+                  cards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CardManifestEntry"
+
   /profiles:
     get:
       operationId: getProfiles
@@ -1862,6 +1891,33 @@ components:
           nullable: true
         card_back:
           type: string
+          nullable: true
+
+    CardManifestEntry:
+      type: object
+      required: [identifier, internal_version]
+      properties:
+        identifier:
+          type: string
+        faction:
+          type: string
+          nullable: true
+        internal_version:
+          type: integer
+          description: Bumps whenever the card's image bytes change; drives client re-download.
+        front_url:
+          type: string
+          nullable: true
+          description: Versioned (?v=internal_version) URL of the front image, or null if missing.
+        back_url:
+          type: string
+          nullable: true
+        front_bytes:
+          type: integer
+          nullable: true
+          description: Size in bytes of the front image, or null if the file is missing.
+        back_bytes:
+          type: integer
           nullable: true
 
     Equipment:

@@ -27,6 +27,7 @@ Rails.application.routes.draw do
         end
       end
       resources :profiles, only: %i[index show]
+      get "cards/manifest", to: "cards#manifest"
       resources :abilities, only: %i[index]
       resources :equipment, only: %i[index]
       resources :scenarios, only: %i[index]
