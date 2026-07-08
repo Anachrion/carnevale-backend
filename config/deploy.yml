@@ -38,6 +38,11 @@ registry:
 builder:
   arch: amd64
   # remote: ssh://root@62.238.30.155
+  # Build from the working tree, NOT the default `git archive` of HEAD. Git archives contain only
+  # LFS *pointer* files, so the default would ship 132-byte pointers for public/cards/*.png instead
+  # of the real images. With `context: .` Kamal uses the checked-out files (run `git lfs pull` on
+  # any machine you deploy from so they're materialised). .dockerignore still excludes /.git etc.
+  context: .
 
 env:
   clear:
