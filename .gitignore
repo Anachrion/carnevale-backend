@@ -29,6 +29,9 @@
 
 /public/assets
 
+# Node modules for Puppeteer (backoffice card rendering); Chromium is provisioned in the image.
+/node_modules
+
 # Claude Code settings (personal, not shared)
 .claude/settings.json
 .claude/settings.local.json

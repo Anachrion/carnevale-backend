@@ -40,27 +40,13 @@ namespace :cards do
   # repeatedly; only cards with a changed digest are touched. Also invoked at the end of seeds.
   desc "Bump internal_version for cards whose images changed"
   task reversion: :environment do
-    bumped = created = unchanged = missing = 0
+    tally = Hash.new(0)
 
     Catalog::CardReference.includes(:profile).find_each do |cr|
-      digest = cr.image_digest
-      if digest.nil?
-        missing += 1
-        next
-      end
-
-      if cr.content_digest.nil?
-        # First time we see this card's images — establish a baseline at version 1.
-        cr.update_columns(content_digest: digest, updated_at: Time.current)
-        created += 1
-      elsif cr.content_digest != digest
-        cr.update_columns(internal_version: cr.internal_version + 1, content_digest: digest, updated_at: Time.current)
-        bumped += 1
-      else
-        unchanged += 1
-      end
+      tally[cr.reversion!] += 1
     end
 
-    puts "cards:reversion — baselined #{created}, bumped #{bumped}, unchanged #{unchanged}, missing images #{missing}"
+    puts "cards:reversion — baselined #{tally[:baselined]}, bumped #{tally[:bumped]}, " \
+         "unchanged #{tally[:unchanged]}, missing images #{tally[:missing]}"
   end
 end

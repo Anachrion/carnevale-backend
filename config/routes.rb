@@ -60,6 +60,27 @@ Rails.application.routes.draw do
     end
   end
 
+  # Card-authoring backoffice: browse profiles, render/export card faces, edit illustration
+  # framing, and push freshly rendered images into the catalog (public/cards). Auth is enforced
+  # in Backoffice::BaseController (Devise login), which also lets the internal Grover render
+  # request through via a render token — so it is NOT wrapped in an `authenticate :user` block.
+  namespace :backoffice do
+    resources :profiles, only: %i[index show] do
+      member do
+        get   :card
+        get   :card_pdf
+        get   :card_png
+        get   :illustration_editor
+        patch :illustration_position
+        post  :render_to_catalog
+      end
+      collection do
+        get :export_pdf
+        get :export_png
+      end
+    end
+  end
+
   mount ActionCable.server => "/cable"
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

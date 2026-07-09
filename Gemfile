@@ -53,6 +53,14 @@ gem "rack-cors"
 # Rate limiting / throttling for the (partly public) API [https://github.com/rack/rack-attack]
 gem "rack-attack"
 
+# Backoffice card rendering/export: Grover drives headless Chrome (via Puppeteer) to
+# screenshot the HTML card into PNG; Prawn assembles print-ready PDFs; rubyzip bundles
+# batch PNG exports. See app/controllers/backoffice/profiles_controller.rb.
+gem "grover"
+gem "prawn"
+gem "combine_pdf"
+gem "rubyzip"
+
 group :development, :test do
   # Load environment variables from .env files [https://github.com/bkeepers/dotenv]
   gem "dotenv-rails"

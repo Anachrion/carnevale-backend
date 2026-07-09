@@ -1,0 +1,102 @@
+<% content_for :title, "Profiles" %>
+
+<%
+  def sort_link(label, col, current_sort, current_dir, params)
+    next_dir = (current_sort == col && current_dir == "asc") ? "desc" : "asc"
+    arrow = current_sort == col ? (current_dir == "asc" ? " ↑" : " ↓") : ""
+    link_to "#{label}#{arrow}",
+      backoffice_profiles_path(params.permit(:faction, :search).merge(sort: col, dir: next_dir))
+  end
+%>
+
+<h1>Profiles</h1>
+
+<%= form_with url: backoffice_profiles_path, method: :get do |f| %>
+  <%= f.hidden_field :sort, value: @sort %>
+  <%= f.hidden_field :dir,  value: @dir %>
+  <div class="toolbar">
+    <%= f.text_field :search, value: params[:search], placeholder: "Search by name…" %>
+    <%= f.select :faction,
+          Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] },
+          { include_blank: "All factions", selected: params[:faction] },
+          onchange: "this.form.requestSubmit()" %>
+    <span class="count"><%= @profiles.size %> profile<%= "s" unless @profiles.size == 1 %></span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button type="button" id="btn-export-pdf" class="btn btn-indigo">⬇ Export PDF</button>
+      <button type="button" id="btn-export-png" class="btn btn-emerald">⬇ Export PNG</button>
+    </div>
+  </div>
+<% end %>
+
+<!-- hidden export forms -->
+<%= form_with url: export_pdf_backoffice_profiles_path, method: :get, id: "export-form", html: { style: "display:none" } do |f| %>
+  <%= f.hidden_field :sort, value: @sort %>
+  <%= f.hidden_field :dir,  value: @dir %>
+<% end %>
+<%= form_with url: export_png_backoffice_profiles_path, method: :get, id: "export-png-form", html: { style: "display:none" } do |f| %>
+  <%= f.hidden_field :sort, value: @sort %>
+  <%= f.hidden_field :dir,  value: @dir %>
+<% end %>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th><%= sort_link("Name", "name", @sort, @dir, params) %></th>
+        <th>Faction</th>
+        <th class="text-right"><%= sort_link("Ducats", "ducats", @sort, @dir, params) %></th>
+        <th class="text-center"><input type="checkbox" id="select-all" checked></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @profiles.each do |profile| %>
+        <tr>
+          <td>
+            <%= link_to profile.name, card_backoffice_profile_path(profile, @filter), target: "_blank" %>
+          </td>
+          <td>
+            <span class="pill" style="<%= faction_pill_style(profile.faction) %>"><%= profile.faction.capitalize %></span>
+          </td>
+          <td class="text-right" style="font-weight:600;color:#374151;"><%= profile.ducats %></td>
+          <td class="text-center">
+            <input type="checkbox" name="ids[]" value="<%= profile.id %>" checked class="profile-checkbox" form="export-form">
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+(function() {
+  const btnPdf     = document.getElementById('btn-export-pdf');
+  const btnPng     = document.getElementById('btn-export-png');
+  const selectAll  = document.getElementById('select-all');
+  const checkboxes = document.querySelectorAll('.profile-checkbox');
+  const pdfForm    = document.getElementById('export-form');
+  const pngForm    = document.getElementById('export-png-form');
+
+  btnPdf.addEventListener('click', function() { pdfForm.submit(); });
+
+  btnPng.addEventListener('click', function() {
+    pngForm.querySelectorAll('input[name="ids[]"]').forEach(el => el.remove());
+    checkboxes.forEach(function(cb) {
+      if (!cb.checked) return;
+      const hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'ids[]';
+      hidden.value = cb.value;
+      pngForm.appendChild(hidden);
+    });
+    pngForm.submit();
+  });
+
+  selectAll.addEventListener('change', function() {
+    checkboxes.forEach(cb => { cb.checked = this.checked; });
+  });
+
+  checkboxes.forEach(cb => cb.addEventListener('change', function() {
+    selectAll.checked = [...checkboxes].every(c => c.checked);
+  }));
+})();
+</script>

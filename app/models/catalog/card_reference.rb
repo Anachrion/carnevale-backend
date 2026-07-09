@@ -30,6 +30,25 @@ module Catalog
       Digest::SHA256.hexdigest(File.binread(front_path) + File.binread(back_path))
     end
 
+    # Advance internal_version when the on-disk image bytes have changed since the recorded
+    # baseline. Establishes the baseline (staying at version 1) the first time images appear.
+    # Returns :missing, :baselined, :bumped, or :unchanged. Shared by the cards:reversion task
+    # and the backoffice render-to-catalog action so both apply the exact same rule.
+    def reversion!
+      digest = image_digest
+      return :missing if digest.nil?
+
+      if content_digest.nil?
+        update_columns(content_digest: digest, updated_at: Time.current)
+        :baselined
+      elsif content_digest != digest
+        update_columns(internal_version: internal_version + 1, content_digest: digest, updated_at: Time.current)
+        :bumped
+      else
+        :unchanged
+      end
+    end
+
     # Versioned public URLs for the app to download. The ?v= cache-buster changes with the
     # image, so intermediary caches never serve a stale face for a reused filename.
     def image_urls

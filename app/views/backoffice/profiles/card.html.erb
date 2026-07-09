@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= @profile.name %></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'Buckingham';
+    src: url('/fonts/Buckingham-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+  body { margin: 0; box-sizing: border-box; }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  @media print {
+    @page { size: 70mm 120mm; margin: 0; }
+
+    body > div {
+      background: none !important;
+      padding: 0 !important;
+      min-height: 0 !important;
+      display: block !important;
+    }
+
+    body > div > div { display: block !important; }
+
+    #front-wrapper,
+    #back-wrapper {
+      display: block !important;
+      width: 70mm !important;
+      height: 120mm !important;
+      overflow: hidden !important;
+      break-after: page;
+    }
+
+    #card-pdf-btn { display: none !important; }
+
+    #front-wrapper > :not(#front-card),
+    #back-wrapper > :not(#back-card) { display: none !important; }
+
+    #front-card,
+    #back-card {
+      zoom: 0.63;
+      box-shadow: none !important;
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+
+    #front-card *,
+    #back-card * {
+      print-color-adjust: exact;
+      -webkit-print-color-adjust: exact;
+    }
+  }
+</style>
+</head>
+<body>
+<%
+  stat_val = ->(v) { v == 0 ? "–" : (v > 0 ? "+#{v}" : v.to_s) }
+  discipline_kw  = @profile.keywords.find { |k| k.start_with?("Discipline (") }
+  disciplines    = discipline_kw ? discipline_kw.gsub(/^Discipline \(|\)$/, "").split(", ") : []
+  plain_keywords = @profile.keywords.reject { |k| k.start_with?("Discipline (") }
+
+  t = case @profile.faction
+  when "doctors"
+    {
+      accent:        "#0a5060",
+      accent_mid:    "#177282",
+      accent_dark:   "#0e5e6e",
+      accent_title:  "#177282",
+      text_dark:     "#0d2b30",
+      text_footer:   "#0d2b30",
+      cell_bg:       "#f4fafb",
+      cell_border_a: "rgba(10,80,96,0.45)",
+      cell_border_b: "rgba(10,80,96,0.55)",
+      front_bg_mid:  "#f0f8fa",
+      front_bg_end:  "#c4e6ee",
+      card_grad_a:   "#177282",
+      card_grad_b:   "#0a5060",
+      back_tint:     "rgba(10,80,96,0.12)",
+      back_bg:       "#ebf7f9",
+      back_bg_mid:   "#f0f8fa",
+      back_bg_end:   "#c4e6ee",
+      life_grad_a:   "#177282",
+      life_grad_b:   "#041e24",
+      life_dot_ring: "#062028",
+      life_num_color:"#0e5e6e",
+    }
+  when "strigoi"
+    {
+      accent:        "#1e2d52",
+      accent_mid:    "#2a3d6e",
+      accent_dark:   "#1e2d52",
+      accent_title:  "#2a3d6e",
+      text_dark:     "#1a1a2e",
+      text_footer:   "#1a1a2e",
+      cell_bg:       "#f4f6fb",
+      cell_border_a: "rgba(30,45,82,0.35)",
+      cell_border_b: "rgba(30,45,82,0.50)",
+      front_bg_mid:  "#f0f3fa",
+      front_bg_end:  "#c4d0ee",
+      card_grad_a:   "#2a3d6e",
+      card_grad_b:   "#1a2548",
+      back_tint:     "rgba(30,45,82,0.12)",
+      back_bg:       "#ebeff9",
+      back_bg_mid:   "#f0f3fa",
+      back_bg_end:   "#c4d0ee",
+      life_grad_a:   "#2a3d6e",
+      life_grad_b:   "#08101e",
+      life_dot_ring: "#0e1830",
+      life_num_color:"#1e2d52",
+    }
+  when "gifted"
+    {
+      accent:        "#7a2e00",
+      accent_mid:    "#b04510",
+      accent_dark:   "#8a3308",
+      accent_title:  "#c04a10",
+      text_dark:     "#2a1006",
+      text_footer:   "#1c0a04",
+      cell_bg:       "#fbf6f4",
+      cell_border_a: "rgba(160,60,10,0.45)",
+      cell_border_b: "rgba(160,60,10,0.55)",
+      front_bg_mid:  "#faf4f0",
+      front_bg_end:  "#eed4c4",
+      card_grad_a:   "#b04510",
+      card_grad_b:   "#7a2e00",
+      back_tint:     "rgba(160,60,10,0.12)",
+      back_bg:       "#f9f1eb",
+      back_bg_mid:   "#faf4f0",
+      back_bg_end:   "#eed4c4",
+      life_grad_a:   "#b04510",
+      life_grad_b:   "#2e0e02",
+      life_dot_ring: "#280e00",
+      life_num_color:"#8a3308",
+    }
+  when "rashaar"
+    {
+      accent:        "#0a3a2a",
+      accent_mid:    "#1a5a40",
+      accent_dark:   "#0a3a2a",
+      accent_title:  "#1a5a40",
+      text_dark:     "#0a1e14",
+      text_footer:   "#0a1e14",
+      cell_bg:       "#f4fbf9",
+      cell_border_a: "rgba(10,58,42,0.35)",
+      cell_border_b: "rgba(10,58,42,0.50)",
+      front_bg_mid:  "#f0faf6",
+      front_bg_end:  "#c4eee0",
+      card_grad_a:   "#1a5a40",
+      card_grad_b:   "#0a3a2a",
+      back_tint:     "rgba(10,58,42,0.12)",
+      back_bg:       "#ebf9f5",
+      back_bg_mid:   "#f0faf6",
+      back_bg_end:   "#c4eee0",
+      life_grad_a:   "#1a5a40",
+      life_grad_b:   "#04160a",
+      life_dot_ring: "#061e10",
+      life_num_color:"#0a3a2a",
+    }
+  when "patricians"
+    {
+      accent:        "#3a0a5a",
+      accent_mid:    "#5a1a7a",
+      accent_dark:   "#3a0a5a",
+      accent_title:  "#5a1a7a",
+      text_dark:     "#1e0a2a",
+      text_footer:   "#1e0a2a",
+      cell_bg:       "#f8f4fb",
+      cell_border_a: "rgba(90,26,122,0.35)",
+      cell_border_b: "rgba(90,26,122,0.50)",
+      front_bg_mid:  "#f6f0fa",
+      front_bg_end:  "#ddc4ee",
+      card_grad_a:   "#6a2090",
+      card_grad_b:   "#3a0a5a",
+      back_tint:     "rgba(90,26,122,0.12)",
+      back_bg:       "#f4ebf9",
+      back_bg_mid:   "#f6f0fa",
+      back_bg_end:   "#ddc4ee",
+      life_grad_a:   "#5a1a7a",
+      life_grad_b:   "#130418",
+      life_dot_ring: "#1e0630",
+      life_num_color:"#3a0a5a",
+    }
+  when "vatican"
+    {
+      accent:        "#6a4810",
+      accent_mid:    "#8a6018",
+      accent_dark:   "#503808",
+      accent_title:  "#8a6018",
+      text_dark:     "#1e0e06",
+      text_footer:   "#1e0e06",
+      cell_bg:       "#fdfaf5",
+      cell_border_a: "rgba(106,72,16,0.35)",
+      cell_border_b: "rgba(106,72,16,0.45)",
+      front_bg_mid:  "#fbf8f2",
+      front_bg_end:  "#f0e2cc",
+      card_grad_a:   "#d8b030",
+      card_grad_b:   "#9a7018",
+      back_tint:     "rgba(106,72,16,0.08)",
+      back_bg:       "#fbf7ee",
+      back_bg_mid:   "#fbf8f2",
+      back_bg_end:   "#f0e2cc",
+      life_grad_a:   "#8a6018",
+      life_grad_b:   "#1e1202",
+      life_dot_ring: "#2e1e04",
+      life_num_color:"#503808",
+    }
+  else
+    {
+      accent:        "#5b0c12",
+      accent_mid:    "#831822",
+      accent_dark:   "#641019",
+      accent_title:  "#9b1c1c",
+      text_dark:     "#2a1416",
+      text_footer:   "#1c0d0f",
+      cell_bg:       "#fbf4f4",
+      cell_border_a: "rgba(91,12,18,0.45)",
+      cell_border_b: "rgba(91,12,18,0.55)",
+      front_bg_mid:  "#faf0f1",
+      front_bg_end:  "#eec4c7",
+      card_grad_a:   "#831822",
+      card_grad_b:   "#5b0c12",
+      back_tint:     "rgba(123,12,18,0.16)",
+      back_bg:       "#f9ebec",
+      back_bg_mid:   "#faf0f1",
+      back_bg_end:   "#eec4c7",
+      life_grad_a:   "#831822",
+      life_grad_b:   "#1e0406",
+      life_dot_ring: "#2a070b",
+      life_num_color:"#641019",
+    }
+  end
+%>
+
+<%
+  kw = ->(text) {
+    h(text)
+      .gsub(/((?:\d+\s+)?Will\s+Points?)/,       '<span style="font-weight:700;color:#1a70a0;">\1</span>')
+      .gsub(/((?:\d+\s+)?Command\s+Points?)/,    '<span style="font-weight:700;color:#2a7a3a;">\1</span>')
+      .gsub(/(ORDER|COUNTER|AURA Command Ability|PULSE Command Ability)/, '<span style="font-weight:700;color:#2a7a3a;">\1</span>')
+      .gsub(/((?:\d+\s+)?Life\s+Points?)/,       '<span style="font-weight:700;color:#c02020;">\1</span>')
+      .gsub(/\b(Aerial Attack|Boat Crew|Black Powder|Expert Grappler|Expert Marksman|Expert Offence|Expert Protection|Expert Sorcerer|Fast Swimmer|First Strike|Limited Movement|Universal Shielding|Vampiric Attack|Water Creature|Two-handed|Aerobatic|Bodyguard|Brawler|Berserk|Brave|Bulky|Companion|Concealment|Engage|Ethereal|Fear|Flight|Frenzied|Hunter|Infiltration|Mage|Mindless|Parry|Pickpocket|Primitive|Slippery|Aquatic|Blast|Harmless|Knockback|Reload|Poisoned|Smoke|Stun|Template)(?!\w)(\s*\([^)]+\))?/, '<span style="font-weight:700;">\1\2</span>')
+      .gsub(/(MIND|MOVE|MOVEMENT|DEXTERITY|ATTACK|PROTECTION|Run\/Climb)/, '<span style="font-weight:700;">\1</span>')
+      .gsub(/([+-]?\d+\s*AP)\b/,                 '<span style="font-weight:700;color:#c86820;">\1</span>')
+      .gsub(/([+-]\d+\s+ATT)/,                   '<span style="font-weight:700;">\1</span>')
+      .gsub(/([+-]\d+)/,                         '<span style="font-weight:700;">\1</span>')
+      .gsub(/\b(Drown|Combat|Jump|Run|Climb|Dive|Stunned|Cast Spell|Dispel)\b/, '<span style="font-weight:700;">\1</span>')
+      .gsub(/\b(Blood Rites)\b/,                 '<span style="color:#c02020;">\1</span>')
+      .gsub(/\b(Runes of Sovereignty)\b/,        '<span style="color:#2a7a3a;">\1</span>')
+      .gsub(/\b(Wild Magic)\b/,                   '<span style="color:#c86820;">\1</span>')
+      .gsub(/\b(Divinity)\b/,                    '<span style="color:#c89010;">\1</span>')
+      .gsub(/\b(Fateweaving)\b/,                 '<span style="color:#2878b0;">\1</span>')
+      .gsub(/\b(Unique)\b/,                      '<em>\1</em>')
+      .gsub(/(Faction \([^)]+\))/,               '<em>\1</em>')
+      .html_safe
+  }
+%>
+<% front_card_html = capture do %>
+      <div id="front-card" style="position:relative;width:420px;height:720px;border-radius:22px;padding:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.45),0 2px 0 rgba(255,255,255,0.06) inset;background-color:<%= t[:accent] %>;background-image:radial-gradient(circle at 16% 9%, rgba(0,0,0,0.5), transparent 34%),radial-gradient(circle at 88% 92%, rgba(0,0,0,0.55), transparent 40%),linear-gradient(140deg,<%= t[:card_grad_a] %>,<%= t[:card_grad_b] %>);">
+
+        <div style="position:absolute;inset:0;background-image:url(/card-template/motif-light.png);background-repeat:repeat;background-size:250px 83px;background-position:center;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 92% 86% at 50% 42%, transparent 0%, transparent 17%, rgba(0,0,0,0.42) 40%, rgba(0,0,0,0.78) 64%, #000 86%);mask-image:radial-gradient(ellipse 92% 86% at 50% 42%, transparent 0%, transparent 17%, rgba(0,0,0,0.42) 40%, rgba(0,0,0,0.78) 64%, #000 86%);"></div>
+
+        <div style="position:absolute;inset:11px;border-radius:15px;border:1px solid rgba(231,205,122,0.7);pointer-events:none;z-index:2;"></div>
+
+        <div style="position:relative;isolation:isolate;width:100%;height:100%;border-radius:14px;padding:17px 17px 15px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 10px 4px <%= t[:card_grad_b] %> inset, 0 4px 14px rgba(0,0,0,0.15) inset;background-color:transparent;background-image:linear-gradient(to bottom, rgba(254,247,244,0) 0%, rgba(254,247,244,0) 42%, <%= t[:front_bg_mid] %> 60%, <%= t[:front_bg_end] %> 100%);">
+
+          <div style="position:absolute;inset:0;z-index:-1;pointer-events:none;-webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,0) 40%, #000 52%);mask-image:linear-gradient(to bottom, rgba(0,0,0,0) 40%, #000 52%);"><div style="position:absolute;inset:0;background-image:url(/card-template/motif.png);background-repeat:repeat;background-size:250px 83px;background-position:center;-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 0%, transparent 34%, rgba(0,0,0,0.18) 56%, rgba(0,0,0,0.6) 80%, #000 100%);mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 0%, transparent 34%, rgba(0,0,0,0.18) 56%, rgba(0,0,0,0.6) 80%, #000 100%);"></div></div>
+
+          <!-- top row: ducats -->
+          <div style="display:flex;justify-content:flex-end;align-items:flex-start;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+              <div style="position:relative;overflow:hidden;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%, #f1d98f, #d6b85f 70%, #bf9f49) padding-box, conic-gradient(from 0deg, #f7e070, #e0c040 30deg, #c08010 75deg, #a06018 130deg, #6a3c10 180deg, #a06018 230deg, #c08010 285deg, #e0c040 330deg, #f7e070 360deg) border-box;border:3px solid transparent;box-shadow:0 0 0 1px #2a1404, 0 4px 12px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px #2a1404, inset 0 2px 5px rgba(255,255,255,0.45);">
+                <img src="/card-template/sym-ducat.png" alt="" style="position:absolute;width:60px;height:auto;left:50%;top:50%;transform:translate(-50%,calc(-50% + 1px));pointer-events:none;filter:brightness(0) opacity(0.75);">
+                <span style="position:relative;z-index:1;font-family:'Pirata One',system-ui;font-size:27px;color:#fff;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.55);"><%= @profile.ducats %></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- stat stack + portrait -->
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-top:-26px;">
+            <div style="position: absolute; left: 0; top: 42%; transform: translateY(calc(-50% - 12px)); display: flex; flex-direction: column; gap: 36px; align-items: center">
+              <!-- Action Points -->
+              <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                <div style="position:relative;overflow:hidden;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%, #f6c193, #e8a268 68%, #d18a4c) padding-box, conic-gradient(from 0deg, #f7e070, #e0c040 30deg, #c08010 75deg, #a06018 130deg, #6a3c10 180deg, #a06018 230deg, #c08010 285deg, #e0c040 330deg, #f7e070 360deg) border-box;border:3px solid transparent;box-shadow:0 0 0 1px #2a1404, 0 4px 12px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px #2a1404, inset 0 2px 5px rgba(255,255,255,0.45);">
+                  <img src="/card-template/sym-action.png" alt="" style="position:absolute;width:40px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;filter:brightness(0) opacity(0.6);">
+                  <span style="position:relative;z-index:1;font-family:'Pirata One',system-ui;font-size:27px;color:#fff;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.55);"><%= @profile.action_points %></span>
+                </div>
+              </div>
+              <!-- Will Points (invisible if 0) -->
+              <% high_combined = (@profile.will_points + @profile.command_points) >= 10 %>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:1px;<%= 'visibility:hidden;' if @profile.will_points == 0 %>">
+                <div style="position:relative;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%, #aedcf0, #80bfe0 68%, #66a8cc) padding-box, conic-gradient(from 0deg, #f7e070, #e0c040 30deg, #c08010 75deg, #a06018 130deg, #6a3c10 180deg, #a06018 230deg, #c08010 285deg, #e0c040 330deg, #f7e070 360deg) border-box;border:3px solid transparent;box-shadow:0 0 0 1px #2a1404, 0 4px 12px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px #2a1404, inset 0 2px 5px rgba(255,255,255,0.45);">
+                  <img src="/card-template/sym-will.png" alt="" style="position:absolute;width:44px;height:auto;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;filter:brightness(0) opacity(0.6);">
+                  <span style="position:relative;z-index:1;font-family:'Pirata One',system-ui;font-size:27px;color:#fff;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.55);"><%= @profile.will_points %></span>
+                  <div style="position:absolute;right:calc(100% + 5px);top:50%;transform:<%= high_combined ? 'translateY(calc(-50% - 20px))' : 'translateY(-50%)' %>;display:flex;flex-direction:column;gap:3px;">
+                    <% @profile.will_points.times do %>
+                    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #80bfe0;background:<%= t[:cell_bg] %>;box-shadow:0 1px 1px rgba(0,0,0,0.18);"></div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              <!-- Command Points (invisible if 0) -->
+              <div style="display:flex;flex-direction:column;align-items:center;gap:1px;<%= 'visibility:hidden;' if @profile.command_points == 0 %>">
+                <div style="position:relative;width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 38% 32%, #a8de92, #79c45f 68%, #5fa749) padding-box, conic-gradient(from 0deg, #f7e070, #e0c040 30deg, #c08010 75deg, #a06018 130deg, #6a3c10 180deg, #a06018 230deg, #c08010 285deg, #e0c040 330deg, #f7e070 360deg) border-box;border:3px solid transparent;box-shadow:0 0 0 1px #2a1404, 0 4px 12px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px #2a1404, inset 0 2px 5px rgba(255,255,255,0.45);">
+                  <img src="/card-template/sym-command.png" alt="" style="position:absolute;width:40px;height:auto;left:50%;top:50%;transform:translate(-50%,calc(-50% - 2px)) scaleY(1.15);pointer-events:none;filter:brightness(0) opacity(0.6);">
+                  <span style="position:relative;z-index:1;font-family:'Pirata One',system-ui;font-size:27px;color:#fff;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,0.55);"><%= @profile.command_points %></span>
+                  <div style="position:absolute;right:calc(100% + 5px);top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:3px;">
+                    <% @profile.command_points.times do %>
+                    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #79c45f;background:<%= t[:cell_bg] %>;box-shadow:0 1px 1px rgba(0,0,0,0.18);"></div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- portrait circle -->
+            <div style="display:flex;justify-content:center;align-items:center;position:relative;">
+              <div style="position:relative;z-index:1;width:240px;height:240px;border-radius:50%;padding:6px;background:conic-gradient(from 0deg, #f7e070, #c08010 60deg, #2a1404 180deg, #c08010 300deg, #f7e070 360deg);box-shadow:0 0 0 1px #2a1404, 0 8px 28px rgba(0,0,0,0.95), 0 4px 10px rgba(0,0,0,0.85);">
+              <div style="position:relative;width:228px;height:228px;border-radius:50%;overflow:hidden;background:<%= illustration_gradient(t[:accent]) %>;">
+                <div style="position:absolute;inset:0;background-image:url(/card-template/motif-light.png);background-repeat:repeat;background-size:180px 60px;background-position:center;pointer-events:none;z-index:0;-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.75) 75%, #000 100%);mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.75) 75%, #000 100%);"></div>
+                <% if (illus = @profile.illustrations.first) %>
+                <% illus_data = @profile.illustrations.map { |i| { src: asset_path("illustrations/#{@profile.faction}/#{i.path}"), offset_x: i.offset_x, offset_y: i.offset_y, zoom: i.zoom, flipped: i.flipped, number: i.number } } %>
+                <%= image_tag "illustrations/#{@profile.faction}/#{illus.path}",
+                    id: "portrait-img",
+                    style: "position:absolute;",
+                    data: { offset_x: illus.offset_x, offset_y: illus.offset_y, zoom: illus.zoom, flipped: illus.flipped },
+                    draggable: false %>
+                <script>
+                (function(){
+                  var C=228,img=document.getElementById('portrait-img');
+                  function applyPortrait(){
+                    var zoom=parseInt(img.dataset.zoom)||100;
+                    var s=Math.max(C/img.naturalWidth,C/img.naturalHeight)*zoom/100;
+                    var w=img.naturalWidth*s,h=img.naturalHeight*s;
+                    var ox=Math.max(0,w-C),oy=Math.max(0,h-C);
+                    img.style.width=w+'px';img.style.height=h+'px';
+                    img.style.left=-(ox/2-parseInt(img.dataset.offsetX))+'px';
+                    img.style.top=-parseInt(img.dataset.offsetY)+'px';
+                    img.style.transform=img.dataset.flipped==='true'?'scaleX(-1)':'';
+                  }
+                  img.onload=applyPortrait;
+                  if(img.complete)applyPortrait();
+
+                  var illustrations=<%= illus_data.to_json.html_safe %>;
+                  var illustrationIdx=0;
+                  var swapBtn=document.getElementById('btn-swap-illus');
+                  if(swapBtn){
+                    swapBtn.addEventListener('click',function(){
+                      illustrationIdx=(illustrationIdx+1)%illustrations.length;
+                      var d=illustrations[illustrationIdx];
+                      img.dataset.offsetX=d.offset_x;
+                      img.dataset.offsetY=d.offset_y;
+                      img.dataset.zoom=d.zoom;
+                      img.dataset.flipped=d.flipped?'true':'false';
+                      img.onload=applyPortrait;
+                      img.src=d.src;
+                      if(img.complete)applyPortrait();
+                      var editLink=document.getElementById('edit-illus-link');
+                      if(editLink){
+                        var url=new URL(editLink.href);
+                        url.searchParams.set('number',d.number);
+                        editLink.href=url.toString();
+                      }
+                    });
+                  }
+                })();
+                </script>
+                <% end %>
+                <div style="position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 2px #0a0400;z-index:10;pointer-events:none;"></div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- name banner -->
+          <div style="align-self:center;margin-top:-48px;position:relative;z-index:4;width:340px;filter:drop-shadow(0 6px 12px rgba(20,4,6,0.5)) drop-shadow(0 2px 3px rgba(20,4,6,0.35));">
+            <img src="/card-template/banner3.png" alt="" style="display:block;width:100%;height:auto;">
+            <div style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;">
+              <span id="banner-name" style="font-family:'Buckingham',system-ui;font-size:28px;letter-spacing:1px;line-height:1;color:#1a1410;text-shadow:0 1px 0 rgba(255,244,224,0.45);white-space:nowrap;"><%= @profile.name %></span>
+              <span style="font-family:'EB Garamond',serif;font-style:italic;font-size:14px;letter-spacing:.5px;line-height:1;color:#1a1410;"><%= plain_keywords.join(" · ") %></span>
+            </div>
+          </div>
+
+          <!-- stats row -->
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);margin-top:12px;border:2px solid <%= t[:accent] %>;border-radius:7px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:14px;text-align:center;padding:6px 0;border-right:1px solid rgba(255,255,255,0.22);">MOV</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:14px;text-align:center;padding:6px 0;border-right:1px solid rgba(255,255,255,0.22);">DEX</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:14px;text-align:center;padding:6px 0;border-right:1px solid rgba(255,255,255,0.22);">ATT</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:14px;text-align:center;padding:6px 0;border-right:1px solid rgba(255,255,255,0.22);">PRO</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:14px;text-align:center;padding:6px 0;">MIND</div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'Pirata One',system-ui;font-size:27px;text-align:center;padding:4px 0 5px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= @profile.movement %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'Pirata One',system-ui;font-size:27px;text-align:center;padding:4px 0 5px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= @profile.dexterity %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'Pirata One',system-ui;font-size:27px;text-align:center;padding:4px 0 5px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= @profile.attack %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'Pirata One',system-ui;font-size:27px;text-align:center;padding:4px 0 5px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= @profile.protection %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'Pirata One',system-ui;font-size:27px;text-align:center;padding:4px 0 5px;border-top:1px solid <%= t[:accent] %>;"><%= @profile.mind %></div>
+          </div>
+
+          <!-- character abilities -->
+<%
+  split_threshold = @profile.life_points > 30 ? 4 : 5
+  split_abilities = disciplines.empty? && @profile.abilities.size > split_threshold
+  abilities_left  = split_abilities ? @profile.abilities.first(split_threshold) : @profile.abilities
+  abilities_right = split_abilities ? @profile.abilities.drop(split_threshold) : []
+%>
+          <div style="display:flex;flex-direction:column;margin-top:14px;flex:1;">
+            <% if split_abilities %>
+            <!-- overflow: single separator spanning both columns -->
+            <div style="display:flex;gap:12px;border-bottom:1.5px solid <%= t[:cell_border_a] %>;padding-bottom:2px;margin-bottom:5px;">
+              <div style="flex:1;font-family:'Buckingham',system-ui;font-size:21px;color:<%= t[:accent_dark] %>;letter-spacing:.5px;">Abilities</div>
+              <div style="flex:1;"></div>
+            </div>
+            <div style="display:flex;gap:12px;flex:1;">
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <% abilities_left.each do |ability| %>
+                  <div style="display:flex;gap:7px;align-items:baseline;"><span style="width:5px;height:5px;border-radius:50%;background:<%= t[:accent_title] %>;flex:none;transform:translateY(-2px);"></span><span style="font-family:'EB Garamond',serif;font-weight:700;font-size:15.5px;color:#000;"><%= kw.(ability) %></span></div>
+                  <% end %>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <% abilities_right.each do |ability| %>
+                  <div style="display:flex;gap:7px;align-items:baseline;"><span style="width:5px;height:5px;border-radius:50%;background:<%= t[:accent_title] %>;flex:none;transform:translateY(-2px);"></span><span style="font-family:'EB Garamond',serif;font-weight:700;font-size:15.5px;color:#000;"><%= kw.(ability) %></span></div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <% elsif disciplines.any? %>
+            <!-- two columns: abilities left, discipline right, each with own separator -->
+            <div style="display:flex;gap:12px;flex:1;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Buckingham',system-ui;font-size:21px;color:<%= t[:accent_dark] %>;letter-spacing:.5px;margin-bottom:5px;border-bottom:1.5px solid <%= t[:cell_border_a] %>;padding-bottom:2px;">Abilities</div>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <% abilities_left.each do |ability| %>
+                  <div style="display:flex;gap:7px;align-items:baseline;"><span style="width:5px;height:5px;border-radius:50%;background:<%= t[:accent_title] %>;flex:none;transform:translateY(-2px);"></span><span style="font-family:'EB Garamond',serif;font-weight:700;font-size:15.5px;color:#000;"><%= kw.(ability) %></span></div>
+                  <% end %>
+                </div>
+              </div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Buckingham',system-ui;font-size:21px;color:<%= t[:accent_dark] %>;letter-spacing:.5px;margin-bottom:5px;border-bottom:1.5px solid <%= t[:cell_border_a] %>;padding-bottom:2px;">Discipline</div>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <% disciplines.each do |d| %>
+                  <div style="display:flex;gap:7px;align-items:baseline;"><span style="width:5px;height:5px;border-radius:50%;background:<%= t[:accent_title] %>;flex:none;transform:translateY(-2px);"></span><span style="font-family:'EB Garamond',serif;font-weight:700;font-size:15.5px;color:#000;"><%= kw.(d) %></span></div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <% else %>
+            <!-- single column: separator only spans left half -->
+            <div style="display:flex;gap:12px;flex:1;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Buckingham',system-ui;font-size:21px;color:<%= t[:accent_dark] %>;letter-spacing:.5px;margin-bottom:5px;border-bottom:1.5px solid <%= t[:cell_border_a] %>;padding-bottom:2px;width:50%;">Abilities</div>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                  <% abilities_left.each do |ability| %>
+                  <div style="display:flex;gap:7px;align-items:baseline;"><span style="width:5px;height:5px;border-radius:50%;background:<%= t[:accent_title] %>;flex:none;transform:translateY(-2px);"></span><span style="font-family:'EB Garamond',serif;font-weight:700;font-size:15.5px;color:#000;"><%= kw.(ability) %></span></div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <% end %>
+          </div>
+
+          <!-- life track -->
+          <% life_rows = (1..@profile.life_points).each_slice(15).to_a %>
+          <div style="margin-top:8px;transform:translateY(11px);display:flex;justify-content:center;">
+            <div style="display:flex;flex-direction:column;border-radius:22px;background:linear-gradient(to bottom,<%= t[:life_grad_a] %>,<%= t[:life_grad_b] %>);box-shadow:inset 0 2px 4px rgba(0,0,0,0.55),0 1px 0 rgba(255,255,255,0.08);">
+              <% life_rows.each_with_index do |row_dots, row_idx| %>
+              <div style="display:flex;align-items:center;gap:4px;padding:4px 9px;">
+                <% row_dots.each do |n| %>
+                <div style="position:relative;width:19px;height:19px;flex:none;border-radius:50%;background:<%= n == 1 ? 'radial-gradient(circle at 38% 32%, #f3a3a3, #d97676 68%, #c25c5c)' : 'radial-gradient(circle at 38% 32%, #ffffff, #ece5da)' %>;box-shadow:0 0 0 1.5px <%= t[:life_dot_ring] %>, 0 1px 1px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+                  <% if n == 1 %>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" style="position:absolute;opacity:0.55;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+                  <% end %>
+                  <% unless n == 1 %><span style="position:relative;font-family:'EB Garamond',serif;font-weight:700;font-size:11px;color:<%= t[:life_num_color] %>;line-height:1;"><%= n %></span><% end %>
+                </div>
+                <% end %>
+              </div>
+              <% end %>
+            </div>
+          </div>
+
+        </div>
+      </div>
+<% end %>
+<% back_card_html = capture do %>
+      <div id="back-card" style="position:relative;width:420px;height:720px;border-radius:22px;padding:12px;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,0.45),0 2px 0 rgba(255,255,255,0.06) inset;background-color:<%= t[:accent] %>;background-image:radial-gradient(circle at 86% 8%, rgba(0,0,0,0.5), transparent 34%),radial-gradient(circle at 12% 90%, rgba(0,0,0,0.55), transparent 40%),linear-gradient(140deg,<%= t[:card_grad_a] %>,<%= t[:card_grad_b] %>);">
+
+        <div style="position:absolute;inset:0;background-image:url(/card-template/motif-light.png);background-repeat:repeat;background-size:250px 83px;background-position:center;pointer-events:none;"></div>
+        <div style="position:absolute;inset:11px;border-radius:15px;border:1px solid rgba(231,205,122,0.7);pointer-events:none;z-index:2;"></div>
+
+        <div style="position:relative;isolation:isolate;width:100%;height:100%;border-radius:14px;padding:18px 18px 16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 0 2px <%= t[:cell_border_b] %>, 0 0 10px 4px <%= t[:card_grad_b] %> inset, 0 4px 14px rgba(0,0,0,0.15) inset;background-color:<%= t[:back_bg] %>;background-image:radial-gradient(150% 70% at 8% 4%, <%= t[:back_tint] %>, transparent 42%),radial-gradient(130% 80% at 50% 100%, <%= t[:back_bg_mid] %>, <%= t[:front_bg_end] %> 72%, <%= t[:back_bg_end] %> 100%);">
+
+          <div style="position:absolute;inset:0;z-index:-1;background-image:url(/card-template/motif.png);background-repeat:repeat;background-size:250px 83px;background-position:center;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 0%, transparent 34%, rgba(0,0,0,0.18) 56%, rgba(0,0,0,0.6) 80%, #000 100%);mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, transparent 0%, transparent 34%, rgba(0,0,0,0.18) 56%, rgba(0,0,0,0.6) 80%, #000 100%);"></div>
+
+          <!-- weapons section -->
+          <div style="display:grid;grid-template-columns:1.4fr .65fr .65fr .65fr .65fr 1.8fr;border:2px solid <%= t[:accent] %>;border-radius:7px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.18);">
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">Weapon</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">RNG</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">EVS</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">DMG</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">PEN</div>
+            <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;">Abilities</div>
+            <% @profile.weapons.each do |w| %>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:14px;text-align:center;padding:11px 4px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= w.name %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= w.range %>"</div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= stat_val.(w.evasion) %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= stat_val.(w.damage) %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= stat_val.(w.penetration) %></div>
+            <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;"><%= w.abilities.any? ? w.abilities.join(", ") : "–" %></div>
+            <% end %>
+          </div>
+
+          <!-- special rules section -->
+          <% special_rule_chars = @profile.special_rules.sum { |r| r.name.to_s.length + r.description.to_s.length + r.spell_name.to_s.length + r.spell_description.to_s.length }
+             compact_rules = special_rule_chars > 774 %>
+
+          <% @profile.special_rules.each do |rule| %>
+          <div style="margin-bottom:<%= compact_rules ? '7px' : '14px' %>;margin-top:<%= rule == @profile.special_rules.first ? '22px' : '0' %>">
+            <% if rule.name.present? %>
+            <div style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '18px' : '21px' %>;color:#000;letter-spacing:.5px;margin-bottom:4px;"><%= rule.name %></div>
+            <% end %>
+            <% if rule.description.present? %>
+            <p style="margin:0 0 6px;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '14px' : '16px' %>;line-height:1.35;color:#000;text-wrap:pretty;"><%= kw.(rule.description) %></p>
+            <% end %>
+            <% if rule.spell_name.present? %>
+            <div style="border:2px solid #c86820;border-radius:6px;overflow:hidden;margin-top:4px;">
+              <div style="background:linear-gradient(#c86820,#a05010);padding:5px 10px;text-align:center;">
+                <span style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '17px' : '19px' %>;color:#fdeee2;letter-spacing:.5px;"><%= rule.spell_name %></span>
+              </div>
+              <div style="background:<%= t[:cell_bg] %>;display:flex;justify-content:space-around;padding:4px 10px;border-bottom:1px solid <%= t[:cell_border_a] %>;">
+                <span style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '13px' : '14px' %>;color:#000;">Cost: <%= rule.spell_cost %></span>
+                <span style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '13px' : '14px' %>;color:#000;">Difficulty: <%= rule.spell_difficulty %></span>
+              </div>
+              <div style="background:#fff;padding:5px 8px;">
+                <p style="margin:0;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '13px' : '15px' %>;line-height:1.35;color:#000;text-wrap:pretty;"><%= kw.(rule.spell_description) %></p>
+              </div>
+            </div>
+            <% end %>
+          </div>
+          <% end %>
+
+          <!-- base size + version -->
+          <div style="margin-top:auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;transform:translateY(10px);">
+            <span></span>
+            <span style="font-family:'EB Garamond',serif;font-weight:500;font-size:13px;color:<%= t[:text_footer] %>;letter-spacing:.5px;white-space:nowrap;">Size : <%= @profile.size %></span>
+            <span style="justify-self:end;font-family:'EB Garamond',serif;font-weight:500;font-size:13px;color:<%= t[:text_footer] %>;letter-spacing:.5px;"><%= @profile.version %></span>
+          </div>
+
+        </div>
+      </div>
+<% end %>
+
+<% if @side %>
+<div style="width:265px;height:454px;overflow:hidden;margin:0;padding:0;">
+  <div style="zoom:0.630;"><%= @side == "front" ? front_card_html : back_card_html %></div>
+</div>
+<% else %>
+<div id="page-outer" style="min-height:100vh;width:100%;padding:48px 40px;display:flex;flex-direction:column;align-items:center;gap:30px;background:radial-gradient(circle at 50% 28%, #908984, #645d58 78%, #534d49);font-family:'EB Garamond',serif;">
+
+  <div id="cards-row" style="display:flex;align-items:flex-start;gap:48px;flex-wrap:wrap;justify-content:center;">
+
+    <!-- ============ FRONT ============ -->
+    <div id="front-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-family:'EB Garamond',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.72);">Front</span>
+        <% if @profile.illustrations.any? %>
+        <a id="edit-illus-link" href="<%= illustration_editor_backoffice_profile_path(@profile, (@query_params || {}).merge(number: 1)) %>" title="Edit illustration position" style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;">✎</a>
+        <% end %>
+        <% if @profile.illustrations.size > 1 %>
+        <button id="btn-swap-illus" title="Next illustration" style="width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.45);border:none;color:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;padding:0;line-height:1;">⇄</button>
+        <% end %>
+      </div>
+      <%= front_card_html %>
+    </div>
+
+    <!-- ============ BACK ============ -->
+    <div id="back-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <span style="font-family:'EB Garamond',serif;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,0.72);">Back</span>
+      <%= back_card_html %>
+    </div>
+
+  </div>
+
+  <div id="card-pdf-btn" style="display:flex;gap:10px;align-items:center;">
+    <a href="<%= card_pdf_backoffice_profile_path(@profile) %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download this card as PDF">⬇ PDF</a>
+    <a href="<%= card_png_backoffice_profile_path(@profile, side: 'front') %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download front as PNG">⬇ Front PNG</a>
+    <a href="<%= card_png_backoffice_profile_path(@profile, side: 'back') %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download back as PNG">⬇ Back PNG</a>
+    <%= button_to "⇪ Render to catalog", render_to_catalog_backoffice_profile_path(@profile), method: :post,
+          data: { turbo_confirm: "Render #{@profile.name} and overwrite its hosted card images (public/cards)?" },
+          form: { style: "margin:0;" },
+          style: "display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#c4a24a;border:none;border-radius:6px;color:#1a1000;font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;cursor:pointer;",
+          title: "Render both faces and publish them to the hosted catalog" %>
+  </div>
+
+</div>
+<% end %>
+
+<script>
+  document.fonts.ready.then(function() {
+    var el = document.getElementById('banner-name');
+    if (!el) return;
+    var maxWidth = 270;
+    while (el.scrollWidth > maxWidth && parseFloat(el.style.fontSize) > 10) {
+      el.style.fontSize = (parseFloat(el.style.fontSize) - 0.5) + 'px';
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    <% if @prev_profile_id %>
+    if (e.key === 'ArrowLeft') window.location.href = '<%= card_backoffice_profile_path(@prev_profile_id, @query_params || {}) %>';
+    <% end %>
+    <% if @next_profile_id %>
+    if (e.key === 'ArrowRight') window.location.href = '<%= card_backoffice_profile_path(@next_profile_id, @query_params || {}) %>';
+    <% end %>
+  });
+</script>
+</body>
+</html>
