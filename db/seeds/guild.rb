@@ -787,7 +787,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: shipwright, weapon: riveting_
   "Bloodletter"       => "p13.png",
   "Blood Matron"      => ["p14.png", 51, -1, 80, false],
   "Barber"            => ["p15.png", -2, -16, 110, false],
-  "Baroni"            => "p16.png",
+  "Baroni"            => ["p16.png", 10, -5, 95, false],
   "Brewer"            => ["p17.png", -16, 0, 100, true],
   "Brute"             => ["p18.png", 9, -25, 85, false],
   "Butcher"           => ["p19.png", 1, -11, 90, false],
