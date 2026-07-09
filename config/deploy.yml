@@ -62,6 +62,10 @@ env:
     FRONTEND_URL: https://62.238.30.155.sslip.io
     # Action Cable pub/sub backend (the redis accessory below, on the kamal network).
     REDIS_URL: redis://carnevale_backend-redis:6379/1
+    # Backoffice card rendering: Grover's headless Chromium loads the card page from here.
+    # Point at the container-internal Thruster (:80) so it never hair-pins out to the public
+    # host. Must stay reachable from inside the app container.
+    CARD_RENDER_BASE_URL: http://localhost
   secret:
     - RAILS_MASTER_KEY
     - CARNEVALE_BACKEND_DATABASE_PASSWORD
@@ -69,6 +73,15 @@ env:
 # Persist Active Storage uploads across deploys (config.active_storage.service = :local).
 volumes:
   - "carnevale_backend_storage:/rails/storage"
+  # Persist the hosted card images so backoffice "Render to catalog" survives redeploys.
+  # Docker seeds this named volume from the image's committed public/cards on the FIRST deploy
+  # (real LFS bytes, since the image is built from the working tree), then the volume becomes
+  # the source of truth. Consequence: once the volume exists, NEW/changed images committed to
+  # git no longer appear on deploy (the volume masks the image dir) — publish them on the server
+  # via the backoffice Render-to-catalog action instead, which also bumps internal_version in
+  # Postgres so /api/v1/cards/manifest advertises the change. To force-reseed from git, remove
+  # the volume (`kamal server exec docker volume rm carnevale_backend_cards`) and redeploy.
+  - "carnevale_backend_cards:/rails/public/cards"
 
 accessories:
   db:

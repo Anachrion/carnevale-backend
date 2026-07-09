@@ -14,9 +14,14 @@ FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
 # Rails app lives here
 WORKDIR /rails
 
-# Install base packages
+# Install base packages. nodejs + chromium (with the fonts it needs) are here because the
+# backoffice renders cards in production: Grover drives headless Chromium via Puppeteer. Letting
+# apt pull the `chromium` package resolves Chrome's native library deps for us, and Puppeteer is
+# pointed at it through PUPPETEER_EXECUTABLE_PATH below instead of downloading its own build.
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips postgresql-client && \
+    apt-get install --no-install-recommends -y \
+      curl libjemalloc2 libvips postgresql-client \
+      nodejs chromium fonts-liberation fonts-dejavu-core && \
     ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
@@ -25,14 +30,15 @@ ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
     BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+    LD_PRELOAD="/usr/local/lib/libjemalloc.so" \
+    PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium"
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems (plus npm for the Puppeteer dependency)
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libpq-dev libvips libyaml-dev pkg-config && \
+    apt-get install --no-install-recommends -y build-essential git libpq-dev libvips libyaml-dev npm pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
@@ -43,6 +49,11 @@ RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
     bundle exec bootsnap precompile -j 1 --gemfile
+
+# Install the Puppeteer JS package Grover shells out to. Skip its bundled Chrome download —
+# the runtime uses the apt `chromium` from the base stage (see PUPPETEER_EXECUTABLE_PATH).
+COPY package.json package-lock.json ./
+RUN PUPPETEER_SKIP_DOWNLOAD=1 npm ci
 
 # Copy application code
 COPY . .

@@ -176,8 +176,14 @@ module Backoffice
 
     # Internal URL Grover's headless Chrome navigates to. Carries the render token so the
     # gated `card` action serves it without a Devise session (see BaseController).
+    #
+    # Defaults to the request's own base URL (correct in development). In production, set
+    # CARD_RENDER_BASE_URL to the container-internal address (e.g. http://localhost, where
+    # Thruster listens) so Chrome loops straight back to Puma instead of hair-pinning out to
+    # the public host and back through kamal-proxy.
     def card_url_for(profile, side)
-      card_backoffice_profile_url(profile, host: request.base_url, side: side, render_token: BaseController.render_token)
+      base = ENV["CARD_RENDER_BASE_URL"].presence || request.base_url
+      card_backoffice_profile_url(profile, host: base, side: side, render_token: BaseController.render_token)
     end
 
     def render_card_png(profile, side)
