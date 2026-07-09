@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Illustration editor — <%= @profile.name %></title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    background: #2a2a2a;
+    font-family: system-ui, sans-serif;
+    color: #fff;
+    user-select: none;
+  }
+  h1 { font-size: 20px; font-weight: 600; opacity: 0.9; }
+  p.hint { font-size: 13px; opacity: 0.55; }
+
+  #circle {
+    width: 228px;
+    height: 228px;
+    border-radius: 50%;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 0 3px #c4a24a, 0 6px 16px rgba(0,0,0,0.6);
+    background: linear-gradient(150deg, #fffcfc, #050029);
+    cursor: grab;
+    touch-action: none;
+  }
+  #circle.dragging { cursor: grabbing; }
+
+  #portrait {
+    position: absolute;
+    /* sized and positioned by JS */
+  }
+
+  .coords {
+    font-size: 13px;
+    opacity: 0.6;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .zoom-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    opacity: 0.75;
+  }
+  .zoom-row input[type=range] {
+    width: 180px;
+    accent-color: #c4a24a;
+    cursor: pointer;
+  }
+  .zoom-val {
+    min-width: 42px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .actions { display: flex; gap: 12px; }
+  button {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #btn-save   { background: #c4a24a; color: #1a1000; }
+  #btn-cancel { background: #444;    color: #fff; }
+  #btn-reset  { background: #333;    color: #aaa; }
+  #btn-flip   { background: #333;    color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1><%= @profile.name %></h1>
+<p class="hint">Drag to reposition · Slider to zoom · Save when done.</p>
+
+<div id="circle">
+  <img id="portrait"
+       src="<%= asset_path "illustrations/#{@profile.faction}/#{@illustration.path}" %>"
+       draggable="false">
+</div>
+
+<div class="zoom-row">
+  <span>Zoom</span>
+  <input type="range" id="zoom-slider" min="50" max="300" step="5" value="<%= @illustration.zoom %>">
+  <span class="zoom-val"><span id="coord-zoom"><%= @illustration.zoom %></span>%</span>
+</div>
+
+<div class="coords">x: <span id="coord-x"><%= @illustration.offset_x %></span>px &nbsp;/&nbsp; y: <span id="coord-y"><%= @illustration.offset_y %></span>px</div>
+
+<div class="actions">
+  <button id="btn-flip">⇄ Flip</button>
+  <button id="btn-reset">Reset</button>
+  <button id="btn-cancel" onclick="window.location='<%= card_backoffice_profile_path(@profile, params.permit(:faction, :search, :sort, :dir)) %>'">Cancel</button>
+  <button id="btn-save">Save</button>
+</div>
+
+<form id="save-form" action="<%= illustration_position_backoffice_profile_path(@profile) %>" method="post" style="display:none">
+  <input type="hidden" name="_method" value="patch">
+  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+  <input type="hidden" name="number"   value="<%= @illustration.number %>">
+  <input type="hidden" name="offset_x" id="form-x">
+  <input type="hidden" name="offset_y" id="form-y">
+  <input type="hidden" name="zoom"     id="form-zoom">
+  <input type="hidden" name="flipped"  id="form-flipped">
+</form>
+
+<script>
+(function() {
+  const CONTAINER = 228;
+  const img       = document.getElementById('portrait');
+  const circle    = document.getElementById('circle');
+  const coordX    = document.getElementById('coord-x');
+  const coordY    = document.getElementById('coord-y');
+  const coordZoom = document.getElementById('coord-zoom');
+  const zoomSlider = document.getElementById('zoom-slider');
+
+  let displayW, displayH, overflowX, overflowY;
+  let offsetX = 0, offsetY = 0;
+  let currentZoom = parseInt('<%= @illustration.zoom %>') || 100;
+  let flipped = <%= @illustration.flipped ? 'true' : 'false' %>;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function computeDisplaySize() {
+    const coverScale = Math.max(CONTAINER / img.naturalWidth, CONTAINER / img.naturalHeight);
+    const scale = coverScale * currentZoom / 100;
+    displayW  = img.naturalWidth  * scale;
+    displayH  = img.naturalHeight * scale;
+    overflowX = Math.max(0, displayW - CONTAINER);
+    overflowY = Math.max(0, displayH - CONTAINER);
+  }
+
+  function initDimensions() {
+    computeDisplaySize();
+    // stored values are center-relative pixel offsets
+    const initX = parseInt('<%= @illustration.offset_x %>');
+    const initY = parseInt('<%= @illustration.offset_y %>');
+    offsetX = overflowX / 2 - initX;
+    offsetY = initY;
+    applyPosition();
+  }
+
+  function applyPosition() {
+    img.style.width     = displayW + 'px';
+    img.style.height    = displayH + 'px';
+    img.style.left      = -offsetX + 'px';
+    img.style.top       = -offsetY + 'px';
+    img.style.transform = flipped ? 'scaleX(-1)' : '';
+
+    coordX.textContent    = Math.round(overflowX / 2 - offsetX);
+    coordY.textContent    = Math.round(offsetY);
+    coordZoom.textContent = currentZoom;
+  }
+
+  // Zoom slider
+  zoomSlider.addEventListener('input', function() {
+    // Keep the visible center point fixed while zooming
+    const fracX = displayW > 0 ? (offsetX + CONTAINER / 2) / displayW : 0.5;
+    const fracY = displayH > 0 ? (offsetY + CONTAINER / 2) / displayH : 0.5;
+
+    currentZoom = parseInt(this.value);
+    computeDisplaySize();
+
+    offsetX = clamp(fracX * displayW - CONTAINER / 2, -CONTAINER, overflowX + CONTAINER);
+    offsetY = clamp(fracY * displayH - CONTAINER / 2, -CONTAINER, overflowY + CONTAINER);
+    applyPosition();
+  });
+
+  // Drag handling (mouse + touch)
+  let dragging = false, lastX = 0, lastY = 0;
+
+  function dragStart(x, y) {
+    dragging = true;
+    lastX = x; lastY = y;
+    circle.classList.add('dragging');
+  }
+  function dragMove(x, y) {
+    if (!dragging) return;
+    offsetX = clamp(offsetX - (x - lastX), -CONTAINER, overflowX + CONTAINER);
+    offsetY = clamp(offsetY - (y - lastY), -CONTAINER, overflowY + CONTAINER);
+    lastX = x; lastY = y;
+    applyPosition();
+  }
+  function dragEnd() {
+    dragging = false;
+    circle.classList.remove('dragging');
+  }
+
+  circle.addEventListener('mousedown',  e => { e.preventDefault(); dragStart(e.clientX, e.clientY); });
+  window.addEventListener('mousemove',  e => dragMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup',    ()  => dragEnd());
+
+  circle.addEventListener('touchstart', e => { e.preventDefault(); dragStart(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+  window.addEventListener('touchmove',  e => dragMove(e.touches[0].clientX, e.touches[0].clientY));
+  window.addEventListener('touchend',   ()  => dragEnd());
+
+  document.getElementById('btn-flip').addEventListener('click', function() {
+    flipped = !flipped;
+    this.style.color = flipped ? '#c4a24a' : '#aaa';
+    applyPosition();
+  });
+
+  document.getElementById('btn-save').addEventListener('click', function() {
+    document.getElementById('form-x').value       = Math.round(overflowX / 2 - offsetX);
+    document.getElementById('form-y').value       = Math.round(offsetY);
+    document.getElementById('form-zoom').value    = currentZoom;
+    document.getElementById('form-flipped').value = flipped ? '1' : '0';
+    document.getElementById('save-form').submit();
+  });
+
+  document.getElementById('btn-reset').addEventListener('click', function() {
+    currentZoom = 100;
+    zoomSlider.value = 100;
+    computeDisplaySize();
+    offsetX = overflowX / 2;
+    offsetY = 0;
+    applyPosition();
+  });
+
+  if (img.complete) { initDimensions(); }
+  else              { img.addEventListener('load', initDimensions); }
+})();
+</script>
+</body>
+</html>
