@@ -37,5 +37,5 @@
 .codex/
 
 # Personal research notes, not for the repo
-/HOSTING_NOTES.md
+/docs/HOSTING_NOTES.md
 .kamal/deploy.env
