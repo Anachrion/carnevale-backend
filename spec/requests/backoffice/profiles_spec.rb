@@ -1,10 +1,10 @@
 require "rails_helper"
 
 RSpec.describe "Backoffice::Profiles", type: :request do
-  let(:user) { create(:user) }
+  let(:admin) { create(:user, :admin) }
   let(:profile) { create(:profile, faction: "guild", name: "Capodecina") }
 
-  describe "authentication" do
+  describe "authentication and admin gate" do
     it "redirects the index to sign-in when signed out" do
       get backoffice_profiles_path
       expect(response).to redirect_to(new_user_session_path)
@@ -15,8 +15,20 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response).to redirect_to(new_user_session_path)
     end
 
-    it "serves the card page to a signed-in user" do
-      sign_in user
+    it "forbids a signed-in non-admin (regular app user)" do
+      sign_in create(:user)
+      get backoffice_profiles_path
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "forbids a non-admin on the card page even though it renders catalog data" do
+      sign_in create(:user)
+      get card_backoffice_profile_path(profile), params: { side: "front" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "serves the card page to a signed-in admin" do
+      sign_in admin
       get card_backoffice_profile_path(profile), params: { side: "front" }
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(profile.name)
@@ -53,7 +65,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
 
     before do
-      sign_in user
+      sign_in admin
       stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
     end
 

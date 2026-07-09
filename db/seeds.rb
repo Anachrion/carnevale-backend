@@ -31,12 +31,21 @@ sample_user = User.find_or_create_by!(email: "demo@example.com") do |u|
 end
 
 # ── Dev test players (local two-player testing) ─────────────────────────────────
+# Regular app users — NOT admins, so they cannot reach /backoffice.
 %w[player1 player2].each do |username|
   User.find_or_create_by!(email: "#{username}@dev.local") do |u|
     u.username = username
     u.password = "password123"
   end
 end
+
+# ── Dev backoffice admin (card authoring) ───────────────────────────────────────
+# The only seeded account that can sign in to /backoffice. In production, grant admin
+# deliberately via `kamal console` (User.find_by(email:).update!(admin: true)).
+User.find_or_create_by!(email: "admin@dev.local") do |u|
+  u.username = "admin"
+  u.password = "password123"
+end.update!(admin: true)
 
 list = Gang::List.find_or_create_by!(name: "Guild Sample List", faction: "guild") do |l|
   l.points = 150
