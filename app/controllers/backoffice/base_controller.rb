@@ -18,10 +18,15 @@ module Backoffice
 
     private
 
+    # Backoffice is admin-only. App users authenticate via the JWT API and are not admins; the
+    # HTML Devise session here must belong to a User with admin? true. (The render token still
+    # bypasses this for Grover's internal card fetch.)
     def authenticate_backoffice!
       return if valid_render_token?
+      return authenticate_user! unless user_signed_in?
+      return if current_user.admin?
 
-      authenticate_user!
+      render plain: "Forbidden — backoffice access requires an admin account.", status: :forbidden
     end
 
     # A render-token request is only ever the internal Grover fetch of a card page, so it is

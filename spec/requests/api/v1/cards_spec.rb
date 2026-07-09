@@ -1,12 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe "Api::V1::Cards", type: :request do
-  # Write real image bytes into public/cards so the manifest can report sizes and the reversion
-  # task can digest them. Cleaned up after each example.
-  let(:images_dir) { Catalog::CardReference::IMAGES_DIR }
+  # Write image bytes so the manifest can report sizes and the reversion task can digest them.
+  # IMAGES_DIR is redirected to a throwaway tmp dir per example so the suite never touches (or
+  # deletes!) the real, committed public/cards images.
+  let(:images_dir) { Pathname(Dir.mktmpdir) }
 
   def write_card_images(card_reference, front_bytes: "front", back_bytes: "back")
-    FileUtils.mkdir_p(images_dir)
     File.binwrite(images_dir.join(card_reference.card_front), front_bytes)
     File.binwrite(images_dir.join(card_reference.card_back), back_bytes)
   end
@@ -19,11 +19,12 @@ RSpec.describe "Api::V1::Cards", type: :request do
       profile: create(:profile, faction: "guild"))
   end
 
-  before { write_card_images(guild_card, front_bytes: "AAA", back_bytes: "BBBB") }
-
-  after do
-    Dir.glob(images_dir.join("*.png")).each { |f| File.delete(f) }
+  before do
+    stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+    write_card_images(guild_card, front_bytes: "AAA", back_bytes: "BBBB")
   end
+
+  after { FileUtils.remove_entry(images_dir) }
 
   describe "GET /api/v1/cards/manifest" do
     it "returns one row per card with version, versioned URLs and byte sizes" do
