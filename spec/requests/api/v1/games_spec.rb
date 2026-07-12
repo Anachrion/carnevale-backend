@@ -563,6 +563,70 @@ RSpec.describe "Api::V1::Games", type: :request do
                  params: { counters: { stunned: true } }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
+
+    # The PATCH response only carries the state it just wrote, so a turn change (which doesn't touch
+    # the entry state at all) has to be observed from a fresh read of the owner's gang.
+    def entry_state_for(session, headers, game_id, username)
+      session.get "/api/v1/games/#{game_id}", headers: headers
+      player_id = json(session)["players"].find { |p| p["username"] == username }["id"]
+      session.get "/api/v1/games/#{game_id}/players/#{player_id}/list", headers: headers
+      json(session)["entries"].first["state"]
+    end
+
+    it "activates a model, and the flag resets itself when the turn advances" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)).to include("activated" => true)
+
+      # The reset is implicit — advancing stamps no entry state, the turn simply stops matching.
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+      expect(entry_state_for(host, h, game_id, host_user.username)).to include("activated" => false)
+
+      # ...and rewinding restores turn 1's activations rather than having destroyed them.
+      host.post "/api/v1/games/#{game_id}/turns/rewind", headers: h
+      expect(entry_state_for(host, h, game_id, host_user.username)).to include("activated" => true)
+    end
+
+    it "deactivates a model without disturbing its other counters" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated: true, stunned: true } }.to_json, headers: h
+      expect(json(host)).to include("activated" => true, "stunned" => true)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated: false } }.to_json, headers: h
+      expect(json(host)).to include("activated" => false, "stunned" => true)
+    end
+
+    it "reads an activation against its owner's turn, not the viewer's" do
+      host, guest, h, g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated: true } }.to_json, headers: h
+
+      # The guest moves their own cursor to turn 2. The host is still on turn 1, so the host's model
+      # must still read as activated from the guest's view — turns are per-player.
+      guest.post "/api/v1/games/#{game_id}/turns/advance", headers: g
+      expect(entry_state_for(guest, g, game_id, host_user.username)).to include("activated" => true)
+    end
+
+    it "rejects a non-boolean activated, and ignores a client-supplied turn stamp" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated: "yes" } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+
+      # activated_on_turn is server-written: a client can't forge an activation onto another turn.
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { activated_on_turn: 4 } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)).to include("activated" => false)
+    end
   end
 
   describe "PATCH /api/v1/games/:id/entries/:list_entry_id/stats" do

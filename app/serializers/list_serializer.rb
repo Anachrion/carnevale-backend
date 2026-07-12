@@ -1,9 +1,13 @@
 # The full gang list with its entries. Pass a shared `cantrips` lookup when rendering many lists
 # in one request (e.g. the lists index) so it isn't rebuilt per list (B-P2-3).
 class ListSerializer
-  def initialize(list, cantrips: nil)
+  # `turn` is the owning player's turn cursor, needed to derive each model's `activated` flag. Only
+  # passed for an in-game gang (Encounter::Player owns the snapshot); a gang-builder list has no turn
+  # and no entry states, so it stays nil.
+  def initialize(list, cantrips: nil, turn: nil)
     @list = list
     @cantrips = cantrips
+    @turn = turn
   end
 
   def as_json
@@ -21,7 +25,7 @@ class ListSerializer
       total_cost: entries.sum { |e| e.cost.to_i },
       selection_valid: @list.selection_valid,
       selection_errors: @list.selection_errors,
-      entries: entries.map { |entry| EntrySerializer.new(entry, cantrips: cantrips).as_json }
+      entries: entries.map { |entry| EntrySerializer.new(entry, cantrips: cantrips, turn: @turn).as_json }
     }
   end
 

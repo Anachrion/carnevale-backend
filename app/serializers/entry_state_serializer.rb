@@ -1,6 +1,10 @@
 class EntryStateSerializer
-  def initialize(entry_state)
+  # `turn` is the owning player's current turn cursor, needed to derive `activated` — which is stored
+  # as the turn the model activated on rather than a boolean (see Encounter::EntryState#activated?).
+  # Nil outside a live game, where nothing reads as activated.
+  def initialize(entry_state, turn: nil)
     @entry_state = entry_state
+    @turn = turn
   end
 
   def as_json
@@ -13,7 +17,8 @@ class EntryStateSerializer
       hidden: s.hidden?,
       guarding: s.guarding?,
       carrying_objective: s.carrying_objective?,
-      underwater_counters: s.underwater_counters
+      underwater_counters: s.underwater_counters,
+      activated: s.activated?(@turn)
     }
   end
 end

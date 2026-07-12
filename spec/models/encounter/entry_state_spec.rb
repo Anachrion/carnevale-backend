@@ -1,6 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe Encounter::EntryState, type: :model do
+  # A full, valid counters hash with the given keys overridden — so a spec that cares about one
+  # counter doesn't fail the shape validation on the others.
+  def base_counters(overrides = {})
+    Encounter::EntryState::DEFAULT_COUNTERS.merge(overrides)
+  end
+
   describe "validations" do
     it "is valid with the default factory" do
       expect(build(:entry_state)).to be_valid
@@ -31,6 +37,57 @@ RSpec.describe Encounter::EntryState, type: :model do
       entry_state = build(:entry_state, counters: { "stunned" => false, "hidden" => false, "guarding" => false, "carrying_objective" => false, "underwater_counters" => 3 })
       expect(entry_state).not_to be_valid
     end
+
+    it "rejects a non-positive-integer activated_on_turn" do
+      expect(build(:entry_state, counters: base_counters("activated_on_turn" => 0))).not_to be_valid
+      expect(build(:entry_state, counters: base_counters("activated_on_turn" => true))).not_to be_valid
+    end
+
+    it "accepts a state whose counters predate activation tracking" do
+      # Entry states created before the key existed omit it entirely — they must stay valid so an
+      # in-flight game doesn't need a backfill.
+      legacy = base_counters.except("activated_on_turn")
+      expect(build(:entry_state, counters: legacy)).to be_valid
+    end
+  end
+
+  describe "#activated?" do
+    it "is true only on the turn the model was stamped with" do
+      entry_state = build(:entry_state, counters: base_counters("activated_on_turn" => 3))
+
+      expect(entry_state.activated?(3)).to be true
+      # The reset is implicit: a new turn matches nothing, so the whole gang reads as un-activated.
+      expect(entry_state.activated?(4)).to be false
+      # ...and rewinding back to turn 3 restores it, rather than having cleared it.
+      expect(entry_state.activated?(3)).to be true
+    end
+
+    it "is false when never activated, or with no turn to compare against" do
+      expect(build(:entry_state).activated?(1)).to be false
+      expect(build(:entry_state, counters: base_counters("activated_on_turn" => 3)).activated?(nil)).to be false
+    end
+  end
+
+  describe "#set_activated" do
+    it "stamps the given turn, and clears it back to nil" do
+      entry_state = build(:entry_state)
+
+      entry_state.set_activated(true, turn: 2)
+      expect(entry_state.counters["activated_on_turn"]).to eq(2)
+
+      entry_state.set_activated(false, turn: 2)
+      expect(entry_state.counters["activated_on_turn"]).to be_nil
+    end
+
+    it "leaves the other counters untouched" do
+      entry_state = build(:entry_state, counters: base_counters("stunned" => true, "underwater_counters" => 2))
+
+      entry_state.set_activated(true, turn: 1)
+
+      expect(entry_state).to be_valid
+      expect(entry_state.stunned?).to be true
+      expect(entry_state.underwater_counters).to eq(2)
+    end
   end
 
   describe ".create_for!" do
@@ -58,9 +115,9 @@ RSpec.describe Encounter::EntryState, type: :model do
       expect(entry_state.guarding?).to be false
       expect(entry_state.carrying_objective?).to be false
       expect(entry_state.underwater_counters).to eq(0)
+      expect(entry_state.activated?(1)).to be false
     end
   end
-
 end
 
 # == Schema Information

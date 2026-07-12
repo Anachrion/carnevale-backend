@@ -83,7 +83,9 @@ module Api
         target = @game.game_players.find(params[:player_id])
         return render_error("List not selected yet") unless target.list.present?
 
-        render json: ListSerializer.new(target.list).as_json
+        # `turn` is the *owning* player's cursor, not the viewer's: each player advances turns
+        # independently, and a model's activation is relative to its own controller's turn.
+        render json: ListSerializer.new(target.list, turn: target.current_turn).as_json
       end
 
       def select_gang
@@ -186,11 +188,24 @@ module Api
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
-      # Status counters (stunned/hidden/guarding/carrying objective/underwater) on one of the
-      # current player's own models — each player only ever edits their own gang. Accepts a
+      # Status counters (stunned/hidden/guarding/carrying objective/underwater/activated) on one of
+      # the current player's own models — each player only ever edits their own gang. Accepts a
       # partial set of counters; omitted ones keep their current value.
+      #
+      # `activated` is virtual: it's persisted as the turn the model activated on, stamped from this
+      # player's own turn cursor, so it resets itself each turn and can't be forged onto another turn
+      # (see Encounter::EntryState#activated?).
       def update_counters
-        update_entry_state! { |state| state.counters = state.counters.merge(counters_params) }
+        counters = counters_params
+        activated = counters.delete("activated")
+        # Never lands in the JSON blob, so counters_shape can't police it the way it does the stored
+        # counters — reject a non-boolean here instead, rather than letting "false" activate a model.
+        return render_error("activated must be true or false") unless activated.nil? || [ true, false ].include?(activated)
+
+        update_entry_state! do |state|
+          state.counters = state.counters.merge(counters)
+          state.set_activated(activated, turn: @game_player.current_turn) unless activated.nil?
+        end
       end
 
       # Current HP/WP/CP on one of the current player's own models. Accepts a partial set (absolute
@@ -321,7 +336,7 @@ module Api
           # players via broadcast_state!, and the client applies this slim payload as an optimistic
           # update on the tapped model (see the Flutter _applyEntryState path). Intentional deviation
           # from the game-returning actions — keep it in sync with the client if it ever changes.
-          render json: EntryStateSerializer.new(state).as_json
+          render json: EntryStateSerializer.new(state, turn: @game_player.current_turn).as_json
         else
           render_error(state.errors)
         end
@@ -330,7 +345,7 @@ module Api
       # No type casting: JSON already carries real booleans/integers, and anything else
       # (e.g. "true" as a string) is rejected by EntryState's counters_shape validation.
       def counters_params
-        params.require(:counters).permit(*Encounter::EntryState::COUNTER_KEYS).to_h
+        params.require(:counters).permit(*Encounter::EntryState::CLIENT_COUNTER_KEYS).to_h
       end
 
       def stats_params

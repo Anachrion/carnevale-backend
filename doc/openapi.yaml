@@ -1559,6 +1559,13 @@ components:
               type: integer
               minimum: 0
               maximum: 2
+            activated:
+              type: boolean
+              description: |
+                Whether this model has been activated on the acting player's current turn. Persisted
+                server-side as the turn it was activated on, so it resets itself when that player
+                advances the turn (and is restored intact if they rewind). The turn is always taken
+                from the acting player's own cursor — it cannot be supplied by the client.
 
     UpdateStatsInput:
       type: object
@@ -1699,7 +1706,7 @@ components:
 
     EntryState:
       type: object
-      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters]
+      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters, activated]
       properties:
         life_points:
           $ref: "#/components/schemas/EntryStatValue"
@@ -1719,6 +1726,12 @@ components:
           type: integer
           minimum: 0
           maximum: 2
+        activated:
+          type: boolean
+          description: |
+            Whether this model has already been activated on its *owner's* current turn (each player
+            has an independent turn cursor). Derived server-side, so it flips back to false on its
+            own when the owning player advances the turn.
 
     EntryStatValue:
       type: object
