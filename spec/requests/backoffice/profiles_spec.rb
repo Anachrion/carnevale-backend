@@ -35,6 +35,26 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  describe "GET index (the sticky filter)" do
+    let!(:capodecina) { profile }
+    let!(:bombardier) { create(:profile, faction: "guild", name: "Bombardier") }
+
+    before { sign_in admin }
+
+    it "filters by name and remembers the filter for a later bare visit" do
+      get backoffice_profiles_path, params: { search: "capo" }
+      expect(response.body).to include("Capodecina")
+      expect(response.body).not_to include("Bombardier")
+
+      # A bare visit (e.g. coming back from a card tab) replays the stored filter, and the toolbar
+      # and sort links have to show it — otherwise the list looks filtered for no visible reason.
+      get backoffice_profiles_path
+      expect(response.body).not_to include("Bombardier")
+      expect(response.body).to include('value="capo"')
+      expect(response.body).to include("search=capo")
+    end
+  end
+
   describe "render token bypass (used by Grover)" do
     it "serves the card page with a valid render token and no session" do
       get card_backoffice_profile_path(profile), params: {
