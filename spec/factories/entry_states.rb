@@ -8,7 +8,7 @@ FactoryBot.define do
     current_command_points { 1 }
     starting_command_points { 1 }
     counters do
-      { "stunned" => false, "hidden" => false, "guarding" => false, "carrying_objective" => false, "underwater_counters" => 0 }
+      { "stunned" => false, "hidden" => false, "guarding" => false, "carrying_objective" => false, "underwater_counters" => 0, "activated_on_turn" => nil }
     end
   end
 end

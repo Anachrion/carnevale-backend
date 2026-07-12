@@ -1,9 +1,12 @@
 class EntrySerializer
   # `cantrips` is the discipline => cantrip Spell lookup, passed in so a whole list (or the games
   # index) resolves it once rather than per entry (B-P2-3).
-  def initialize(list_entry, cantrips:)
+  # `turn` is the owning player's turn cursor, passed through to EntryStateSerializer to derive
+  # `activated`; nil outside a live game.
+  def initialize(list_entry, cantrips:, turn: nil)
     @entry = list_entry
     @cantrips = cantrips
+    @turn = turn
   end
 
   def as_json
@@ -19,7 +22,7 @@ class EntrySerializer
       cost: entry.cost,
       # Only present once the game has started (Encounter::Game#start!); nil beforehand
       # and for equipment entries, which have no HP/WP/CP to track.
-      state: entry.entry_state && EntryStateSerializer.new(entry.entry_state).as_json,
+      state: entry.entry_state && EntryStateSerializer.new(entry.entry_state, turn: @turn).as_json,
       # Spell selection (rulebook p24). `mage` gates the Spells button in the gang builder;
       # non-Mage entries carry mage: false and no disciplines/spells.
       mage: profile&.mage? || false,

@@ -1,13 +1,18 @@
 module Encounter
   class EntryState < ApplicationRecord
     BOOLEAN_COUNTERS = %w[stunned hidden guarding carrying_objective].freeze
-    COUNTER_KEYS = (BOOLEAN_COUNTERS + %w[underwater_counters]).freeze
+    COUNTER_KEYS = (BOOLEAN_COUNTERS + %w[underwater_counters activated_on_turn]).freeze
+    # What a client is allowed to send. `activated_on_turn` is server-written and deliberately absent:
+    # a client sends the virtual boolean `activated`, which the controller stamps with that player's
+    # own turn cursor, so nobody can forge an activation on a turn they aren't on.
+    CLIENT_COUNTER_KEYS = (BOOLEAN_COUNTERS + %w[underwater_counters activated]).freeze
     DEFAULT_COUNTERS = {
       "stunned" => false,
       "hidden" => false,
       "guarding" => false,
       "carrying_objective" => false,
-      "underwater_counters" => 0
+      "underwater_counters" => 0,
+      "activated_on_turn" => nil
     }.freeze
 
     belongs_to :list_entry, class_name: "Gang::Entry"
@@ -40,6 +45,20 @@ module Encounter
       counters["underwater_counters"]
     end
 
+    # Activation is stored as the turn the model activated on rather than a plain boolean, because
+    # `current_turn` is a per-player *rewindable* cursor (Encounter::Player#advance_turn!/#rewind_turn!),
+    # not a monotonic game clock. Stamping the turn makes the per-turn reset implicit — on a fresh turn
+    # nothing matches, so the whole gang reads as un-activated without a bulk write — and rewinding to
+    # an earlier turn restores exactly the activations that turn had, which a boolean cleared on every
+    # turn change would have destroyed.
+    def activated?(turn)
+      turn.present? && counters["activated_on_turn"] == turn
+    end
+
+    def set_activated(flag, turn:)
+      self.counters = counters.merge("activated_on_turn" => (flag ? turn : nil))
+    end
+
     private
 
     def counters_shape
@@ -51,6 +70,13 @@ module Encounter
       end
 
       errors.add(:counters, "underwater_counters must be 0, 1, or 2") unless (0..2).cover?(counters["underwater_counters"])
+
+      # Absent (rather than explicitly null) on states created before activation tracking existed —
+      # those read as never-activated, so an in-flight game needs no backfill.
+      activated_on_turn = counters["activated_on_turn"]
+      unless activated_on_turn.nil? || (activated_on_turn.is_a?(Integer) && activated_on_turn.positive?)
+        errors.add(:counters, "activated_on_turn must be a positive integer or null")
+      end
     end
   end
 end
