@@ -94,6 +94,39 @@ module Encounter
       true
     end
 
+    # Conjures a model onto the board mid-game — a summon/raise granted by some model's special rule.
+    # It joins this player's frozen gang snapshot with an entry state of its own, so it takes damage,
+    # carries counters and activates exactly like a hired model; but it is flagged `summoned`, which
+    # keeps it out of the gang-*building* rules (ducat limit, faction, unique/Leader/ratio — see
+    # ListValidationService). Deliberately unrestricted as to *what* can be summoned: the rule lives
+    # on the summoner's card and only the player knows what it permits, so the app tracks rather than
+    # adjudicates. Returns the new entry, or nil if the player can't act.
+    def summon!(card_reference)
+      return nil unless playing? && list
+
+      transaction do
+        entry = list.list_entries.create!(
+          entry_type: "Catalog::CardReference",
+          entry_id: card_reference.id,
+          position: (list.list_entries.maximum(:position) || 0) + 1,
+          summoned: true
+        )
+        Encounter::EntryState.create_for!(entry)
+        entry
+      end
+    end
+
+    # Removes a summoned model — the summon was a mistake, or the rule that sustained it has ended.
+    # Only summoned models: the hired roster is frozen the moment the game starts, so a player can't
+    # quietly delete a model they're losing with.
+    def dismiss_summon!(list_entry)
+      return false unless playing?
+      return false unless list_entry.summoned?
+
+      list_entry.destroy!
+      true
+    end
+
     # Actively taking actions (scoring, drawing, moving the turn cursor): the game is live and this
     # player hasn't ended it. A finished player is soft-locked until they undo.
     def playing?

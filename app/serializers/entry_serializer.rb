@@ -20,6 +20,9 @@ class EntrySerializer
       entry_id: entry.entry_id,
       name: entry.entry.name,
       cost: entry.cost,
+      # Conjured mid-game by a special rule rather than hired. Costs the gang nothing and is exempt
+      # from the gang-building rules; the client marks it and offers to remove it again.
+      summoned: entry.summoned,
       # Only present once the game has started (Encounter::Game#start!); nil beforehand
       # and for equipment entries, which have no HP/WP/CP to track.
       state: entry.entry_state && EntryStateSerializer.new(entry.entry_state, turn: @turn).as_json,

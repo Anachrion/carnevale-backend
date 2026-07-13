@@ -59,6 +59,14 @@ module Encounter
       self.counters = counters.merge("activated_on_turn" => (flag ? turn : nil))
     end
 
+    # A model is dead when it has lost its last life point. Derived rather than stored: HP is already
+    # tracked and clamped at 0, so a separate `killed` flag would only introduce a second source of
+    # truth that could contradict it (killed at full HP, alive at 0). Killing a model is therefore
+    # just setting its HP to 0 through the existing stats endpoint — no new state, no new action.
+    def dead?
+      current_life_points.zero?
+    end
+
     private
 
     def counters_shape

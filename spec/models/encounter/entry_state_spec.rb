@@ -68,6 +68,25 @@ RSpec.describe Encounter::EntryState, type: :model do
     end
   end
 
+  describe "#dead?" do
+    it "is true exactly when the model has lost its last life point" do
+      expect(build(:entry_state, current_life_points: 1)).not_to be_dead
+      expect(build(:entry_state, current_life_points: 0)).to be_dead
+    end
+
+    # Derived, not stored: the only way to kill a model is to take its HP to 0, and the only way to
+    # revive it is to give HP back — so the flag can never contradict the HP shown beside it.
+    it "follows current HP, with no separate state to fall out of step" do
+      entry_state = build(:entry_state, current_life_points: 3)
+
+      entry_state.current_life_points = 0
+      expect(entry_state).to be_dead
+
+      entry_state.current_life_points = 2
+      expect(entry_state).not_to be_dead
+    end
+  end
+
   describe "#set_activated" do
     it "stamps the given turn, and clears it back to nil" do
       entry_state = build(:entry_state)

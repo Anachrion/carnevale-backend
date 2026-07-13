@@ -51,6 +51,10 @@ Rails.application.routes.draw do
           post "turns/rewind", action: :rewind_turn
           post :finish
           post :unfinish
+          # Models conjured mid-game by a special rule. They join the player's (otherwise frozen)
+          # gang, and only they can be removed again — the hired roster stays locked.
+          post "summons", action: :summon
+          delete "summons/:list_entry_id", action: :dismiss_summon
           patch "entries/:list_entry_id/counters", action: :update_counters
           patch "entries/:list_entry_id/stats", action: :update_stats
           patch :archive
