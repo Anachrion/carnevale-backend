@@ -18,7 +18,8 @@ class EntryStateSerializer
       guarding: s.guarding?,
       carrying_objective: s.carrying_objective?,
       underwater_counters: s.underwater_counters,
-      activated: s.activated?(@turn)
+      activated: s.activated?(@turn),
+      dead: s.dead?
     }
   end
 end

@@ -927,6 +927,98 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/summons:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    post:
+      operationId: summonModel
+      summary: Conjure a model onto the board and add it to the current player's gang
+      description: |
+        For the rare models whose special rules summon or raise new models mid-battle. Only
+        available while the game is in_progress.
+
+        Any model in the catalog may be summoned — the rule lives on the summoner's card, so the
+        app tracks the summon rather than adjudicating it, and a summon from outside the gang's own
+        faction is expected rather than exceptional.
+
+        The new model joins the player's (otherwise frozen) gang with an entry state of its own, so
+        it takes damage, carries counters and activates like any hired model. It is flagged
+        `summoned`, which exempts it from the gang-building rules: it costs the gang no ducats and
+        cannot push it over its limit or flip it to invalid. Broadcast to both players as a
+        `game_state` event; the response is the player's updated gang.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [card_reference_id]
+              properties:
+                card_reference_id:
+                  type: integer
+                  description: The Catalog::CardReference to summon (a profile's card).
+      responses:
+        "201":
+          description: The player's gang, with the summoned model appended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Game or card reference not found
+        "422":
+          description: Game isn't in progress, or the player has no gang
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/summons/{list_entry_id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    delete:
+      operationId: dismissSummon
+      summary: Remove a summoned model from the current player's gang
+      description: |
+        Undoes a summon — a mis-tap, or a rule that no longer sustains the model. Only summoned
+        models can be removed: the hired roster is frozen the moment the game starts, so a player
+        cannot quietly delete a model they are losing with. Attempting it on a hired model is a 422.
+        Broadcast to both players; the response is the player's updated gang.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: The player's gang, with the summoned model removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Game or entry not found (the opponent's entries 404)
+        "422":
+          description: Game isn't in progress, or the entry wasn't summoned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/entries/{list_entry_id}/counters:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -1635,7 +1727,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, cost, mage, spell_slots, disciplines, spells]
+      required: [id, position, entry_type, entry_id, name, cost, summoned, mage, spell_slots, disciplines, spells]
       properties:
         id:
           type: integer
@@ -1650,6 +1742,14 @@ components:
           type: string
         cost:
           type: integer
+        summoned:
+          type: boolean
+          description: |
+            Conjured onto the board mid-game by a special rule, rather than hired during gang
+            building. A summoned model tracks HP/counters/activation like any other, but costs the
+            gang nothing and is exempt from the gang-building rules (ducat limit, faction
+            consistency, unique/Leader/ratio), so a legal summon can't push a gang over its limit or
+            flip it to invalid. It is also the only kind of model that can be removed mid-game.
         state:
           allOf:
             - $ref: "#/components/schemas/EntryState"
@@ -1706,7 +1806,7 @@ components:
 
     EntryState:
       type: object
-      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters, activated]
+      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters, activated, dead]
       properties:
         life_points:
           $ref: "#/components/schemas/EntryStatValue"
@@ -1732,6 +1832,12 @@ components:
             Whether this model has already been activated on its *owner's* current turn (each player
             has an independent turn cursor). Derived server-side, so it flips back to false on its
             own when the owning player advances the turn.
+        dead:
+          type: boolean
+          description: |
+            Whether this model has lost its last life point. Derived from `life_points.current == 0`,
+            not stored separately — so a model is killed by setting its HP to 0 through the usual
+            stats endpoint, and revived by giving it HP back. A dead model stays fully editable.
 
     EntryStatValue:
       type: object

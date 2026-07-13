@@ -34,13 +34,17 @@ module Gang
     # gear — computed in SQL so it neither loads every entry nor resolves its profile. The old
     # Ruby-side `list_entries.sum(&:cost)` walked the polymorphic entry -> profile chain per row
     # (the B-P2-2 N+1); two aggregate queries replace that regardless of list size.
+    #
+    # Summoned models are excluded: they were conjured mid-battle by a special rule, not bought, so
+    # charging the gang for them would show it over a limit it never actually exceeded.
     def total_cost
-      model_cost = list_entries
+      hired = list_entries.where(summoned: false)
+      model_cost = hired
         .where(entry_type: "Catalog::CardReference")
         .joins("INNER JOIN card_references ON card_references.id = list_entries.entry_id")
         .joins("INNER JOIN profiles ON profiles.id = card_references.profile_id")
         .sum("profiles.ducats")
-      equipment_cost = list_entries
+      equipment_cost = hired
         .where(entry_type: "Catalog::Equipment")
         .joins("INNER JOIN equipment ON equipment.id = list_entries.entry_id")
         .sum("equipment.cost")

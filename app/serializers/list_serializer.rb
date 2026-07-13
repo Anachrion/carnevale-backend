@@ -21,8 +21,10 @@ class ListSerializer
       faction: @list.faction,
       points: @list.points,
       # Sum over the already-materialised, profile-preloaded entries so total_cost costs no extra
-      # queries and doesn't re-trigger the per-entry profile lookup (B-P2-2).
-      total_cost: entries.sum { |e| e.cost.to_i },
+      # queries and doesn't re-trigger the per-entry profile lookup (B-P2-2). Summoned models are
+      # skipped — they were conjured mid-battle, not bought — mirroring Gang::List#total_cost, which
+      # this deliberately bypasses for the reason above. Keep the two in step.
+      total_cost: entries.reject(&:summoned?).sum { |e| e.cost.to_i },
       selection_valid: @list.selection_valid,
       selection_errors: @list.selection_errors,
       entries: entries.map { |entry| EntrySerializer.new(entry, cantrips: cantrips, turn: @turn).as_json }

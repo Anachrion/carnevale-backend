@@ -35,8 +35,12 @@ class ListValidationService
     @errors ||= []
   end
 
+  # Every rule below is a gang-*building* rule — the ducat limit, faction consistency, unique models,
+  # the Leader count, the Hero/Henchman ratio. None of them has anything to say about a model
+  # conjured onto the board mid-battle by a special rule, so summoned entries are excluded outright:
+  # otherwise a legal summon would push the gang over its limit and flip it to invalid.
   def projected_items
-    @projected_items ||= @list.list_entries.includes(:entry).map(&:entry)
+    @projected_items ||= @list.list_entries.where(summoned: false).includes(:entry).map(&:entry)
   end
 
   def projected_card_references

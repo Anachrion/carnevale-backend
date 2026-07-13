@@ -83,9 +83,7 @@ module Api
         target = @game.game_players.find(params[:player_id])
         return render_error("List not selected yet") unless target.list.present?
 
-        # `turn` is the *owning* player's cursor, not the viewer's: each player advances turns
-        # independently, and a model's activation is relative to its own controller's turn.
-        render json: ListSerializer.new(target.list, turn: target.current_turn).as_json
+        render json: player_list_json(target)
       end
 
       def select_gang
@@ -188,6 +186,35 @@ module Api
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
+      # Conjures a model onto the board mid-game (a summon/raise granted by a special rule) and adds
+      # it to this player's gang. Any model in the catalog is allowed: the rule lives on the
+      # summoner's card, so the app tracks the summon rather than adjudicating it. The new model is
+      # flagged `summoned` and so stays out of the gang-building rules — it neither costs ducats nor
+      # invalidates the gang. See Encounter::Player#summon!.
+      def summon
+        return render_error("Wrong game status for summoning a model") unless @game_player.playing?
+        return render_error("You have no gang in this game") unless @game_player.list
+
+        card_reference = Catalog::CardReference.find(params[:card_reference_id])
+        return render_error("Could not summon that model") unless @game_player.summon!(card_reference)
+
+        broadcast_state!(@game)
+        render json: player_list_json(@game_player), status: :created
+      end
+
+      # Removes a summoned model. Scoped to the player's own list, and Player#dismiss_summon! refuses
+      # anything that wasn't summoned — the hired roster is frozen once the game starts.
+      def dismiss_summon
+        return render_error("Wrong game status for dismissing a model") unless @game_player.playing?
+        return render_error("You have no gang in this game") unless @game_player.list
+
+        entry = @game_player.list.list_entries.find(params[:list_entry_id])
+        return render_error("Only a summoned model can be removed") unless @game_player.dismiss_summon!(entry)
+
+        broadcast_state!(@game)
+        render json: player_list_json(@game_player)
+      end
+
       # Status counters (stunned/hidden/guarding/carrying objective/underwater/activated) on one of
       # the current player's own models — each player only ever edits their own gang. Accepts a
       # partial set of counters; omitted ones keep their current value.
@@ -281,6 +308,13 @@ module Api
       def set_game_and_player
         @game_player = current_user.game_players.where.not(visibility: "deleted").find_by!(game_id: params[:id])
         @game = @game_player.game
+      end
+
+      # A player's gang as the client renders it. `turn` is the *owning* player's cursor, not the
+      # viewer's: each player advances turns independently, so a model's `activated` has to resolve
+      # against its own controller's turn.
+      def player_list_json(player)
+        ListSerializer.new(player.list.reload, turn: player.current_turn).as_json
       end
 
       def broadcast_state!(game)

@@ -518,6 +518,95 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "POST /api/v1/games/:id/summons" do
+    # The entry's display name comes from the CardReference, not the profile behind it.
+    def spawn_reference(**profile_attrs)
+      create(:reference, name: "Ugdru Spawn", profile: create(:profile, **profile_attrs))
+    end
+
+    it "adds a summoned model to the player's gang, ready to take damage" do
+      host, _guest, h, _g, game_id, = start_game_with_models
+
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: spawn_reference(life_points: 6).id }.to_json, headers: h
+      expect(host.response).to have_http_status(:created)
+
+      entry = json(host)["entries"].find { |e| e["name"] == "Ugdru Spawn" }
+      expect(entry).to be_present
+      expect(entry["summoned"]).to be true
+      # It gets an entry state like any other model, so it can be damaged, countered and activated.
+      expect(entry["state"]["life_points"]).to eq("current" => 6, "starting" => 6)
+    end
+
+    # The whole point of the `summoned` flag: gang-building rules describe *hiring*, and have nothing
+    # to say about a model conjured mid-battle. A legal summon must not bankrupt or invalidate a gang.
+    it "charges the gang nothing and leaves its validity alone" do
+      host, _guest, h, _g, game_id, = start_game_with_models
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      player_id = json(host)["players"].find { |p| p["username"] == host_user.username }["id"]
+      host.get "/api/v1/games/#{game_id}/players/#{player_id}/list", headers: h
+      cost_before = json(host)["total_cost"]
+      valid_before = json(host)["selection_valid"]
+      errors_before = json(host)["selection_errors"]
+
+      # Deliberately extravagant, and from a faction this gang could never hire — exactly the shape a
+      # summon takes, and exactly what the hiring rules would reject.
+      expensive = create(:reference, profile: create(:profile, faction: "rashaar", ducats: 500))
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: expensive.id }.to_json, headers: h
+
+      # Unchanged in every respect — the assertion is that a summon is *invisible* to the hiring
+      # rules, not that the gang happens to be legal (this fixture's gang has no Leader, so it isn't).
+      expect(json(host)["total_cost"]).to eq(cost_before)
+      expect(json(host)["selection_valid"]).to eq(valid_before)
+      expect(json(host)["selection_errors"]).to eq(errors_before)
+    end
+
+    it "rejects a summon before the game is live" do
+      host, _guest, h, _g, game_id, = start_game_with_models(start: false)
+
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: create(:reference).id }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
+  describe "DELETE /api/v1/games/:id/summons/:list_entry_id" do
+    it "removes a summoned model" do
+      host, _guest, h, _g, game_id, = start_game_with_models
+
+      summoned = create(:reference, name: "Ugdru Spawn")
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: summoned.id }.to_json, headers: h
+      entry_id = json(host)["entries"].find { |e| e["name"] == "Ugdru Spawn" }["id"]
+
+      host.delete "/api/v1/games/#{game_id}/summons/#{entry_id}", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["entries"].map { |e| e["name"] }).not_to include("Ugdru Spawn")
+    end
+
+    # The hired roster is frozen once the game starts — otherwise a player could quietly delete a
+    # model they were losing with.
+    it "refuses to remove a hired model" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.delete "/api/v1/games/#{game_id}/summons/#{host_entry_id}", headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "404s on the opponent's summoned model" do
+      host, guest, h, g, game_id, = start_game_with_models
+
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: create(:reference).id }.to_json, headers: h
+      entry_id = json(host)["entries"].last["id"]
+
+      guest.delete "/api/v1/games/#{game_id}/summons/#{entry_id}", headers: g
+      expect(guest.response).to have_http_status(:not_found)
+    end
+  end
+
   describe "PATCH /api/v1/games/:id/entries/:list_entry_id/counters" do
     it "toggles counters on the player's own model, merging partial updates" do
       host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
@@ -630,6 +719,24 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "PATCH /api/v1/games/:id/entries/:list_entry_id/stats" do
+    # Killing a model needs no endpoint of its own: `dead` is derived from HP, so taking a model to
+    # 0 life points through the ordinary stats update is what kills it, and giving HP back revives it.
+    it "reports a model as dead once it loses its last life point, and alive again if healed" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/stats",
+                 params: { stats: { life_points: 1 } }.to_json, headers: h
+      expect(json(host)).to include("dead" => false)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/stats",
+                 params: { stats: { life_points: 0 } }.to_json, headers: h
+      expect(json(host)).to include("dead" => true)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/stats",
+                 params: { stats: { life_points: 4 } }.to_json, headers: h
+      expect(json(host)).to include("dead" => false)
+    end
+
     it "sets current HP/WP/CP on the player's own model, merging partial updates" do
       host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
 
