@@ -126,7 +126,8 @@
                   records: @all_weapons, selected: profile.weapons,
                   create_url: backoffice_weapons_path(format: :json),
                   create_fields: { name: "Name", damage: "Damage", evasion: "Evasion",
-                                   penetration: "Penetration", range: "Range" } %>
+                                   penetration: "Penetration", range: "Range",
+                                   abilities_text: "Abilities (one per line)" } %>
           </td>
         </tr>
         <tr>
