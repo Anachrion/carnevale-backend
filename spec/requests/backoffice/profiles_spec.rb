@@ -88,11 +88,12 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       }
     end
 
-    it "renders the editor with the live card wired to card_preview" do
+    it "renders the editor with both faces wired to card_preview" do
       get edit_backoffice_profile_path(profile)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('id="card-preview"')
+      expect(response.body).to include('id="card-preview-front"')
+      expect(response.body).to include('id="card-preview-back"')
       expect(response.body).to include(card_preview_backoffice_profile_path(profile))
     end
 
