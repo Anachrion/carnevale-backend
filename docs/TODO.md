@@ -17,7 +17,9 @@
 ## Deployment / Ops
 
 Production runs on a single Hetzner VM via Kamal — see `DEPLOYMENT.md` for the full
-picture. To make it production-ready (roughly in priority order):
+picture, and `DATA_AND_BACKUPS.md` for who owns which data, what a restore looks like,
+and which of these gaps actually loses information. To make it production-ready
+(roughly in priority order):
 
 - **P1: Off-site database backups.** None today — the biggest risk. Add a nightly
   `pg_dump` (from the Postgres container) → gzip → upload *off the server*, with
@@ -30,7 +32,8 @@ picture. To make it production-ready (roughly in priority order):
   App Links note under Auth above).
 - **P2: Finish the Solid stack** — generate the solid_queue/cache/cable schemas so
   background jobs and WebSockets (ActionCable) work; both are disabled/Redis-pointed today.
-- **P2: Automate the daily catalog snapshot.** `catalog:export` exists but is run by hand.
+- **P2: Automate the daily catalog snapshot.** `bin/catalog-snapshot` does the whole trip
+  (export in the running container → pull the files out → show the diff) but is run by hand.
   A game creator authors ~10 cards/year in the prod backoffice (uploading art as Active
   Storage blobs); those live only on the box until exported. Want a daily
   export → commit → push to git, so the catalog + its blobs land in version control
