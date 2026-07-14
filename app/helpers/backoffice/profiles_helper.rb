@@ -20,6 +20,18 @@ module Backoffice
       FACTION_PILL_STYLES.fetch(faction.to_s, "background:#f3f4f6;color:#374151;")
     end
 
+    # The src for an illustration's image: the uploaded file (Active Storage) when there is one,
+    # otherwise the committed asset shipped with the app. Both come back as root-relative URLs, so
+    # the card renders the same whether its art was uploaded or seeded — and Grover, fetching the
+    # page over HTTP, can load either.
+    def illustration_src(illustration, faction)
+      if illustration.image_attached?
+        rails_blob_path(illustration.image, only_path: true)
+      else
+        asset_path("illustrations/#{faction}/#{illustration.path}")
+      end
+    end
+
     # Radial-portrait backing gradient derived from the card's accent colour: rotate the hue
     # 180° and step from a light to a near-black tone so the illustration reads on any faction.
     def illustration_gradient(accent_hex)

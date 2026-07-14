@@ -84,7 +84,7 @@
 
 <div id="circle">
   <img id="portrait"
-       src="<%= asset_path "illustrations/#{@profile.faction}/#{@illustration.path}" %>"
+       src="<%= illustration_src(@illustration, @profile.faction) %>"
        draggable="false">
 </div>
 
