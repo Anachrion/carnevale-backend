@@ -30,6 +30,17 @@ picture. To make it production-ready (roughly in priority order):
 - **P3:** Email/SMTP, Hetzner firewall (22/80/443 only), error tracking + `/up` uptime
   monitoring, rotate the GitHub deploy token.
 
+## Cards
+
+- **P2: Serve the card images as WebP instead of PNG.** Each card face is a ~1.1 MB PNG,
+  so a full catalog sync makes the app download ~750 MB. The same image as WebP (same
+  795×1362 pixels, transparent corners preserved) is ~170 KB — about 7× smaller, for no
+  loss of resolution. Grover only emits PNG/JPEG, so this means converting the PNG to
+  WebP (`cwebp` or libvips, added to the production image next to Chromium) before
+  writing into `public/cards`, in `render_to_catalog` and the `cards:render` task. The
+  filenames gain a `.webp` extension, so every client re-downloads its catalog once —
+  at ~125 MB instead of the ~750 MB it costs them today. The print/PDF path keeps PNG.
+
 ## Roadmap
 
 3. Full game/match tracking (DONE)
