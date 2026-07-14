@@ -61,6 +61,11 @@
   <body>
     <header class="bo-header">
       <a href="<%= backoffice_profiles_path %>">Carnevale Backoffice</a>
+      <nav style="display:flex;gap:14px;margin-left:24px;font-size:14px;">
+        <%= link_to "Profiles", backoffice_profiles_path %>
+        <%= link_to "Weapons", backoffice_weapons_path %>
+        <%= link_to "Special rules", backoffice_special_rules_path %>
+      </nav>
       <div class="spacer"></div>
       <% if respond_to?(:current_user) && current_user %>
         <span class="user"><%= current_user.try(:username) || current_user.email %></span>

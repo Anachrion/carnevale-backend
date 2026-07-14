@@ -1,0 +1,5 @@
+<% content_for :title, "New weapon" %>
+
+<h1>New weapon</h1>
+
+<%= render "form", weapon: @weapon, url: backoffice_weapons_path, method: :post %>

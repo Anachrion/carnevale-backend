@@ -1,0 +1,5 @@
+<% content_for :title, "New special rule" %>
+
+<h1>New special rule</h1>
+
+<%= render "form", special_rule: @special_rule, url: backoffice_special_rules_path, method: :post %>

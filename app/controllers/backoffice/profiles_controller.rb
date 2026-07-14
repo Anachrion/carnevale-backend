@@ -325,10 +325,6 @@ module Backoffice
       Array(list).compact_blank.map(&:to_i)
     end
 
-    def text_to_list(text)
-      text.to_s.split("\n").map(&:strip).compact_blank
-    end
-
     def export_scope
       scope = params[:ids].present? ? Catalog::Profile.where(id: params[:ids]) : Catalog::Profile.all
       scope = scope.where(faction: params[:faction]) if params[:faction].present?

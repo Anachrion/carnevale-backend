@@ -1,0 +1,51 @@
+<% content_for :title, "Weapons" %>
+
+<h1>Weapons</h1>
+
+<%= form_with url: backoffice_weapons_path, method: :get do |f| %>
+  <div class="toolbar">
+    <%= f.text_field :search, value: params[:search], placeholder: "Search by name…" %>
+    <span class="count"><%= @weapons.size %> weapon<%= "s" unless @weapons.size == 1 %></span>
+    <div style="margin-left:auto;">
+      <%= link_to "+ New weapon", new_backoffice_weapon_path, class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="text-right">Damage</th>
+        <th class="text-right">Evasion</th>
+        <th class="text-right">Penetration</th>
+        <th class="text-right">Range</th>
+        <th>Abilities</th>
+        <th class="text-center">Carried by</th>
+        <th class="text-center">Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @weapons.each do |weapon| %>
+        <tr>
+          <td><%= weapon.name %></td>
+          <td class="text-right"><%= weapon.damage %></td>
+          <td class="text-right"><%= weapon.evasion %></td>
+          <td class="text-right"><%= weapon.penetration %></td>
+          <td class="text-right"><%= weapon.range %></td>
+          <td style="color:#6b7280;"><%= weapon.abilities.join(", ").presence || "—" %></td>
+          <td class="text-center">
+            <% carried = @carried_by[weapon.id].to_i %>
+            <span class="pill" style="background:#f3f4f6;color:#6b7280;">
+              <%= carried %> profile<%= "s" unless carried == 1 %>
+            </span>
+          </td>
+          <td class="text-center">
+            <%= link_to "✎ Edit", edit_backoffice_weapon_path(weapon), class: "btn" %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

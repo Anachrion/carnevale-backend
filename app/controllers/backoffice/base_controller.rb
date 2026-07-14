@@ -18,6 +18,13 @@ module Backoffice
 
     private
 
+    # The json list columns (a profile's keywords and abilities, a weapon's abilities) are edited
+    # as one-per-line textareas — the forms' only concession to their shape, and cheaper to use
+    # than a row of nested fields.
+    def text_to_list(text)
+      text.to_s.split("\n").map(&:strip).compact_blank
+    end
+
     # Backoffice is admin-only. App users authenticate via the JWT API and are not admins; the
     # HTML Devise session here must belong to a User with admin? true. (The render token still
     # bypasses this for Grover's internal card fetch.)

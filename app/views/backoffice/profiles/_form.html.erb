@@ -1,0 +1,328 @@
+<%#
+  The profile editor, shared by new and edit. The card is drawn live beside the form from the
+  values currently typed into it (see Backoffice::ProfilesController#card_preview), so a card
+  being invented is previewed exactly like one being amended.
+
+  Locals: profile, url, method, preview_url.
+%>
+<%# scope: :profile — the model is namespaced, so the default param key would be catalog_profile. %>
+<%= form_with model: profile, scope: :profile, url: url, method: method, id: "profile-form" do |f| %>
+
+  <% if profile.errors.any? %>
+    <div class="flash alert"><%= profile.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <!-- ── The live card: both faces, redrawn as the form below is filled in ────── -->
+  <div style="display:flex;gap:20px;align-items:flex-start;justify-content:center;margin:16px 0 24px;">
+    <figure style="margin:0;">
+      <iframe id="card-preview-front" title="Live preview, front" scrolling="no"
+              style="width:265px;height:454px;border:0;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);background:#fff;"></iframe>
+      <figcaption style="text-align:center;color:#6b7280;font-size:12px;margin-top:6px;">Front</figcaption>
+    </figure>
+
+    <figure style="margin:0;">
+      <iframe id="card-preview-back" title="Live preview, back" scrolling="no"
+              style="width:265px;height:454px;border:0;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);background:#fff;"></iframe>
+      <figcaption style="text-align:center;color:#6b7280;font-size:12px;margin-top:6px;">Back</figcaption>
+    </figure>
+
+    <div style="align-self:stretch;display:flex;flex-direction:column;gap:8px;max-width:220px;">
+      <% if profile.illustrations.size > 1 %>
+        <label style="color:#6b7280;font-size:13px;">
+          Illustration
+          <%= select_tag :preview_illustration,
+                options_for_select(profile.illustrations.map { |i| [ "Art #{i.number}", i.number ] }),
+                id: "preview-illustration", class: "btn", style: "padding:6px;display:block;margin-top:4px;" %>
+        </label>
+      <% end %>
+
+      <span id="preview-state" style="color:#9ca3af;font-size:12px;">&nbsp;</span>
+
+      <p style="color:#6b7280;font-size:12px;margin:0;">
+        Unsaved preview of the card as the form describes it — the same template
+        “Render to catalog” screenshots.
+      </p>
+
+      <% if profile.new_record? %>
+        <p style="color:#6b7280;font-size:12px;margin:0;">
+          A new profile has no illustration yet, so the front shows an empty frame.
+        </p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- ── The form ─────────────────────────────────────────────────────────────── -->
+  <div class="table-wrap">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:170px;"><%= f.label :name %></th>
+          <td><%= f.text_field :name, id: "profile-name", style: "width:320px;" %></td>
+        </tr>
+        <tr>
+          <th><%= f.label :faction %></th>
+          <td><%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] },
+                    {}, id: "profile-faction" %></td>
+        </tr>
+
+        <% if profile.new_record? %>
+          <%# The card the app downloads. Its identifier is the app's key for the card and names
+              its image files, so it is settable here and fixed afterwards. %>
+          <tr>
+            <th><%= label_tag "card[identifier]", "Card identifier" %></th>
+            <td>
+              <%= text_field_tag "card[identifier]", params.dig(:card, :identifier),
+                    id: "card-identifier", style: "width:320px;font-family:ui-monospace,monospace;" %>
+              <div style="color:#6b7280;font-size:13px;">
+                Filled in from the faction and name as you type. The app keys the card by this and
+                its images are named after it, so it cannot be changed later.
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th><%= label_tag "card[pair]", "A/B pair" %></th>
+            <td>
+              <%= check_box_tag "card[pair]", "1", params.dig(:card, :pair) == "1" %>
+              <label for="card_pair" style="color:#6b7280;font-size:13px;">
+                Two cards sharing these stats, each with its own illustration (…-a and …-b).
+              </label>
+            </td>
+          </tr>
+        <% end %>
+
+        <% Catalog::Profile::STATS.each do |stat| %>
+          <tr>
+            <th><%= f.label stat, stat.to_s.humanize %></th>
+            <td><%= f.number_field stat, min: 0, style: "width:90px;" %></td>
+          </tr>
+        <% end %>
+
+        <tr>
+          <th><%= f.label :version %></th>
+          <td><%= f.text_field :version, style: "width:120px;" %></td>
+        </tr>
+
+        <tr>
+          <th><%= f.label :keywords_text, "Keywords" %></th>
+          <td>
+            <%= f.text_area :keywords_text, value: profile.keywords.join("\n"),
+                  rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Discipline (Blood Rites)</code>.</div>
+          </td>
+        </tr>
+        <tr>
+          <th><%= f.label :abilities_text, "Abilities" %></th>
+          <td>
+            <%= f.text_area :abilities_text, value: profile.abilities.join("\n"),
+                  rows: 6, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Mage (2)</code>.</div>
+          </td>
+        </tr>
+
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;">Weapons</th>
+          <td>
+            <%= render "association_picker", param: :weapon_ids, noun: "weapon",
+                  records: @all_weapons, selected: profile.weapons,
+                  create_url: backoffice_weapons_path(format: :json),
+                  create_fields: { name: "Name", damage: "Damage", evasion: "Evasion",
+                                   penetration: "Penetration", range: "Range" } %>
+          </td>
+        </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;">Special rules</th>
+          <td>
+            <%= render "association_picker", param: :special_rule_ids, noun: "special rule",
+                  records: @all_special_rules, selected: profile.special_rules,
+                  create_url: backoffice_special_rules_path(format: :json),
+                  create_fields: { name: "Name", description: "Description" } %>
+            <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+              Weapons and special rules are shared across the catalog — attaching one here does not
+              change it for any other profile. The order is the order the card prints them in.
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="margin-top:16px;">
+    <span style="color:#6b7280;font-size:13px;">
+      Saving does not render the card — it joins the
+      <%= link_to "render queue", render_queue_backoffice_profiles_path %> as out of date.
+    </span>
+    <div style="margin-left:auto;">
+      <%= f.submit profile.new_record? ? "Create profile and card" : "Save profile", class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>
+
+<script>
+(function () {
+  // Each face posts the form to card_preview, which assigns the values to the profile in memory
+  // (without saving) and renders the card template. Debounced, because it redraws on every
+  // keystroke and there is no point rendering the same card five times while a word is typed.
+  const form   = document.getElementById('profile-form');
+  const state  = document.getElementById('preview-state');
+  const picker = document.getElementById('preview-illustration');
+  const url    = '<%= preview_url %>';
+  const token  = document.querySelector('meta[name="csrf-token"]').content;
+
+  const faces = {
+    front: document.getElementById('card-preview-front'),
+    back:  document.getElementById('card-preview-back')
+  };
+
+  let timer = null;
+  let pending = 0;
+
+  function payload(side) {
+    const body = new FormData(form);
+
+    // The form carries Rails' hidden _method for its own submit. Left in place, it would turn
+    // this POST into a PATCH to card_preview, which routes nowhere.
+    body.delete('_method');
+    body.append('side', side);
+    if (picker) body.append('illustration', picker.value);
+    return body;
+  }
+
+  async function drawFace(side, seq) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': token },
+      body: payload(side)
+    });
+    const html = await response.text();
+
+    // A slow render must not overwrite a newer one: only the latest request may paint.
+    if (seq !== pending) return;
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    faces[side].srcdoc = html;
+  }
+
+  async function refresh() {
+    const seq = ++pending;
+    state.textContent = 'updating…';
+
+    try {
+      await Promise.all([ drawFace('front', seq), drawFace('back', seq) ]);
+      if (seq === pending) state.innerHTML = '&nbsp;';
+    } catch (error) {
+      if (seq === pending) state.textContent = 'preview failed';
+    }
+  }
+
+  function scheduleRefresh() {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, 250);
+  }
+
+  form.addEventListener('input', scheduleRefresh);
+  form.addEventListener('change', scheduleRefresh);
+
+  // ── Weapon / special-rule pickers ──────────────────────────────────────────────
+  // Rows are plain selects named profile[weapon_ids][]; their DOM order is the print order, so
+  // moving a row is all "reorder" means. Adding and removing rows fires no input event of its
+  // own, so the preview is asked to redraw by hand.
+  document.querySelectorAll('.js-picker').forEach(function (picker) {
+    const rows = picker.querySelector('.js-rows');
+    const template = picker.querySelector('.js-template');
+
+    function addRow(id) {
+      rows.appendChild(template.content.cloneNode(true));
+      const select = rows.lastElementChild.querySelector('.js-select');
+      if (id) select.value = id;
+      scheduleRefresh();
+    }
+
+    picker.querySelector('.js-add').addEventListener('click', function () { addRow(); });
+
+    // ── Inventing a new shared record without leaving the card ───────────────────
+    // It is created in the catalog for real (weapons and rules are shared, so there is no such
+    // thing as one that belongs only to this profile), then offered in every select and attached.
+    const creator = picker.querySelector('.js-new');
+    const error = picker.querySelector('.js-new-error');
+
+    picker.querySelector('.js-new-toggle').addEventListener('click', function () {
+      creator.style.display = creator.style.display === 'none' ? '' : 'none';
+      error.textContent = '';
+    });
+
+    picker.querySelector('.js-new-save').addEventListener('click', async function () {
+      const model = picker.dataset.model;
+      const attributes = {};
+      creator.querySelectorAll('[data-field]').forEach(function (input) {
+        if (input.value !== '') attributes[input.dataset.field] = input.value;
+      });
+
+      error.textContent = '';
+
+      try {
+        const response = await fetch(picker.dataset.createUrl, {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [model]: attributes })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error((result.errors || ['could not be created']).join(', '));
+
+        // Offer it everywhere it could be picked, so a second row can choose it too.
+        picker.querySelectorAll('.js-select').forEach(function (select) {
+          select.appendChild(new Option(result.name, result.id));
+        });
+        const option = new Option(result.name, result.id);
+        picker.querySelector('.js-template').content.querySelector('select').appendChild(option);
+
+        addRow(result.id);
+        creator.querySelectorAll('[data-field]').forEach(function (input) { input.value = ''; });
+        creator.style.display = 'none';
+      } catch (failure) {
+        error.textContent = failure.message;
+      }
+    });
+
+    picker.addEventListener('click', function (event) {
+      const row = event.target.closest('.js-row');
+      if (!row) return;
+
+      if (event.target.classList.contains('js-remove')) {
+        row.remove();
+      } else if (event.target.classList.contains('js-up') && row.previousElementSibling) {
+        row.parentNode.insertBefore(row, row.previousElementSibling);
+      } else if (event.target.classList.contains('js-down') && row.nextElementSibling) {
+        row.parentNode.insertBefore(row.nextElementSibling, row);
+      } else {
+        return;
+      }
+
+      scheduleRefresh();
+    });
+  });
+
+  // ── The card identifier (new profiles only) ────────────────────────────────────
+  // Suggested from the faction and name, and left alone the moment it is typed into by hand:
+  // it keys the card in the app and names its image files, so it is the author's to decide.
+  const identifier = document.getElementById('card-identifier');
+  if (identifier) {
+    let touched = identifier.value.length > 0;
+    identifier.addEventListener('input', function () { touched = true; });
+
+    const slug = () => [
+      document.getElementById('profile-faction').value,
+      document.getElementById('profile-name').value
+    ].join(' ')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    const suggest = function () { if (!touched) identifier.value = slug(); };
+    document.getElementById('profile-name').addEventListener('input', suggest);
+    document.getElementById('profile-faction').addEventListener('change', suggest);
+    suggest();
+  }
+
+  refresh();
+})();
+</script>
