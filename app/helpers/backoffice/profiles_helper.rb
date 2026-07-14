@@ -1,4 +1,8 @@
 module Backoffice
+  # Helpers the card itself is drawn with. This file is one of the inputs to
+  # Catalog::CardReference.template_digest, so any change here marks every card in the catalog as
+  # stale — which is the point when it changes how a card looks, and pure noise when it doesn't.
+  # Helpers for the backoffice's own screens belong in CatalogHelper.
   module ProfilesHelper
     # Inline background/text colours for a faction pill in the browse table. The backoffice
     # ships its own small stylesheet rather than Tailwind, so these are plain CSS declarations.

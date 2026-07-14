@@ -14,6 +14,10 @@ module Catalog
     # Directory holding the committed card images, served statically from /cards.
     IMAGES_DIR = Rails.root.join("public", "cards").freeze
 
+    # Where the authored illustrations live, keyed by faction — the same files the card view
+    # draws through asset_path("illustrations/<faction>/<path>").
+    ILLUSTRATIONS_DIR = Rails.root.join("app", "assets", "images", "illustrations").freeze
+
     # A card reference is the finished card the app downloads, so it owns both its faces. Both are
     # named after the identifier — the stable slug the app already keys cards by — rather than the
     # profile's name, which is display text and can be re-worded.
@@ -30,8 +34,16 @@ module Catalog
     end
 
     # The authored illustration this card renders with (see Backoffice::ProfilesController).
+    # Picked from the loaded association so a staleness sweep over the whole catalog doesn't
+    # issue a query per reference.
     def illustration
-      profile.illustrations.find_by(number: illustration_number)
+      profile.illustrations.detect { |i| i.number == illustration_number }
+    end
+
+    # The illustration's file on disk, or nil when this reference has no illustration.
+    def illustration_path
+      illus = illustration
+      ILLUSTRATIONS_DIR.join(profile.faction, illus.path) if illus
     end
 
     def front_path
@@ -69,6 +81,68 @@ module Catalog
       end
     end
 
+    # content_digest records what we rendered; source_digest records what we rendered it *from*.
+    # The two answer different questions: reversion! asks "did the image bytes change, so the app
+    # must re-download?", while stale? asks "did the art or the stats change since we last
+    # rendered, so the images on disk are out of date?". Without the second one, editing a profile
+    # or repositioning an illustration leaves the catalog silently serving the old card.
+
+    # Everything a render draws from: the printed stats, the weapons and special rules, the
+    # illustration's framing, the illustration file's own bytes, and the shared card template.
+    def source_fingerprint
+      Digest::SHA256.hexdigest(JSON.generate([
+        self.class.template_digest,
+        profile_source,
+        illustration_source
+      ]))
+    end
+
+    # True when public/cards no longer matches what the backoffice would render right now —
+    # including when the images are missing, or when nothing was ever recorded about them (a
+    # reference rendered before source_digest existed; a full render clears that).
+    def stale?
+      return true unless front_path.exist? && back_path.exist?
+      return true if source_digest.nil?
+
+      source_digest != source_fingerprint
+    end
+
+    # Record the sources the images on disk were just rendered from. Called by the backoffice
+    # button and by cards:render immediately after writing the faces, so stale? has a baseline.
+    def stamp_source!
+      update_columns(source_digest: source_fingerprint, updated_at: Time.current)
+    end
+
+    # The references whose images are out of date. Staleness is computed in Ruby (it hashes files
+    # on disk), so this eager-loads everything the fingerprint reads and returns an Array.
+    def self.stale
+      includes(profile: [
+        :illustrations,
+        { profile_weapons: :weapon },
+        { profile_special_rules: :special_rule }
+      ]).select(&:stale?)
+    end
+
+    # The card template every profile is drawn into: change the layout, a helper, or a template
+    # asset and every card on disk is out of date, whatever the profiles say. Cached against the
+    # files' mtimes so sweeping the catalog doesn't re-hash the multi-megabyte motifs per card.
+    def self.template_digest
+      files = template_files
+      stamp = files.map { |f| [ f.to_s, f.mtime ] }
+      return @template_digest if @template_stamp == stamp
+
+      @template_stamp  = stamp
+      @template_digest = Digest::SHA256.hexdigest(files.map { |f| Digest::SHA256.file(f).hexdigest }.join)
+    end
+
+    def self.template_files
+      [
+        Rails.root.join("app", "views", "backoffice", "profiles", "card.html.erb"),
+        Rails.root.join("app", "helpers", "backoffice", "profiles_helper.rb"),
+        *Rails.root.glob("public/card-template/*")
+      ].select(&:file?).sort
+    end
+
     # Versioned public URLs for the app to download. The ?v= cache-buster changes with the
     # image, so intermediary caches never serve a stale face for a reused filename.
     def image_urls
@@ -76,6 +150,32 @@ module Catalog
         front_url: "/cards/#{card_front}?v=#{internal_version}",
         back_url: "/cards/#{card_back}?v=#{internal_version}"
       }
+    end
+
+    private
+
+    # Every profile column is printed somewhere on the card, so all of them count — as do the
+    # weapons and special rules in the order they are laid out.
+    def profile_source
+      [
+        profile.attributes.except("id", "created_at", "updated_at"),
+        profile.profile_weapons.map { |pw| [ pw.position, pw.weapon.attributes.except("id", "created_at", "updated_at") ] },
+        profile.profile_special_rules.map { |pr| [ pr.position, pr.special_rule.attributes.except("id", "created_at", "updated_at") ] }
+      ]
+    end
+
+    # The framing (offset, zoom, flip) *and* the file's bytes: re-exporting the art without
+    # touching the record has to count as a change too. A missing file hashes as nil, so it
+    # reappearing is itself a change.
+    def illustration_source
+      illus = illustration
+      return nil if illus.nil?
+
+      path = illustration_path
+      [
+        illus.attributes.except("id", "created_at", "updated_at"),
+        path.exist? ? Digest::SHA256.file(path).hexdigest : nil
+      ]
     end
   end
 end
@@ -90,6 +190,7 @@ end
 #  illustration_number :integer          default(1), not null
 #  internal_version    :integer          default(1), not null
 #  name                :string
+#  source_digest       :string
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #  profile_id          :bigint           not null

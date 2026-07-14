@@ -24,6 +24,7 @@
           onchange: "this.form.requestSubmit()" %>
     <span class="count"><%= @profiles.size %> profile<%= "s" unless @profiles.size == 1 %></span>
     <div style="margin-left:auto;display:flex;gap:8px;">
+      <%= link_to "⇪ Render queue", render_queue_backoffice_profiles_path, class: "btn" %>
       <button type="button" id="btn-export-pdf" class="btn btn-indigo">⬇ Export PDF</button>
       <button type="button" id="btn-export-png" class="btn btn-emerald">⬇ Export PNG</button>
     </div>
@@ -46,7 +47,7 @@
       <tr>
         <th><%= sort_link("Name", "name", @sort, @dir, @filter) %></th>
         <th>Faction</th>
-        <th class="text-right"><%= sort_link("Ducats", "ducats", @sort, @dir, @filter) %></th>
+        <th class="text-center">Version</th>
         <th class="text-center"><input type="checkbox" id="select-all" checked></th>
       </tr>
     </thead>
@@ -59,7 +60,7 @@
           <td>
             <span class="pill" style="<%= faction_pill_style(profile.faction) %>"><%= profile.faction.capitalize %></span>
           </td>
-          <td class="text-right" style="font-weight:600;color:#374151;"><%= profile.ducats %></td>
+          <td class="text-center"><%= card_versions(profile) %></td>
           <td class="text-center">
             <input type="checkbox" name="ids[]" value="<%= profile.id %>" checked class="profile-checkbox" form="export-form">
           </td>

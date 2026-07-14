@@ -1,0 +1,156 @@
+<% content_for :title, "Render queue" %>
+
+<h1>Render queue</h1>
+
+<div class="toolbar">
+  <span class="count">
+    <%= @stale_count %> of <%= @total_count %> card<%= "s" unless @total_count == 1 %> out of date
+  </span>
+
+  <div style="display:flex;gap:8px;margin-left:16px;">
+    <%= link_to "Out of date (#{@stale_count})", render_queue_backoffice_profiles_path,
+          class: "btn #{'btn-indigo' if @scope == 'stale'}" %>
+    <%= link_to "Whole catalog (#{@total_count})", render_queue_backoffice_profiles_path(scope: "all"),
+          class: "btn #{'btn-indigo' if @scope == 'all'}" %>
+  </div>
+
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+    <span id="progress-label" class="count"></span>
+    <button type="button" id="btn-render" class="btn btn-emerald" <%= "disabled" if @profiles.empty? %>>
+      ⇪ Render <%= @profiles.size %> profile<%= "s" unless @profiles.size == 1 %>
+    </button>
+    <button type="button" id="btn-stop" class="btn" style="display:none;">■ Stop</button>
+  </div>
+</div>
+
+<% if @profiles.empty? %>
+  <div class="flash notice">
+    Every card in the catalog matches the stats and art it was rendered from. Nothing to render.
+  </div>
+<% else %>
+  <div class="flash notice" style="display:none;" id="summary"></div>
+
+  <div style="height:6px;background:#e5e7eb;border-radius:9999px;overflow:hidden;margin-bottom:12px;">
+    <div id="progress-bar" style="height:100%;width:0;background:#10b981;transition:width .2s;"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Profile</th>
+          <th>Faction</th>
+          <th class="text-center">Cards</th>
+          <th class="text-center">State</th>
+          <th class="text-center">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @profiles.each do |profile| %>
+          <tr data-profile-id="<%= profile.id %>">
+            <td><%= link_to profile.name, card_backoffice_profile_path(profile) %></td>
+            <td><%= profile.faction.to_s.capitalize %></td>
+            <td class="text-center"><%= profile.card_references.size %></td>
+            <td class="text-center">
+              <% if @stale_profile_ids.include?(profile.id) %>
+                <span class="pill" style="background:#fef3c7;color:#92400e;">out of date</span>
+              <% else %>
+                <span class="pill" style="background:#f3f4f6;color:#6b7280;">up to date</span>
+              <% end %>
+            </td>
+            <td class="text-center js-result">—</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    (function () {
+      // One POST per profile, strictly sequential: each render fires up headless Chrome for every
+      // face, so firing them all at once would stampede the box and time out. Sequential also
+      // means a failure is confined to its own row and the queue keeps going.
+      const rows  = Array.from(document.querySelectorAll('tr[data-profile-id]'));
+      const token = document.querySelector('meta[name="csrf-token"]').content;
+      const start = document.getElementById('btn-render');
+      const stop  = document.getElementById('btn-stop');
+      const bar   = document.getElementById('progress-bar');
+      const label = document.getElementById('progress-label');
+      const summary = document.getElementById('summary');
+
+      let stopped = false;
+
+      function setResult(row, text, color) {
+        const cell = row.querySelector('.js-result');
+        cell.textContent = text;
+        cell.style.color = color;
+      }
+
+      async function renderProfile(id) {
+        const response = await fetch(`/backoffice/profiles/${id}/render_to_catalog`, {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': token, 'Accept': 'application/json' }
+        });
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.error || `HTTP ${response.status}`);
+        return body;
+      }
+
+      start.addEventListener('click', async function () {
+        stopped = false;
+        start.disabled = true;
+        stop.style.display = '';
+        stop.disabled = false;
+        stop.textContent = '■ Stop';
+        summary.style.display = 'none';
+
+        let done = 0, bumped = 0, failed = 0;
+
+        for (const row of rows) {
+          if (stopped) break;
+
+          setResult(row, 'rendering…', '#6b7280');
+          try {
+            const result = await renderProfile(row.dataset.profileId);
+            bumped += result.bumped;
+
+            // A profile can hold several cards (an A/B pair), and they can sit at different
+            // versions, so say how many were updated and list the versions they now carry.
+            const versions = result.versions.map((v) => `v${v}`).join(', ');
+            const cards = `card${result.cards === 1 ? '' : 's'}`;
+            setResult(row,
+              result.bumped > 0
+                ? `${result.bumped} of ${result.cards} ${cards} updated → now ${versions}`
+                : `unchanged (${versions})`,
+              result.bumped > 0 ? '#065f46' : '#6b7280');
+            row.querySelector('.pill').outerHTML =
+              '<span class="pill" style="background:#f3f4f6;color:#6b7280;">up to date</span>';
+          } catch (error) {
+            failed += 1;
+            setResult(row, error.message, '#991b1b');
+          }
+
+          done += 1;
+          bar.style.width = `${(done / rows.length) * 100}%`;
+          label.textContent = `${done} / ${rows.length}`;
+        }
+
+        stop.style.display = 'none';
+        start.disabled = false;
+
+        summary.style.display = '';
+        summary.className = failed > 0 ? 'flash alert' : 'flash notice';
+        summary.textContent =
+          `${stopped ? 'Stopped after' : 'Rendered'} ${done} profile(s) — ` +
+          `${bumped} card(s) got a new version and will re-sync to the app` +
+          (failed > 0 ? `, ${failed} failed (see the rows below)` : '') + '.';
+      });
+
+      stop.addEventListener('click', function () {
+        stopped = true;
+        stop.disabled = true;
+        stop.textContent = 'stopping…';
+      });
+    })();
+  </script>
+<% end %>

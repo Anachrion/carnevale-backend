@@ -31,6 +31,7 @@ end
 #  illustration_number :integer          default(1), not null
 #  internal_version    :integer          default(1), not null
 #  name                :string
+#  source_digest       :string
 #  created_at          :datetime         not null
 #  updated_at          :datetime         not null
 #  profile_id          :bigint           not null
