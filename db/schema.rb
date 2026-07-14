@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_12_181732) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_14_093000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,11 +60,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_12_181732) do
   end
 
   create_table "card_references", force: :cascade do |t|
-    t.string "card_back"
-    t.string "card_front"
     t.string "content_digest"
     t.datetime "created_at", null: false
     t.string "identifier", null: false
+    t.integer "illustration_number", default: 1, null: false
     t.integer "internal_version", default: 1, null: false
     t.string "name"
     t.bigint "profile_id", null: false

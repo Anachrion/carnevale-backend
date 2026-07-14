@@ -51,6 +51,10 @@ module Backoffice
       @next_profile_id = ids[idx + 1] if idx
       @query_params = filter
       @side = params[:side].presence
+      # Which illustration the front face draws. Grover screenshots the page as it first loads, so
+      # this param — not the in-page ⇄ swap button — is what selects the art in a rendered card.
+      @illustration = @profile.illustrations.find_by(number: params[:illustration]) ||
+                      @profile.illustrations.first
       render layout: false
     end
 
@@ -67,17 +71,27 @@ module Backoffice
     # GET /backoffice/profiles/:id/card_png
     def card_png
       side = params[:side].presence || "front"
-      png  = Grover.new(card_url_for(@profile, side), **grover_png_options).to_png
+      number = params[:illustration].presence
+      png = render_catalog_png(@profile, side, illustration: number)
+
+      ref = @profile.card_references.find_by(illustration_number: number || 1) ||
+            @profile.card_references.first
       send_data png,
-        filename: "#{@profile.faction.parameterize}-#{@profile.name.parameterize}-#{side}.png",
+        filename: side == "front" ? ref.card_front : ref.card_back,
         type: "image/png",
         disposition: "attachment"
     end
 
     # GET /backoffice/profiles/export_pdf
+    #
+    # One printable card per card reference: an A/B pair yields two fronts with different art, each
+    # followed by its own copy of the shared back so the pages still pair up front/back for duplex.
     def export_pdf
-      pngs = export_scope.flat_map do |profile|
-        [ render_card_png(profile, "front"), render_card_png(profile, "back") ]
+      pngs = export_scope.includes(:card_references).flat_map do |profile|
+        back = render_card_png(profile, "back")
+        profile.card_references.flat_map do |cr|
+          [ render_card_png(profile, "front", illustration: cr.illustration_number), back ]
+        end
       end
 
       label = params[:faction].presence || "selection"
@@ -91,12 +105,15 @@ module Backoffice
     def export_png
       require "zip"
 
+      # Mirrors the catalog layout: both faces of every card reference.
       zip_data = Zip::OutputStream.write_buffer do |zip|
-        export_scope.each do |profile|
-          %w[front back].each do |side|
-            png = Grover.new(card_url_for(profile, side), **grover_png_options).to_png
-            zip.put_next_entry("#{profile.faction.parameterize}-#{profile.name.parameterize}-#{side}.png")
-            zip.write(png)
+        export_scope.includes(:card_references).each do |profile|
+          back = render_catalog_png(profile, "back")
+          profile.card_references.each do |cr|
+            zip.put_next_entry(cr.card_front)
+            zip.write(render_catalog_png(profile, "front", illustration: cr.illustration_number))
+            zip.put_next_entry(cr.card_back)
+            zip.write(back)
           end
         end
       end
@@ -110,25 +127,28 @@ module Backoffice
 
     # POST /backoffice/profiles/:id/render_to_catalog
     #
-    # Render this profile's card faces and write them into public/cards under the filenames its
-    # CardReferences already point at, then bump internal_version for the ones whose bytes changed
-    # (via cards:reversion). The /api/v1/cards/manifest endpoint immediately reflects the new
-    # version, so the Flutter client re-syncs just this card.
+    # Render this profile's cards into public/cards, then bump internal_version for the ones whose
+    # bytes changed (via cards:reversion). The /api/v1/cards/manifest endpoint immediately reflects
+    # the new version, so the Flutter client re-syncs just those cards.
+    #
+    # Every card reference gets both of its faces. The front is drawn with the reference's own
+    # illustration, so an A/B pair delivers two different cards; the back has no illustration, so
+    # it is rendered once and written to each reference.
     def render_to_catalog
-      refs = @profile.card_references.select { |cr| cr.card_front.present? && cr.card_back.present? }
+      refs = @profile.card_references.to_a
       if refs.empty?
         redirect_back fallback_location: card_backoffice_profile_path(@profile),
-          alert: "No card reference with image filenames for #{@profile.name}."
+          alert: "No card reference to render for #{@profile.name}."
         return
       end
 
       FileUtils.mkdir_p(Catalog::CardReference::IMAGES_DIR)
-      # CardReferences of one profile share the same front/back files, so render each unique file once.
-      front_png = Grover.new(card_url_for(@profile, "front"), **grover_png_options).to_png
-      back_png  = Grover.new(card_url_for(@profile, "back"), **grover_png_options).to_png
+      refs.each do |cr|
+        File.binwrite(cr.front_path, render_catalog_png(@profile, "front", illustration: cr.illustration_number))
+      end
 
-      refs.map(&:front_path).uniq.each { |p| File.binwrite(p, front_png) }
-      refs.map(&:back_path).uniq.each  { |p| File.binwrite(p, back_png) }
+      back_png = render_catalog_png(@profile, "back")
+      refs.each { |cr| File.binwrite(cr.back_path, back_png) }
 
       # Same version-bump rule as `rake cards:reversion`, applied to just this profile's refs so
       # the manifest advertises a new internal_version only when the rendered bytes actually change.
@@ -181,13 +201,20 @@ module Backoffice
     # CARD_RENDER_BASE_URL to the container-internal address (e.g. http://localhost, where
     # Thruster listens) so Chrome loops straight back to Puma instead of hair-pinning out to
     # the public host and back through kamal-proxy.
-    def card_url_for(profile, side)
+    def card_url_for(profile, side, illustration: nil)
       base = ENV["CARD_RENDER_BASE_URL"].presence || request.base_url
-      card_backoffice_profile_url(profile, host: base, side: side, render_token: BaseController.render_token)
+      card_backoffice_profile_url(profile, host: base, side: side, illustration: illustration,
+        render_token: BaseController.render_token)
     end
 
-    def render_card_png(profile, side)
-      Grover.new(card_url_for(profile, side), **grover_png_for_pdf_options).to_png
+    # Transparent rounded corners — for the images the app downloads.
+    def render_catalog_png(profile, side, illustration: nil)
+      Grover.new(card_url_for(profile, side, illustration: illustration), **grover_png_options).to_png
+    end
+
+    # Opaque background — an intermediate step towards a printable PDF.
+    def render_card_png(profile, side, illustration: nil)
+      Grover.new(card_url_for(profile, side, illustration: illustration), **grover_png_for_pdf_options).to_png
     end
 
     # PNG options for card exports and catalog images (transparent rounded corners).

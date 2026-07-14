@@ -79,10 +79,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
   describe "POST render_to_catalog" do
     let(:images_dir) { Pathname(Dir.mktmpdir) }
-    let!(:reference) do
-      create(:card_reference, profile: profile,
-        card_front: "guild-capodecina-front.png", card_back: "guild-capodecina-back.png")
-    end
+    let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
 
     before do
       sign_in admin
@@ -127,6 +124,37 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       post render_to_catalog_backoffice_profile_path(profile)
 
       expect(reference.reload.internal_version).to eq(1)
+    end
+
+    it "gives each card reference of an A/B pair both of its faces, with its own illustration" do
+      ref_b = create(:card_reference, profile: profile, identifier: "guild-capodecina-b",
+        illustration_number: 2)
+      create(:illustration, profile: profile, number: 1, path: "p01_a.png")
+      create(:illustration, profile: profile, number: 2, path: "p01_b.png")
+
+      # One Grover render per distinct face, in order: reference A's front, reference B's front,
+      # then the back — which has no illustration and so is rendered once for the profile.
+      grover = instance_double(Grover)
+      allow(Grover).to receive(:new).and_return(grover)
+      allow(grover).to receive(:to_png).and_return("FRONT-A", "FRONT-B", "BACK")
+
+      post render_to_catalog_backoffice_profile_path(profile)
+
+      expect(File.binread(images_dir.join("guild-capodecina-front.png"))).to eq("FRONT-A")
+      expect(File.binread(images_dir.join("guild-capodecina-b-front.png"))).to eq("FRONT-B")
+
+      # Each reference owns both faces: the backs hold identical bytes but are its own files.
+      expect(File.binread(images_dir.join("guild-capodecina-back.png"))).to eq("BACK")
+      expect(File.binread(images_dir.join("guild-capodecina-b-back.png"))).to eq("BACK")
+      expect(Dir.children(images_dir)).to contain_exactly(
+        "guild-capodecina-front.png", "guild-capodecina-back.png",
+        "guild-capodecina-b-front.png", "guild-capodecina-b-back.png"
+      )
+
+      # Each front is fetched with the illustration its reference points at.
+      expect(Grover).to have_received(:new).with(a_string_including("illustration=1"), any_args)
+      expect(Grover).to have_received(:new).with(a_string_including("illustration=2"), any_args)
+      expect(ref_b.reload.content_digest).to be_present
     end
   end
 end

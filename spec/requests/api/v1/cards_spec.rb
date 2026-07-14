@@ -11,12 +11,12 @@ RSpec.describe "Api::V1::Cards", type: :request do
     File.binwrite(images_dir.join(card_reference.card_back), back_bytes)
   end
 
+  # Filenames are derived, not stored: the front from the reference's identifier, the back from
+  # its profile.
   let!(:guild_card) do
     create(:card_reference,
       identifier: "guild-baroni",
-      card_front: "guild-baroni-front.png",
-      card_back: "guild-baroni-back.png",
-      profile: create(:profile, faction: "guild"))
+      profile: create(:profile, faction: "guild", name: "Baroni"))
   end
 
   before do

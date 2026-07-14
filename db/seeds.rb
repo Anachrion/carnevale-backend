@@ -2,19 +2,6 @@
 # Each file seeds its faction's CardReferences, Profiles, Weapons, and Special Rules.
 Dir[File.join(__dir__, "seeds", "*.rb")].sort.each { |f| load f }
 
-# ── Backfill card_front / card_back from profiles.json ─────────────────────────
-# Kept as a checked-in copy under db/seed_data rather than read from the frontend repo's
-# assets directory — that cross-repo path silently no-op'd (and left every card image blank)
-# the moment the frontend flattened/renamed its card assets and dropped its own profiles.json.
-require "json"
-json_map = JSON.parse(File.read(Rails.root.join("db/seed_data/profiles.json"))).each_with_object({}) do |p, h|
-  h[[ p["name"], p["faction"] ]] = { card_front: File.basename(p["front_image"]), card_back: File.basename(p["back_image"]) }
-end
-Catalog::CardReference.includes(:profile).find_each do |cr|
-  entry = json_map[[ cr.profile.name, cr.profile.faction ]]
-  cr.update_columns(entry) if entry
-end
-
 puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile.count} profiles, #{Catalog::Weapon.count} weapons, #{Catalog::SpecialRule.count} special rules"
 
 # ── Version card images ────────────────────────────────────────────────────────
