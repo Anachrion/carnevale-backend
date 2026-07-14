@@ -1,3 +1,4 @@
 public/cards/*.png filter=lfs diff=lfs merge=lfs -text
 app/assets/images/illustrations/**/*.png filter=lfs diff=lfs merge=lfs -text
 public/card-template/*.png filter=lfs diff=lfs merge=lfs -text
+db/catalog/blobs/** filter=lfs diff=lfs merge=lfs -text
