@@ -97,5 +97,23 @@ RSpec.describe "Backoffice::SpecialRules", type: :request do
         expect(flash[:notice]).to include("1 card now out of date")
       end
     end
+
+    describe "DELETE destroy" do
+      it "deletes a rule no profile carries" do
+        delete backoffice_special_rule_path(aura)
+
+        expect(Catalog::SpecialRule.exists?(aura.id)).to be(false)
+        expect(response).to redirect_to(backoffice_special_rules_path)
+      end
+
+      it "refuses to delete a rule a profile still carries" do
+        Catalog::ProfileSpecialRule.create!(profile: create(:profile), special_rule: aura, position: 1)
+
+        delete backoffice_special_rule_path(aura)
+
+        expect(Catalog::SpecialRule.exists?(aura.id)).to be(true)
+        expect(flash[:alert]).to include("cannot be deleted")
+      end
+    end
   end
 end

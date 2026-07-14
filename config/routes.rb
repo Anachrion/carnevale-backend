@@ -88,8 +88,8 @@ Rails.application.routes.draw do
 
     # Weapons and special rules are shared across the catalog, so they are edited in their own
     # right rather than inside one profile. The profile editor creates them inline (format: json).
-    resources :weapons, only: %i[index new create edit update]
-    resources :special_rules, only: %i[index new create edit update]
+    resources :weapons, only: %i[index new create edit update destroy]
+    resources :special_rules, only: %i[index new create edit update destroy]
   end
 
   mount ActionCable.server => "/cable"

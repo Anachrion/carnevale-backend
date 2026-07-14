@@ -41,8 +41,14 @@
               <%= carried %> profile<%= "s" unless carried == 1 %>
             </span>
           </td>
-          <td class="text-center">
+          <td class="text-center" style="white-space:nowrap;">
             <%= link_to "✎ Edit", edit_backoffice_weapon_path(weapon), class: "btn" %>
+            <% if carried.zero? %>
+              <%= button_to "🗑", backoffice_weapon_path(weapon), method: :delete,
+                    class: "btn", form: { style: "display:inline;margin:0;" },
+                    data: { turbo_confirm: "Delete #{weapon.name}? No profile carries it." },
+                    title: "Delete this unused weapon" %>
+            <% end %>
           </td>
         </tr>
       <% end %>

@@ -4,7 +4,7 @@ module Backoffice
   # Editing one is therefore a catalog-wide edit: every card carrying it is out of date afterwards,
   # which the render queue reports without being told (a card's fingerprint covers its weapons).
   class WeaponsController < BaseController
-    before_action :set_weapon, only: %i[edit update]
+    before_action :set_weapon, only: %i[edit update destroy]
 
     # GET /backoffice/weapons
     def index
@@ -52,6 +52,21 @@ module Backoffice
           notice: "Saved #{@weapon.name}. #{affected} card#{"s" unless affected == 1} now out of date."
       else
         render :edit, status: :unprocessable_entity
+      end
+    end
+
+    # DELETE /backoffice/weapons/:id
+    #
+    # Only an orphaned weapon may go — one no profile carries. Destroying a carried weapon would
+    # strip it off every card printing it, so the guard is here, not only on the hidden button: a
+    # direct request cannot get past it either.
+    def destroy
+      if @weapon.profile_weapons.exists?
+        redirect_to backoffice_weapons_path,
+          alert: "#{@weapon.name} is still carried by #{@weapon.profiles.count} profile(s) and cannot be deleted."
+      else
+        @weapon.destroy
+        redirect_to backoffice_weapons_path, notice: "Deleted #{@weapon.name}."
       end
     end
 
