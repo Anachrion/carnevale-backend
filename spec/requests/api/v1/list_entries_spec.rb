@@ -183,6 +183,57 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/list_entries/:id/illustration" do
+    # Two card references for one profile — the "different illustration, same model" case.
+    def two_refs
+      profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader"])
+      [create(:card_reference, profile: profile, illustration_number: 1),
+       create(:card_reference, profile: profile, illustration_number: 2)]
+    end
+
+    def patch_illustration(entry, entry_id:)
+      patch "/api/v1/list_entries/#{entry.id}/illustration",
+            params: { entry: { entry_id: entry_id } }.to_json,
+            headers: headers
+    end
+
+    it "repoints the entry at a sibling card reference of the same profile" do
+      ref_a, ref_b = two_refs
+      entry = create(:list_entry, list: list, entry: ref_a, position: 1)
+
+      patch_illustration(entry, entry_id: ref_b.id)
+
+      expect(response).to have_http_status(:ok)
+      returned = JSON.parse(response.body)["entries"].first
+      expect(returned["entry_id"]).to eq(ref_b.id)
+      expect(returned["identifier"]).to eq(ref_b.identifier)
+      expect(returned["card_front"]).to eq(ref_b.card_front)
+      # Same profile, so the model name is unchanged by the illustration switch.
+      expect(returned["profile_name"]).to eq(ref_b.profile.name)
+      expect(entry.reload.entry_id).to eq(ref_b.id)
+    end
+
+    it "rejects a reference belonging to a different profile" do
+      ref_a, = two_refs
+      other = create(:card_reference, profile: create(:profile, faction: :guild, ducats: 10))
+      entry = create(:list_entry, list: list, entry: ref_a, position: 1)
+
+      patch_illustration(entry, entry_id: other.id)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(entry.reload.entry_id).to eq(ref_a.id)
+    end
+
+    it "returns 404 when the entry belongs to another user" do
+      ref_a, ref_b = two_refs
+      other = create(:list, faction: :guild, points: 100)
+      entry = create(:list_entry, list: other, entry: ref_a, position: 1)
+
+      patch_illustration(entry, entry_id: ref_b.id)
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "DELETE /api/v1/list_entries/:id" do
     it "removes the entry and returns the updated list" do
       ref = guild_ref(keywords: ["Leader"])
