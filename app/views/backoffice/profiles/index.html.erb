@@ -48,6 +48,7 @@
         <th><%= sort_link("Name", "name", @sort, @dir, @filter) %></th>
         <th>Faction</th>
         <th class="text-center">Version</th>
+        <th class="text-center">Edit</th>
         <th class="text-center"><input type="checkbox" id="select-all" checked></th>
       </tr>
     </thead>
@@ -56,13 +57,15 @@
         <tr>
           <td>
             <%= link_to profile.name, card_backoffice_profile_path(profile, @filter), target: "_blank" %>
-            <%= link_to "✎", edit_backoffice_profile_path(profile), title: "Edit profile",
-                  style: "margin-left:6px;text-decoration:none;color:#9ca3af;" %>
           </td>
           <td>
             <span class="pill" style="<%= faction_pill_style(profile.faction) %>"><%= profile.faction.capitalize %></span>
           </td>
           <td class="text-center"><%= card_versions(profile) %></td>
+          <td class="text-center">
+            <%= link_to "✎ Edit", edit_backoffice_profile_path(profile), class: "btn",
+                  title: "Edit the stats, with the card drawn live" %>
+          </td>
           <td class="text-center">
             <input type="checkbox" name="ids[]" value="<%= profile.id %>" checked class="profile-checkbox" form="export-form">
           </td>
