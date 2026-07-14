@@ -5,6 +5,28 @@ module Backoffice
   # Catalog::CardReference.template_digest, so editing it marks every rendered card as stale.
   # Helpers that only dress up the backoffice's own screens have no business doing that.
   module CatalogHelper
+    # How the editor lays the eleven stats out: the five the card prints as a row, under the
+    # headings it prints them with, then the cost and the point pools. A form that reads like the
+    # card it describes beats an alphabet of one-value-per-line fields.
+    STAT_ROWS = {
+      "Stats" => {
+        movement: "MOV", dexterity: "DEX", attack: "ATT", protection: "PRO", mind: "MIND"
+      },
+      "Cost & points" => {
+        ducats: "Ducats", action_points: "AP", will_points: "Will",
+        command_points: "Cmd", life_points: "Life", size: "Size"
+      }
+    }.freeze
+
+    # The rows above, plus anything in Catalog::Profile::STATS they forgot: a stat added to the
+    # model still gets a field rather than quietly going missing from the only form that edits it.
+    def profile_stat_rows
+      unplaced = Catalog::Profile::STATS - STAT_ROWS.values.flat_map(&:keys)
+      return STAT_ROWS if unplaced.empty?
+
+      STAT_ROWS.merge("Other" => unplaced.index_with { |stat| stat.to_s.humanize })
+    end
+
     # The internal_version the app sees for this profile's cards. A profile can own more than one
     # card (an A/B pair), and they drift apart, so show each distinct version it currently carries.
     def card_versions(profile)
