@@ -166,8 +166,8 @@
 
   <div class="toolbar" style="margin-top:16px;">
     <span style="color:#6b7280;font-size:13px;">
-      Saving does not render the card — it joins the
-      <%= link_to "render queue", render_queue_backoffice_profiles_path %> as out of date.
+      Saving does not render the card — it waits, out of date, under
+      <%= link_to "Publish cards", publish_backoffice_profiles_path %>.
     </span>
     <div style="margin-left:auto;">
       <%= f.submit profile.new_record? ? "Create profile and card" : "Save profile", class: "btn btn-emerald" %>

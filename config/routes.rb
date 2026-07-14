@@ -87,7 +87,7 @@ Rails.application.routes.draw do
       collection do
         get  :export_pdf
         get  :export_png
-        get  :render_queue
+        get  :publish
         # Live preview for a profile that does not exist yet (the new form has no id to post to).
         post :new_card_preview
       end

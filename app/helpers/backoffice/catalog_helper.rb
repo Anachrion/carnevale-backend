@@ -1,5 +1,5 @@
 module Backoffice
-  # Presentation for the catalog *around* the cards — the browse table, the render queue.
+  # Presentation for the catalog *around* the cards — the browse table, the publish page.
   #
   # Deliberately not in ProfilesHelper: that file is one of the inputs to
   # Catalog::CardReference.template_digest, so editing it marks every rendered card as stale.

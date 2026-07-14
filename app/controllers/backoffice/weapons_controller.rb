@@ -2,7 +2,7 @@ module Backoffice
   # Weapons are shared across the catalog — one "Stiletto" row, carried by every profile that
   # fights with one — so they are edited here, in their own right, rather than inside a profile.
   # Editing one is therefore a catalog-wide edit: every card carrying it is out of date afterwards,
-  # which the render queue reports without being told (a card's fingerprint covers its weapons).
+  # which the publish page reports without being told (a card's fingerprint covers its weapons).
   class WeaponsController < BaseController
     before_action :set_weapon, only: %i[edit update destroy]
 
