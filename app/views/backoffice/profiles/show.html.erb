@@ -3,7 +3,8 @@
 <div style="display:flex;align-items:center;gap:12px;">
   <h1><%= @profile.name %></h1>
   <span class="pill" style="<%= faction_pill_style(@profile.faction) %>"><%= @profile.faction.capitalize %></span>
-  <%= link_to "Open card →", card_backoffice_profile_path(@profile), target: "_blank", class: "btn btn-indigo", style: "margin-left:auto;" %>
+  <%= link_to "✎ Edit profile", edit_backoffice_profile_path(@profile), class: "btn", style: "margin-left:auto;" %>
+  <%= link_to "Open card →", card_backoffice_profile_path(@profile), target: "_blank", class: "btn btn-indigo" %>
 </div>
 
 <div class="table-wrap" style="margin-top:16px;">

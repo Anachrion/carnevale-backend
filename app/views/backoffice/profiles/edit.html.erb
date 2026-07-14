@@ -1,0 +1,88 @@
+<% content_for :title, "Edit #{@profile.name}" %>
+
+<div style="display:flex;align-items:center;gap:12px;">
+  <h1>Edit <%= @profile.name %></h1>
+  <span class="pill" style="<%= faction_pill_style(@profile.faction) %>"><%= @profile.faction.capitalize %></span>
+  <%= link_to "Cancel", backoffice_profile_path(@profile), class: "btn", style: "margin-left:auto;" %>
+</div>
+
+<%# scope: :profile — the model is namespaced, so the default param key would be catalog_profile. %>
+<%= form_with model: @profile, scope: :profile, url: backoffice_profile_path(@profile), method: :patch do |f| %>
+  <% if @profile.errors.any? %>
+    <div class="flash alert">
+      <%= @profile.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="table-wrap" style="margin-top:16px;">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:200px;"><%= f.label :name %></th>
+          <td><%= f.text_field :name, style: "width:320px;" %></td>
+        </tr>
+        <tr>
+          <th><%= f.label :faction %></th>
+          <td>
+            <%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] } %>
+            <span style="color:#6b7280;font-size:13px;margin-left:8px;">
+              Also picks the folder its illustrations are read from.
+            </span>
+          </td>
+        </tr>
+
+        <% Catalog::Profile::STATS.each do |stat| %>
+          <tr>
+            <th><%= f.label stat, stat.to_s.humanize %></th>
+            <td><%= f.number_field stat, min: 0, style: "width:90px;" %></td>
+          </tr>
+        <% end %>
+
+        <tr>
+          <th><%= f.label :version %></th>
+          <td><%= f.text_field :version, style: "width:120px;" %></td>
+        </tr>
+
+        <tr>
+          <th><%= f.label :keywords_text, "Keywords" %></th>
+          <td>
+            <%= f.text_area :keywords_text, value: @profile.keywords.join("\n"),
+                  rows: 4, style: "width:420px;font-family:ui-monospace,monospace;" %>
+            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Discipline (Blood Rites)</code>.</div>
+          </td>
+        </tr>
+        <tr>
+          <th><%= f.label :abilities_text, "Abilities" %></th>
+          <td>
+            <%= f.text_area :abilities_text, value: @profile.abilities.join("\n"),
+                  rows: 6, style: "width:420px;font-family:ui-monospace,monospace;" %>
+            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Mage (2)</code>.</div>
+          </td>
+        </tr>
+
+        <tr>
+          <th>Weapons</th>
+          <td style="color:#6b7280;">
+            <%= @profile.weapons.map(&:name).join(", ").presence || "—" %>
+          </td>
+        </tr>
+        <tr>
+          <th>Special rules</th>
+          <td style="color:#6b7280;">
+            <%= @profile.special_rules.map(&:name).join(", ").presence || "—" %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="margin-top:16px;">
+    <span style="color:#6b7280;font-size:13px;">
+      Saving does not re-render the card — it will show up in the
+      <%= link_to "render queue", render_queue_backoffice_profiles_path %> as out of date.
+    </span>
+    <div style="margin-left:auto;">
+      <%= f.submit "Save profile", class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>

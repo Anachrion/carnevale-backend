@@ -12,6 +12,18 @@ module Catalog
     has_many :profile_special_rules, -> { order(:position) }, class_name: "Catalog::ProfileSpecialRule"
     has_many :special_rules, through: :profile_special_rules
 
+    # The stats printed on the card. Everything here is a small non-negative integer, and the
+    # backoffice editor is now a way to get bad values into the catalog, so they are checked.
+    STATS = %i[
+      ducats movement attack dexterity protection mind
+      action_points will_points command_points life_points size
+    ].freeze
+
+    validates :name, presence: true
+    validates :faction, presence: true
+    validates(*STATS, numericality: { only_integer: true, greater_than_or_equal_to: 0 })
+    validate :abilities_and_keywords_are_lists_of_strings
+
     MAGE_ABILITY = /\AMage \((\d+)\)\z/
     EXPERT_SORCERER_ABILITY = /\AExpert Sorcerer \((\d+)\)\z/
     DISCIPLINE_KEYWORD = /\ADiscipline \((.+)\)\z/
@@ -46,6 +58,18 @@ module Catalog
       return [] unless keyword
 
       keyword[DISCIPLINE_KEYWORD, 1].split(",").map { |name| name.strip.parameterize(separator: "_") }
+    end
+
+    private
+
+    # These are json columns, so the database will happily take a string or a nested hash. Every
+    # reader — the card view, mage_level, disciplines — assumes a flat list of strings.
+    def abilities_and_keywords_are_lists_of_strings
+      { abilities: abilities, keywords: keywords }.each do |attribute, value|
+        next if value.is_a?(Array) && value.all?(String)
+
+        errors.add(attribute, "must be a list of strings")
+      end
     end
   end
 end
