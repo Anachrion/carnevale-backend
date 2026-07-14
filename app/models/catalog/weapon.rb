@@ -10,6 +10,7 @@ module Catalog
     validates :name, presence: true
     validates :damage, :evasion, :penetration, :range, numericality: { only_integer: true }
     validates_string_list :abilities
+    validates_ability_glossary :abilities, category: "weapon"
 
     # A weapon is shared, so editing one is a catalog-wide edit: every profile carrying it prints
     # it. Nothing re-renders automatically, but a card's source fingerprint covers its weapons, so

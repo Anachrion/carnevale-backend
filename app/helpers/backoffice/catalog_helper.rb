@@ -15,5 +15,17 @@ module Backoffice
         title: "internal_version advertised to the app",
         style: "font-variant-numeric:tabular-nums;color:#374151;")
     end
+
+    # The ability names allowed in a given category — abilities are held to the Catalog::Ability
+    # glossary, so a form has to say what it will accept. Shown under the abilities textareas.
+    def ability_glossary_hint(category)
+      names = Catalog::Ability.where(category: category).order(:name).pluck(:name)
+      tag.div(style: "color:#6b7280;font-size:13px;margin-top:6px;") do
+        safe_join([
+          tag.span("Must be one of these #{category} abilities (a “(X)” rating may follow): "),
+          tag.span(names.join(", "), style: "color:#374151;")
+        ])
+      end
+    end
   end
 end

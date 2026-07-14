@@ -74,7 +74,12 @@ RSpec.describe "Backoffice::Profiles", type: :request do
   describe "PATCH update (the profile editor)" do
     let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
 
-    before { sign_in admin }
+    before do
+      sign_in admin
+      # valid_params carries these abilities, which are held to the glossary.
+      Catalog::Ability.create!(category: "character", name: "Mage")
+      Catalog::Ability.create!(category: "character", name: "Expert Sorcerer")
+    end
 
     def valid_params(overrides = {})
       {
@@ -143,6 +148,14 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(profile.reload.name).to eq("Capodecina")
+    end
+
+    it "rejects an ability that is not in the character glossary" do
+      patch backoffice_profile_path(profile),
+        params: valid_params(abilities_text: "Mage (2)\nMade Up Ability")
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(profile.reload.abilities).not_to include("Made Up Ability")
     end
 
     it "is admin-only" do

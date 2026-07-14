@@ -30,6 +30,7 @@
             <%= f.text_area :abilities_text, value: weapon.abilities.join("\n"),
                   rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
             <div style="color:#6b7280;font-size:13px;">One per line.</div>
+            <%= ability_glossary_hint("weapon") %>
           </td>
         </tr>
       </tbody>

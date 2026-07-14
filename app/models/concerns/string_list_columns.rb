@@ -16,5 +16,24 @@ module StringListColumns
         end
       end
     end
+
+    # Every entry in the list column must name a rule from the Catalog::Ability glossary of the
+    # given category ("character" for a profile's abilities, "weapon" for a weapon's) — its base
+    # name, once the "(X)" rating is stripped. Keeps the editor from inventing an ability the app
+    # has no glossary entry to explain.
+    def validates_ability_glossary(attribute, category:)
+      validate do
+        list = public_send(attribute)
+        next unless list.is_a?(Array)
+
+        known = Catalog::Ability.known_names(category)
+        list.grep(String).each do |entry|
+          base = Catalog::Ability.base_name(entry)
+          next if known.include?(base)
+
+          errors.add(attribute, "\"#{entry}\" is not a known #{category} ability")
+        end
+      end
+    end
   end
 end
