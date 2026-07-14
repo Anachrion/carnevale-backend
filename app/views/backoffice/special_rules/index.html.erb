@@ -4,9 +4,9 @@
 
 <%= form_with url: backoffice_special_rules_path, method: :get do |f| %>
   <div class="toolbar">
-    <%= f.text_field :search, value: params[:search], placeholder: "Search by name or spell…" %>
+    <%= f.text_field :search, value: params[:search], placeholder: "Search by name or spell…", class: "w-64" %>
     <span class="count"><%= @special_rules.size %> rule<%= "s" unless @special_rules.size == 1 %></span>
-    <div style="margin-left:auto;">
+    <div class="ml-auto">
       <%= link_to "+ New special rule", new_backoffice_special_rule_path, class: "btn btn-emerald" %>
     </div>
   </div>
@@ -16,43 +16,44 @@
   <table>
     <thead>
       <tr>
-        <th style="width:220px;">Name</th>
+        <th class="w-56">Name</th>
         <th>Description</th>
         <th class="text-center">Spell</th>
         <th class="text-center">Carried by</th>
-        <th class="text-center">Edit</th>
+        <th class="w-10"></th>
       </tr>
     </thead>
     <tbody>
       <% @special_rules.each do |rule| %>
-        <tr>
+        <% carried = @carried_by[rule.id].to_i %>
+        <tr class="group">
           <td>
-            <%= display_name(rule) %>
+            <%= link_to display_name(rule), edit_backoffice_special_rule_path(rule) %>
             <% if rule.name.blank? %>
-              <div style="color:#9ca3af;font-size:12px;">printed under its spell name</div>
+              <div class="text-xs text-gray-400">printed under its spell name</div>
             <% end %>
           </td>
-          <td style="color:#6b7280;"><%= truncate(rule.description, length: 90) %></td>
+          <td class="text-gray-500"><%= truncate(rule.description, length: 90) %></td>
           <td class="text-center">
             <% if rule.spell_name.present? %>
-              <span class="pill" style="background:#ede9fe;color:#5b21b6;">
+              <span class="pill bg-violet-100 text-violet-800">
                 <%= rule.spell_cost %>/<%= rule.spell_difficulty %>
               </span>
             <% else %>
-              —
+              <span class="text-gray-300">—</span>
             <% end %>
           </td>
           <td class="text-center">
-            <% carried = @carried_by[rule.id].to_i %>
-            <span class="pill" style="background:#f3f4f6;color:#6b7280;">
+            <span class="pill bg-gray-100 text-gray-500">
               <%= carried %> profile<%= "s" unless carried == 1 %>
             </span>
           </td>
-          <td class="text-center" style="white-space:nowrap;">
-            <%= link_to "✎ Edit", edit_backoffice_special_rule_path(rule), class: "btn" %>
+          <td class="text-center">
             <% if carried.zero? %>
               <%= button_to "🗑", backoffice_special_rule_path(rule), method: :delete,
-                    class: "btn", form: { style: "display:inline;margin:0;" },
+                    class: "rounded p-1 text-gray-300 opacity-0 transition group-hover:opacity-100 " \
+                           "hover:bg-red-50 hover:text-red-600 focus:opacity-100",
+                    form: { class: "inline" },
                     data: { turbo_confirm: "Delete #{display_name(rule)}? No profile carries it." },
                     title: "Delete this unused special rule" %>
             <% end %>

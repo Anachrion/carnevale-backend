@@ -17,16 +17,17 @@
   <%= f.hidden_field :sort, value: @sort %>
   <%= f.hidden_field :dir,  value: @dir %>
   <div class="toolbar">
-    <%= f.text_field :search, value: @filter["search"], placeholder: "Search by name…" %>
+    <%= f.text_field :search, value: @filter["search"], placeholder: "Search by name…", class: "w-56" %>
     <%= f.select :faction,
           Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] },
           { include_blank: "All factions", selected: @filter["faction"] },
           onchange: "this.form.requestSubmit()" %>
     <span class="count"><%= @profiles.size %> profile<%= "s" unless @profiles.size == 1 %></span>
-    <div style="margin-left:auto;display:flex;gap:8px;">
+
+    <div class="ml-auto flex gap-2">
       <%= link_to "+ New profile", new_backoffice_profile_path, class: "btn btn-emerald" %>
-      <button type="button" id="btn-export-pdf" class="btn btn-indigo">⬇ Export PDF</button>
-      <button type="button" id="btn-export-png" class="btn btn-emerald">⬇ Export PNG</button>
+      <button type="button" id="btn-export-pdf" class="btn">⬇ PDF</button>
+      <button type="button" id="btn-export-png" class="btn">⬇ PNG</button>
     </div>
   </div>
 <% end %>
@@ -41,6 +42,11 @@
   <%= f.hidden_field :dir,  value: @dir %>
 <% end %>
 
+<%#
+  No Edit button per row: the name *is* the way in, as it is in every list people already use. The
+  card view, which the name used to open, moves to a link that surfaces on hover — it is the thing
+  you want occasionally, not the thing you came here to do.
+%>
 <div class="table-wrap">
   <table>
     <thead>
@@ -48,26 +54,29 @@
         <th><%= sort_link("Name", "name", @sort, @dir, @filter) %></th>
         <th>Faction</th>
         <th class="text-center">Version</th>
-        <th class="text-center">Edit</th>
-        <th class="text-center"><input type="checkbox" id="select-all" checked></th>
+        <th class="w-10 text-center"><input type="checkbox" id="select-all" checked class="size-4 accent-gray-900"></th>
       </tr>
     </thead>
     <tbody>
       <% @profiles.each do |profile| %>
-        <tr>
+        <tr class="group">
           <td>
-            <%= link_to profile.name, card_backoffice_profile_path(profile, @filter), target: "_blank" %>
+            <div class="flex items-center gap-2.5">
+              <%= link_to profile.name, edit_backoffice_profile_path(profile),
+                    title: "Edit the stats, with the card drawn live" %>
+              <%# Hidden until the row is hovered, but never from the keyboard: focus brings it back. %>
+              <%= link_to "Card ↗", card_backoffice_profile_path(profile, @filter), target: "_blank",
+                    class: "rounded px-1 text-xs font-normal text-gray-400 opacity-0 transition " \
+                           "group-hover:opacity-100 hover:!text-gray-900 focus:opacity-100 focus:outline-2" %>
+            </div>
           </td>
           <td>
             <span class="pill" style="<%= faction_pill_style(profile.faction) %>"><%= profile.faction.capitalize %></span>
           </td>
           <td class="text-center"><%= card_versions(profile) %></td>
           <td class="text-center">
-            <%= link_to "✎ Edit", edit_backoffice_profile_path(profile), class: "btn",
-                  title: "Edit the stats, with the card drawn live" %>
-          </td>
-          <td class="text-center">
-            <input type="checkbox" name="ids[]" value="<%= profile.id %>" checked class="profile-checkbox" form="export-form">
+            <input type="checkbox" name="ids[]" value="<%= profile.id %>" checked
+                   class="profile-checkbox size-4 accent-gray-900" form="export-form">
           </td>
         </tr>
       <% end %>

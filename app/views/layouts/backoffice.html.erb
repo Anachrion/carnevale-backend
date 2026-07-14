@@ -1,102 +1,52 @@
 <!DOCTYPE html>
-<html>
+<html class="h-full">
   <head>
     <title><%= content_for(:title) || "Backoffice" %> · Carnevale</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <style>
-      :root { color-scheme: light; }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        color: #111827;
-        background: #f9fafb;
-      }
-      .bo-header {
-        display: flex; align-items: center; gap: 16px;
-        padding: 12px 24px; background: #1f2937; color: #f9fafb;
-      }
-      .bo-header a { color: #f9fafb; text-decoration: none; font-weight: 600; }
-      .bo-header .spacer { margin-left: auto; }
-      .bo-header .user { font-size: 13px; opacity: 0.75; }
-      .bo-main { max-width: 1024px; margin: 0 auto; padding: 24px; }
 
-      h1 { font-size: 24px; font-weight: 700; margin: 0; }
+    <link rel="icon" href="/icon.png" type="image/png">
 
-      .flash { border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 8px; }
-      .flash.notice { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
-      .flash.alert  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
-
-      .toolbar { display: flex; align-items: center; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
-      input[type=text], select {
-        border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 12px;
-        font-size: 14px; background: #fff; color: #374151;
-      }
-      input[type=text] { width: 224px; }
-      .count { font-size: 12px; color: #9ca3af; }
-      .btn {
-        border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer;
-        border: 1px solid transparent; text-decoration: none; display: inline-flex; gap: 6px; align-items: center;
-      }
-      .btn-indigo { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
-      .btn-emerald { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
-
-      table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; }
-      .table-wrap { overflow: hidden; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-      thead { background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
-      th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; }
-      th a { color: inherit; text-decoration: none; }
-      th a:hover { color: #111827; }
-      td { padding: 12px 16px; border-top: 1px solid #f3f4f6; }
-      tbody tr:hover { background: #f9fafb; }
-      .text-right { text-align: right; }
-      .text-center { text-align: center; }
-      td a { color: #111827; text-decoration: none; font-weight: 500; }
-      td a:hover { text-decoration: underline; }
-      .pill { display: inline-block; border-radius: 9999px; padding: 2px 10px; font-size: 12px; font-weight: 500; }
-
-      /* A strip of small labelled number fields — the stat editor lays MOV/DEX/ATT/PRO/MIND out
-         in a row, the way the card prints them, instead of one form row per value. */
-      .stat-strip { display: flex; gap: 6px; flex-wrap: wrap; }
-      .stat-field { display: flex; flex-direction: column; width: 74px; }
-      .stat-field label {
-        padding: 0 0 4px; text-align: center;
-        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280;
-      }
-      .stat-field input[type=number] {
-        width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 7px 4px;
-        font-size: 15px; text-align: center; font-variant-numeric: tabular-nums;
-        background: #fff; color: #374151;
-      }
-
-      /* Fields that belong together on one line (name / faction / version). */
-      .field-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
-      .field-row label {
-        display: block; padding-bottom: 4px;
-        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280;
-      }
-    </style>
+    <%# The backoffice's shared furniture (.btn, .table-wrap, .pill, the editor's stat strip) lives
+        in app/assets/tailwind/application.css — the screens not yet reworked still lean on it. %>
+    <%= stylesheet_link_tag :tailwind, "data-turbo-track": "reload" %>
   </head>
-  <body>
-    <header class="bo-header">
-      <a href="<%= backoffice_profiles_path %>">Carnevale Backoffice</a>
-      <nav style="display:flex;gap:14px;margin-left:24px;font-size:14px;">
-        <%= link_to "Profiles", backoffice_profiles_path %>
-        <%= link_to "Weapons", backoffice_weapons_path %>
-        <%= link_to "Special rules", backoffice_special_rules_path %>
-        <%# Up here rather than in the profiles toolbar: a card is out of date the moment its
-            profile is saved, and that is worth seeing from wherever you happen to be. %>
-        <%= link_to "Publish cards", publish_backoffice_profiles_path %>
+
+  <body class="min-h-full bg-gray-50 font-sans text-gray-900 antialiased">
+    <header class="flex items-center gap-6 bg-gray-900 px-6 py-3 text-gray-100">
+      <%= link_to "Carnevale", backoffice_profiles_path,
+            class: "text-sm font-semibold tracking-tight text-white no-underline" %>
+
+      <%
+        # The tab you are on is the one whose controller is rendering — worked out here rather than
+        # passed in by every screen, so a new page cannot forget to light its own tab up.
+        nav = {
+          "Profiles"      => [ backoffice_profiles_path,      controller_name == "profiles" && action_name != "publish" ],
+          "Weapons"       => [ backoffice_weapons_path,       controller_name == "weapons" ],
+          "Special rules" => [ backoffice_special_rules_path, controller_name == "special_rules" ],
+          "Publish cards" => [ publish_backoffice_profiles_path, action_name == "publish" ]
+        }
+      %>
+      <nav class="flex items-center gap-1 text-sm">
+        <% nav.each do |label, (path, current)| %>
+          <%= link_to label, path,
+                class: "rounded-md px-2.5 py-1.5 no-underline transition #{current ?
+                  'bg-white/10 font-medium text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'}" %>
+        <% end %>
       </nav>
-      <div class="spacer"></div>
-      <% if respond_to?(:current_user) && current_user %>
-        <span class="user"><%= current_user.try(:username) || current_user.email %></span>
-        <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "btn", form: { style: "display:inline" } %>
-      <% end %>
+
+      <div class="ml-auto flex items-center gap-3">
+        <% if respond_to?(:current_user) && current_user %>
+          <span class="text-xs text-gray-400"><%= current_user.try(:username) || current_user.email %></span>
+          <%= button_to "Sign out", destroy_user_session_path, method: :delete,
+                class: "rounded-md border border-white/15 bg-white/5 px-2.5 py-1.5 text-xs text-gray-200 transition hover:bg-white/10 hover:text-white",
+                form: { class: "inline" } %>
+        <% end %>
+      </div>
     </header>
-    <main class="bo-main">
+
+    <main class="mx-auto max-w-6xl px-6 py-6">
       <% if notice.present? %><div class="flash notice"><%= notice %></div><% end %>
       <% if alert.present? %><div class="flash alert"><%= alert %></div><% end %>
       <%= yield %>

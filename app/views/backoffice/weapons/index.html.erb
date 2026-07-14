@@ -4,14 +4,16 @@
 
 <%= form_with url: backoffice_weapons_path, method: :get do |f| %>
   <div class="toolbar">
-    <%= f.text_field :search, value: params[:search], placeholder: "Search by name…" %>
+    <%= f.text_field :search, value: params[:search], placeholder: "Search by name…", class: "w-56" %>
     <span class="count"><%= @weapons.size %> weapon<%= "s" unless @weapons.size == 1 %></span>
-    <div style="margin-left:auto;">
+    <div class="ml-auto">
       <%= link_to "+ New weapon", new_backoffice_weapon_path, class: "btn btn-emerald" %>
     </div>
   </div>
 <% end %>
 
+<%# The name is the way in, as on the profiles list. Deleting is offered only for a weapon nobody
+    carries, and only on hover: it is the rare, irreversible one, not the one you came for. %>
 <div class="table-wrap">
   <table>
     <thead>
@@ -23,29 +25,30 @@
         <th class="text-right">Range</th>
         <th>Abilities</th>
         <th class="text-center">Carried by</th>
-        <th class="text-center">Edit</th>
+        <th class="w-10"></th>
       </tr>
     </thead>
     <tbody>
       <% @weapons.each do |weapon| %>
-        <tr>
-          <td><%= weapon.name %></td>
-          <td class="text-right"><%= weapon.damage %></td>
-          <td class="text-right"><%= weapon.evasion %></td>
-          <td class="text-right"><%= weapon.penetration %></td>
-          <td class="text-right"><%= weapon.range %></td>
-          <td style="color:#6b7280;"><%= weapon.abilities.join(", ").presence || "—" %></td>
+        <% carried = @carried_by[weapon.id].to_i %>
+        <tr class="group">
+          <td><%= link_to weapon.name, edit_backoffice_weapon_path(weapon) %></td>
+          <td class="text-right tabular-nums"><%= weapon.damage %></td>
+          <td class="text-right tabular-nums"><%= weapon.evasion %></td>
+          <td class="text-right tabular-nums"><%= weapon.penetration %></td>
+          <td class="text-right tabular-nums"><%= weapon.range %></td>
+          <td class="text-gray-500"><%= weapon.abilities.join(", ").presence || "—" %></td>
           <td class="text-center">
-            <% carried = @carried_by[weapon.id].to_i %>
-            <span class="pill" style="background:#f3f4f6;color:#6b7280;">
+            <span class="pill bg-gray-100 text-gray-500">
               <%= carried %> profile<%= "s" unless carried == 1 %>
             </span>
           </td>
-          <td class="text-center" style="white-space:nowrap;">
-            <%= link_to "✎ Edit", edit_backoffice_weapon_path(weapon), class: "btn" %>
+          <td class="text-center">
             <% if carried.zero? %>
               <%= button_to "🗑", backoffice_weapon_path(weapon), method: :delete,
-                    class: "btn", form: { style: "display:inline;margin:0;" },
+                    class: "rounded p-1 text-gray-300 opacity-0 transition group-hover:opacity-100 " \
+                           "hover:bg-red-50 hover:text-red-600 focus:opacity-100",
+                    form: { class: "inline" },
                     data: { turbo_confirm: "Delete #{weapon.name}? No profile carries it." },
                     title: "Delete this unused weapon" %>
             <% end %>
