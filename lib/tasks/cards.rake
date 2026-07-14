@@ -1,39 +1,74 @@
 namespace :cards do
-  # Copy the pre-rendered card faces into public/cards so the backend can host them.
-  # Source defaults to the sibling frontend repo's asset dir; override for CI/other checkouts:
-  #   bin/rails 'cards:import_images[/path/to/assets/images/cards]'
-  # Idempotent: files with identical bytes are skipped. Re-run whenever the art changes, then
-  # run cards:reversion to bump internal_version for the cards that actually changed.
-  desc "Copy card front/back PNGs into public/cards"
-  task :import_images, [ :source_dir ] => :environment do |_t, args|
-    require "fileutils"
+  # Render card faces into public/cards, exactly as the backoffice's "render to catalog" button
+  # does — both faces of every card reference. The front is drawn with the reference's own
+  # illustration, so an A/B pair delivers two different cards; the back has no illustration, so it
+  # is rendered once per profile and written to each of its references.
+  #
+  # Grover drives headless Chrome against a *running* server, so boot one first, then:
+  #   bin/rails cards:render                # every card
+  #   bin/rails 'cards:render[doctors]'     # one faction
+  #
+  # Set CARD_RENDER_BASE_URL if that server is not on http://localhost:3000.
+  # Idempotent: re-rendering unchanged art rewrites identical bytes, and reversion then leaves the
+  # version alone, so only genuinely changed cards are advertised to the app as new.
+  desc "Render card images into public/cards (needs a running server)"
+  task :render, [ :faction ] => :environment do |_t, args|
+    require "grover"
 
-    source = Pathname.new(args[:source_dir].presence || File.expand_path("~/Workspace/carnevale/assets/images/cards"))
-    abort "Source directory not found: #{source}" unless source.directory?
+    base  = ENV["CARD_RENDER_BASE_URL"].presence || "http://localhost:3000"
+    scope = Catalog::Profile.includes(:card_references, :illustrations).order(:faction, :name)
+    scope = scope.where(faction: args[:faction]) if args[:faction].present?
 
     dest = Catalog::CardReference::IMAGES_DIR
     FileUtils.mkdir_p(dest)
 
-    copied = skipped = missing = 0
-    filenames = Catalog::CardReference.pluck(:card_front, :card_back).flatten.compact.uniq
-    filenames.each do |name|
-      src = source.join(name)
-      unless src.file?
-        warn "  missing source image: #{name}"
-        missing += 1
-        next
-      end
+    options = {
+      emulate_media: "screen",
+      viewport: { width: 265, height: 454, device_scale_factor: 3 },
+      print_background: true,
+      omit_background: true,
+      launch_args: [ "--no-sandbox", "--disable-setuid-sandbox" ]
+    }
 
-      target = dest.join(name)
-      if target.file? && FileUtils.identical?(src, target)
-        skipped += 1
-      else
-        FileUtils.cp(src, target)
-        copied += 1
-      end
+    url_for = lambda do |profile, side, illustration|
+      Rails.application.routes.url_helpers.card_backoffice_profile_url(
+        profile, host: base, side: side, illustration: illustration,
+        render_token: Backoffice::BaseController.render_token
+      )
     end
 
-    puts "cards:import_images — copied #{copied}, skipped #{skipped} (unchanged), missing #{missing} of #{filenames.size} image files into #{dest}"
+    fronts = backs = 0
+    scope.find_each do |profile|
+      back_png = Grover.new(url_for.(profile, "back", nil), **options).to_png
+
+      profile.card_references.each do |cr|
+        File.binwrite(cr.front_path, Grover.new(url_for.(profile, "front", cr.illustration_number), **options).to_png)
+        File.binwrite(cr.back_path, back_png)
+        fronts += 1
+        backs += 1
+      end
+      print "."
+    end
+    puts
+
+    puts "cards:render — wrote #{fronts} fronts and #{backs} backs into #{dest}"
+    Rake::Task["cards:reversion"].invoke
+  end
+
+  # Delete images in public/cards that no card reference points at any more — e.g. the shared front
+  # a profile's A/B references used before each gained its own.
+  desc "Remove card images no card reference points at"
+  task prune: :environment do
+    require "set"
+
+    dest = Catalog::CardReference::IMAGES_DIR
+    in_use = Catalog::CardReference.includes(:profile)
+      .flat_map { |cr| [ cr.card_front, cr.card_back ] }.to_set
+    orphans = Dir.children(dest).select { |f| f.end_with?(".png") && !in_use.include?(f) }
+
+    orphans.each { |f| File.delete(dest.join(f)) }
+    puts "cards:prune — deleted #{orphans.size} orphaned image(s); #{in_use.size} still in use"
+    orphans.first(10).each { |f| puts "  #{f}" }
   end
 
   # Bump internal_version for cards whose image bytes changed since the last run. Safe to run
