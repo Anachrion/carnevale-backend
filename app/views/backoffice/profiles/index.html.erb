@@ -56,6 +56,8 @@
         <tr>
           <td>
             <%= link_to profile.name, card_backoffice_profile_path(profile, @filter), target: "_blank" %>
+            <%= link_to "✎", edit_backoffice_profile_path(profile), title: "Edit profile",
+                  style: "margin-left:6px;text-decoration:none;color:#9ca3af;" %>
           </td>
           <td>
             <span class="pill" style="<%= faction_pill_style(profile.faction) %>"><%= profile.faction.capitalize %></span>

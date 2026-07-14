@@ -88,10 +88,18 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       }
     end
 
+    it "renders the editor with the live card wired to card_preview" do
+      get edit_backoffice_profile_path(profile)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('id="card-preview"')
+      expect(response.body).to include(card_preview_backoffice_profile_path(profile))
+    end
+
     it "edits the stats, keywords and abilities" do
       patch backoffice_profile_path(profile), params: valid_params
 
-      expect(response).to redirect_to(backoffice_profile_path(profile))
+      expect(response).to redirect_to(edit_backoffice_profile_path(profile))
       profile.reload
       expect(profile.ducats).to eq(20)
       expect(profile.attack).to eq(3)
@@ -142,6 +150,45 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
       expect(response).to have_http_status(:forbidden)
       expect(profile.reload.ducats).to eq(10)
+    end
+
+    describe "POST card_preview (the live card)" do
+      it "draws the card from the form's values without saving them" do
+        post card_preview_backoffice_profile_path(profile), params: valid_params(name: "Renamed", ducats: 44)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Renamed")
+        expect(response.body).to include("44")
+
+        # The whole point: the database is untouched, so the preview can show something the
+        # catalog does not (yet) contain.
+        profile.reload
+        expect(profile.name).to eq("Capodecina")
+        expect(profile.ducats).to eq(10)
+      end
+
+      it "renders the same single-face template Grover screenshots" do
+        # side rides alongside the profile hash, not inside it.
+        post card_preview_backoffice_profile_path(profile), params: valid_params.merge(side: "back")
+
+        # @side is set, so the card page renders one face and none of its browsing chrome.
+        expect(response.body).to include("<!DOCTYPE html>")
+        expect(response.body).not_to include("Render to catalog")
+        expect(response.body).not_to include("⇄") # the front-only illustration swap button
+      end
+
+      it "previews an invalid profile rather than erroring" do
+        post card_preview_backoffice_profile_path(profile), params: valid_params(ducats: -5)
+
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "is admin-only" do
+        sign_in create(:user)
+        post card_preview_backoffice_profile_path(profile), params: valid_params
+
+        expect(response).to have_http_status(:forbidden)
+      end
     end
   end
 

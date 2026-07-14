@@ -3,86 +3,178 @@
 <div style="display:flex;align-items:center;gap:12px;">
   <h1>Edit <%= @profile.name %></h1>
   <span class="pill" style="<%= faction_pill_style(@profile.faction) %>"><%= @profile.faction.capitalize %></span>
-  <%= link_to "Cancel", backoffice_profile_path(@profile), class: "btn", style: "margin-left:auto;" %>
+  <%= link_to "← All profiles", backoffice_profiles_path, class: "btn", style: "margin-left:auto;" %>
+  <%= link_to "Open card →", card_backoffice_profile_path(@profile), target: "_blank", class: "btn btn-indigo" %>
 </div>
 
 <%# scope: :profile — the model is namespaced, so the default param key would be catalog_profile. %>
-<%= form_with model: @profile, scope: :profile, url: backoffice_profile_path(@profile), method: :patch do |f| %>
+<%= form_with model: @profile, scope: :profile, url: backoffice_profile_path(@profile),
+      method: :patch, id: "profile-form" do |f| %>
+
   <% if @profile.errors.any? %>
-    <div class="flash alert">
-      <%= @profile.errors.full_messages.to_sentence %>
-    </div>
+    <div class="flash alert"><%= @profile.errors.full_messages.to_sentence %></div>
   <% end %>
 
-  <div class="table-wrap" style="margin-top:16px;">
-    <table>
-      <tbody>
-        <tr>
-          <th style="width:200px;"><%= f.label :name %></th>
-          <td><%= f.text_field :name, style: "width:320px;" %></td>
-        </tr>
-        <tr>
-          <th><%= f.label :faction %></th>
-          <td>
-            <%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] } %>
-            <span style="color:#6b7280;font-size:13px;margin-left:8px;">
-              Also picks the folder its illustrations are read from.
-            </span>
-          </td>
-        </tr>
+  <div style="display:flex;gap:24px;align-items:flex-start;margin-top:16px;">
+    <!-- ── The form ─────────────────────────────────────────────────────────── -->
+    <div style="flex:1;min-width:0;">
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr>
+              <th style="width:170px;"><%= f.label :name %></th>
+              <td><%= f.text_field :name, style: "width:320px;" %></td>
+            </tr>
+            <tr>
+              <th><%= f.label :faction %></th>
+              <td><%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] } %></td>
+            </tr>
 
-        <% Catalog::Profile::STATS.each do |stat| %>
-          <tr>
-            <th><%= f.label stat, stat.to_s.humanize %></th>
-            <td><%= f.number_field stat, min: 0, style: "width:90px;" %></td>
-          </tr>
+            <% Catalog::Profile::STATS.each do |stat| %>
+              <tr>
+                <th><%= f.label stat, stat.to_s.humanize %></th>
+                <td><%= f.number_field stat, min: 0, style: "width:90px;" %></td>
+              </tr>
+            <% end %>
+
+            <tr>
+              <th><%= f.label :version %></th>
+              <td><%= f.text_field :version, style: "width:120px;" %></td>
+            </tr>
+
+            <tr>
+              <th><%= f.label :keywords_text, "Keywords" %></th>
+              <td>
+                <%= f.text_area :keywords_text, value: @profile.keywords.join("\n"),
+                      rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+                <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Discipline (Blood Rites)</code>.</div>
+              </td>
+            </tr>
+            <tr>
+              <th><%= f.label :abilities_text, "Abilities" %></th>
+              <td>
+                <%= f.text_area :abilities_text, value: @profile.abilities.join("\n"),
+                      rows: 6, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+                <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Mage (2)</code>.</div>
+              </td>
+            </tr>
+
+            <tr>
+              <th>Weapons</th>
+              <td style="color:#6b7280;"><%= @profile.weapons.map(&:name).join(", ").presence || "—" %></td>
+            </tr>
+            <tr>
+              <th>Special rules</th>
+              <td style="color:#6b7280;"><%= @profile.special_rules.map(&:name).join(", ").presence || "—" %></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="toolbar" style="margin-top:16px;">
+        <span style="color:#6b7280;font-size:13px;">
+          Saving does not re-render the card — it joins the
+          <%= link_to "render queue", render_queue_backoffice_profiles_path %> as out of date.
+        </span>
+        <div style="margin-left:auto;">
+          <%= f.submit "Save profile", class: "btn btn-emerald" %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── The live card ────────────────────────────────────────────────────── -->
+    <div style="position:sticky;top:16px;flex:0 0 auto;">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+        <button type="button" class="btn js-side" data-side="front">Front</button>
+        <button type="button" class="btn js-side" data-side="back">Back</button>
+
+        <% if @profile.illustrations.size > 1 %>
+          <select id="preview-illustration" class="btn" style="padding:6px;">
+            <% @profile.illustrations.each do |illus| %>
+              <option value="<%= illus.number %>">Art <%= illus.number %></option>
+            <% end %>
+          </select>
         <% end %>
 
-        <tr>
-          <th><%= f.label :version %></th>
-          <td><%= f.text_field :version, style: "width:120px;" %></td>
-        </tr>
+        <span id="preview-state" style="margin-left:auto;color:#9ca3af;font-size:12px;"></span>
+      </div>
 
-        <tr>
-          <th><%= f.label :keywords_text, "Keywords" %></th>
-          <td>
-            <%= f.text_area :keywords_text, value: @profile.keywords.join("\n"),
-                  rows: 4, style: "width:420px;font-family:ui-monospace,monospace;" %>
-            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Discipline (Blood Rites)</code>.</div>
-          </td>
-        </tr>
-        <tr>
-          <th><%= f.label :abilities_text, "Abilities" %></th>
-          <td>
-            <%= f.text_area :abilities_text, value: @profile.abilities.join("\n"),
-                  rows: 6, style: "width:420px;font-family:ui-monospace,monospace;" %>
-            <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Mage (2)</code>.</div>
-          </td>
-        </tr>
+      <iframe id="card-preview" title="Live card preview" scrolling="no"
+              style="width:265px;height:454px;border:0;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.12);background:#fff;"></iframe>
 
-        <tr>
-          <th>Weapons</th>
-          <td style="color:#6b7280;">
-            <%= @profile.weapons.map(&:name).join(", ").presence || "—" %>
-          </td>
-        </tr>
-        <tr>
-          <th>Special rules</th>
-          <td style="color:#6b7280;">
-            <%= @profile.special_rules.map(&:name).join(", ").presence || "—" %>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="toolbar" style="margin-top:16px;">
-    <span style="color:#6b7280;font-size:13px;">
-      Saving does not re-render the card — it will show up in the
-      <%= link_to "render queue", render_queue_backoffice_profiles_path %> as out of date.
-    </span>
-    <div style="margin-left:auto;">
-      <%= f.submit "Save profile", class: "btn btn-emerald" %>
+      <div style="width:265px;color:#6b7280;font-size:12px;margin-top:8px;text-align:center;">
+        Unsaved preview of the card as the form describes it — the same template
+        “Render to catalog” screenshots.
+      </div>
     </div>
   </div>
 <% end %>
+
+<script>
+(function () {
+  // The preview posts the form to card_preview, which assigns the values to the profile in memory
+  // (without saving) and renders the card template. Debounced, because it re-renders on every
+  // keystroke and there is no point rendering the same card five times while a word is typed.
+  const form    = document.getElementById('profile-form');
+  const frame   = document.getElementById('card-preview');
+  const state   = document.getElementById('preview-state');
+  const picker  = document.getElementById('preview-illustration');
+  const url     = '<%= card_preview_backoffice_profile_path(@profile) %>';
+  const token   = document.querySelector('meta[name="csrf-token"]').content;
+
+  let side = 'front';
+  let timer = null;
+  let pending = 0;
+
+  async function refresh() {
+    const body = new FormData(form);
+
+    // The form carries Rails' hidden _method=patch for its own submit. Left in place, it would
+    // turn this POST into a PATCH to card_preview, which routes nowhere.
+    body.delete('_method');
+    body.append('side', side);
+    if (picker) body.append('illustration', picker.value);
+
+    const seq = ++pending;
+    state.textContent = 'updating…';
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': token },
+        body: body
+      });
+      const html = await response.text();
+
+      // A slow render must not overwrite a newer one: only the latest request may paint.
+      if (seq !== pending) return;
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      frame.srcdoc = html;
+      state.textContent = '';
+    } catch (error) {
+      if (seq === pending) state.textContent = 'preview failed';
+    }
+  }
+
+  function scheduleRefresh() {
+    clearTimeout(timer);
+    timer = setTimeout(refresh, 250);
+  }
+
+  form.addEventListener('input', scheduleRefresh);
+  form.addEventListener('change', scheduleRefresh);
+
+  document.querySelectorAll('.js-side').forEach(function (button) {
+    button.addEventListener('click', function () {
+      side = button.dataset.side;
+      document.querySelectorAll('.js-side').forEach((b) => b.classList.remove('btn-indigo'));
+      button.classList.add('btn-indigo');
+      refresh();
+    });
+  });
+
+  document.querySelector('.js-side[data-side="front"]').classList.add('btn-indigo');
+  refresh();
+})();
+</script>

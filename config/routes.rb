@@ -69,11 +69,12 @@ Rails.application.routes.draw do
   # in Backoffice::BaseController (Devise login), which also lets the internal Grover render
   # request through via a render token — so it is NOT wrapped in an `authenticate :user` block.
   namespace :backoffice do
-    resources :profiles, only: %i[index show edit update] do
+    resources :profiles, only: %i[index edit update] do
       member do
         get   :card
         get   :card_pdf
         get   :card_png
+        post  :card_preview
         get   :illustration_editor
         patch :illustration_position
         post  :render_to_catalog

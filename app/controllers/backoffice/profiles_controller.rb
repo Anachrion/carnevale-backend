@@ -1,6 +1,6 @@
 module Backoffice
   class ProfilesController < BaseController
-    before_action :set_profile, only: %i[show edit update card card_pdf card_png illustration_editor illustration_position render_to_catalog]
+    before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position render_to_catalog]
 
     # GET /backoffice/profiles
     def index
@@ -27,12 +27,25 @@ module Backoffice
       @filter = filter
     end
 
-    # GET /backoffice/profiles/:id
-    def show
-    end
-
     # GET /backoffice/profiles/:id/edit
     def edit
+    end
+
+    # POST /backoffice/profiles/:id/card_preview
+    #
+    # The card as the editor's form currently describes it, rather than as the database has it:
+    # the profile is loaded, the submitted attributes are assigned *in memory*, and the card
+    # template is rendered from that. Nothing is saved.
+    #
+    # It renders the very template Grover screenshots (single face, @side set), so the preview is
+    # not an approximation of the card — it is the card, minus the trip through Chrome.
+    def card_preview
+      @profile.assign_attributes(profile_params)
+      @side = params[:side] == "back" ? "back" : "front"
+      @illustration = @profile.illustrations.find_by(number: params[:illustration]) ||
+                      @profile.illustrations.first
+
+      render :card, layout: false
     end
 
     # PATCH /backoffice/profiles/:id
@@ -42,8 +55,8 @@ module Backoffice
     # stale (Catalog::CardReference#stale?) and the render queue picks them up.
     def update
       if @profile.update(profile_params)
-        redirect_to backoffice_profile_path(@profile),
-          notice: "Updated #{@profile.name}. Its card is now out of date — render it to publish the change."
+        redirect_to edit_backoffice_profile_path(@profile),
+          notice: "Saved #{@profile.name}. Its card is now out of date — render it to publish the change."
       else
         render :edit, status: :unprocessable_entity
       end
