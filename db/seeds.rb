@@ -1,6 +1,25 @@
-# ── Faction Seeds ──────────────────────────────────────────────────────────────
-# Each file seeds its faction's CardReferences, Profiles, Weapons, and Special Rules.
-Dir[File.join(__dir__, "seeds", "*.rb")].sort.each { |f| load f }
+# ── Rulebook data ──────────────────────────────────────────────────────────────
+# Hand-authored, and rightly so: the backoffice cannot edit any of it, so git is where it is
+# written and where it belongs. Abilities come first — Profile and Weapon validate their abilities
+# against that glossary, so importing the catalog before they exist fails every record.
+%w[abilities spells scenarios equipment agendas].each { |f| load File.join(__dir__, "seeds", "#{f}.rb") }
+
+# ── The catalog ────────────────────────────────────────────────────────────────
+# Profiles, weapons, special rules, card references and illustrations come from db/catalog/ — the
+# snapshot of what production actually holds (see bin/catalog-snapshot and docs/DATA_AND_BACKUPS.md).
+#
+# They used to be seeded from hand-written faction files. That made this file a second source of
+# truth for data the backoffice edits, and the two had already drifted: production is authored by a
+# game creator, and no one was retyping their edits back into Ruby. Seeding from the snapshot means
+# a fresh install reproduces *production*, not the catalog as it was the day the seeds were written.
+unless File.exist?(File.join(__dir__, "catalog", "profiles.yml"))
+  abort <<~MESSAGE
+    db/catalog/ is missing, so there is no catalog to seed.
+    It is committed to this repo; if it has gone, `bin/catalog-snapshot` rebuilds it from production.
+  MESSAGE
+end
+
+CatalogSnapshot.import
 
 puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile.count} profiles, #{Catalog::Weapon.count} weapons, #{Catalog::SpecialRule.count} special rules"
 
