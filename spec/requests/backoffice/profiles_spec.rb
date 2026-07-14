@@ -53,6 +53,22 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response.body).to include('value="capo"')
       expect(response.body).to include("search=capo")
     end
+
+    it "shows the internal_version the app sees for each profile's cards" do
+      create(:card_reference, profile: capodecina, identifier: "guild-capo-a", internal_version: 2)
+      create(:card_reference, profile: capodecina, identifier: "guild-capo-b", internal_version: 3)
+
+      get backoffice_profiles_path, params: { search: "capo" }
+
+      # An A/B pair can sit at different versions, so both are listed.
+      expect(response.body).to include("v2, v3")
+    end
+
+    it "shows a dash for a profile with no card" do
+      get backoffice_profiles_path, params: { search: "bombardier" }
+
+      expect(response.body).to include("—")
+    end
   end
 
   describe "render token bypass (used by Grover)" do
@@ -155,6 +171,92 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(Grover).to have_received(:new).with(a_string_including("illustration=1"), any_args)
       expect(Grover).to have_received(:new).with(a_string_including("illustration=2"), any_args)
       expect(ref_b.reload.content_digest).to be_present
+    end
+
+    it "records the sources it rendered from, so the card stops reporting as stale" do
+      stub_grover_returning(front: "FRONT-1", back: "BACK-1")
+
+      expect(reference).to be_stale
+      post render_to_catalog_backoffice_profile_path(profile)
+
+      expect(reference.reload.source_digest).to be_present
+      expect(reference).not_to be_stale
+
+      # ...until the profile it is drawn from moves on.
+      profile.update!(ducats: 99)
+      expect(reference.reload).to be_stale
+    end
+
+    describe "driven by the render queue (JSON)" do
+      it "reports what it rendered" do
+        stub_grover_returning(front: "FRONT-1", back: "BACK-1")
+        post render_to_catalog_backoffice_profile_path(profile), as: :json
+        expect(response.parsed_body).to include("name" => "Capodecina", "cards" => 1, "bumped" => 0)
+
+        stub_grover_returning(front: "FRONT-2", back: "BACK-2")
+        post render_to_catalog_backoffice_profile_path(profile), as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body).to include("bumped" => 1, "versions" => [ 2 ])
+      end
+
+      it "reports a failed render instead of taking the queue down" do
+        allow(Grover).to receive(:new).and_raise(StandardError, "Chrome died")
+
+        post render_to_catalog_backoffice_profile_path(profile), as: :json
+
+        expect(response).to have_http_status(:internal_server_error)
+        expect(response.parsed_body).to include("name" => "Capodecina", "error" => "Chrome died")
+      end
+    end
+  end
+
+  describe "GET render_queue" do
+    let(:images_dir) { Pathname(Dir.mktmpdir) }
+    let!(:stale_ref) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
+    let(:fresh_profile) { create(:profile, faction: "guild", name: "Bravo") }
+    let!(:fresh_ref) { create(:card_reference, profile: fresh_profile, identifier: "guild-bravo") }
+
+    before do
+      sign_in admin
+      stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+
+      # Bravo's images are on disk and stamped; Capodecina's were never rendered.
+      File.binwrite(fresh_ref.front_path, "FRONT")
+      File.binwrite(fresh_ref.back_path, "BACK")
+      fresh_ref.stamp_source!
+    end
+
+    after { FileUtils.remove_entry(images_dir) }
+
+    it "lists only the profiles whose cards are out of date" do
+      get render_queue_backoffice_profiles_path
+
+      expect(response.body).to include("Capodecina")
+      expect(response.body).not_to include(">Bravo<")
+      expect(response.body).to include("1 of 2 cards out of date")
+    end
+
+    it "lists the whole catalog with scope=all" do
+      get render_queue_backoffice_profiles_path(scope: "all")
+
+      expect(response.body).to include("Capodecina")
+      expect(response.body).to include("Bravo")
+    end
+
+    it "says there is nothing to do when every card is up to date" do
+      stale_ref.destroy!
+
+      get render_queue_backoffice_profiles_path
+
+      expect(response.body).to include("Nothing to render.")
+    end
+
+    it "is admin-only" do
+      sign_in create(:user)
+      get render_queue_backoffice_profiles_path
+
+      expect(response).to have_http_status(:forbidden)
     end
   end
 end

@@ -13,7 +13,8 @@ module Backoffice
         filter = session[:profile_filter].presence || {}
       end
 
-      @profiles = Catalog::Profile.all
+      # card_references eager-loaded for the internal_version column.
+      @profiles = Catalog::Profile.includes(:card_references)
       @profiles = @profiles.where(faction: filter["faction"]) if filter["faction"].present?
       @profiles = @profiles.where("name ILIKE ?", "%#{filter["search"]}%") if filter["search"].present?
 
@@ -134,11 +135,16 @@ module Backoffice
     # Every card reference gets both of its faces. The front is drawn with the reference's own
     # illustration, so an A/B pair delivers two different cards; the back has no illustration, so
     # it is rendered once and written to each reference.
+    # Also answers JSON, which is what the render queue (see #render_queue) drives it with, one
+    # profile per request.
     def render_to_catalog
       refs = @profile.card_references.to_a
       if refs.empty?
-        redirect_back fallback_location: card_backoffice_profile_path(@profile),
-          alert: "No card reference to render for #{@profile.name}."
+        message = "No card reference to render for #{@profile.name}."
+        respond_to do |format|
+          format.html { redirect_back fallback_location: card_backoffice_profile_path(@profile), alert: message }
+          format.json { render json: { error: message }, status: :unprocessable_entity }
+        end
         return
       end
 
@@ -152,11 +158,61 @@ module Backoffice
 
       # Same version-bump rule as `rake cards:reversion`, applied to just this profile's refs so
       # the manifest advertises a new internal_version only when the rendered bytes actually change.
-      refs.each(&:reversion!)
+      outcomes = refs.map(&:reversion!)
 
-      versions = @profile.card_references.reload.map(&:internal_version).uniq.join(", ")
-      redirect_to card_backoffice_profile_path(@profile),
-        notice: "Rendered #{@profile.name} into the catalog (internal_version now #{versions})."
+      # The images now match the current stats and art, so record what they were rendered from —
+      # that baseline is what makes these cards stop reporting as stale.
+      refs.each(&:stamp_source!)
+
+      versions = @profile.card_references.reload.map(&:internal_version).uniq.sort
+      respond_to do |format|
+        format.html do
+          redirect_to card_backoffice_profile_path(@profile),
+            notice: "Rendered #{@profile.name} into the catalog (internal_version now #{versions.join(", ")})."
+        end
+        format.json do
+          render json: {
+            id: @profile.id,
+            name: @profile.name,
+            cards: refs.size,
+            bumped: outcomes.count(:bumped),
+            versions: versions
+          }
+        end
+      end
+    rescue StandardError => e
+      # One profile failing to render (a Chrome hiccup, a missing illustration file) must not take
+      # the whole queue down with it: report it and let the page carry on to the next profile.
+      Rails.logger.error("render_to_catalog failed for profile #{@profile.id}: #{e.class}: #{e.message}")
+      respond_to do |format|
+        format.html { redirect_to card_backoffice_profile_path(@profile), alert: "Render failed: #{e.message}" }
+        format.json { render json: { id: @profile.id, name: @profile.name, error: e.message }, status: :internal_server_error }
+      end
+    end
+
+    # GET /backoffice/profiles/render_queue
+    #
+    # The catalog's render queue: the profiles whose cards are out of date, or the whole catalog
+    # with ?scope=all. The rendering itself is driven from the page, one POST to render_to_catalog
+    # per profile, because a single request rendering hundreds of faces through headless Chrome
+    # would run for minutes and time out — and a request per profile is also what lets the page
+    # show progress and survive being closed halfway.
+    def render_queue
+      @scope = params[:scope] == "all" ? "all" : "stale"
+
+      refs = Catalog::CardReference.includes(profile: [
+        :illustrations,
+        { profile_weapons: :weapon },
+        { profile_special_rules: :special_rule }
+      ]).to_a
+      stale = refs.select(&:stale?)
+
+      @total_count = refs.size
+      @stale_count = stale.size
+      @stale_profile_ids = stale.map(&:profile_id).to_set
+
+      queued = @scope == "all" ? refs : stale
+      @profiles = queued.map(&:profile).uniq.sort_by { |p| [ p.faction.to_s, p.name.to_s ] }
     end
 
     # GET /backoffice/profiles/:id/illustration_editor

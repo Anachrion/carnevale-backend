@@ -44,6 +44,7 @@ namespace :cards do
       profile.card_references.each do |cr|
         File.binwrite(cr.front_path, Grover.new(url_for.(profile, "front", cr.illustration_number), **options).to_png)
         File.binwrite(cr.back_path, back_png)
+        cr.stamp_source!
         fronts += 1
         backs += 1
       end
@@ -69,6 +70,34 @@ namespace :cards do
     orphans.each { |f| File.delete(dest.join(f)) }
     puts "cards:prune — deleted #{orphans.size} orphaned image(s); #{in_use.size} still in use"
     orphans.first(10).each { |f| puts "  #{f}" }
+  end
+
+  # Declare the images already on disk to be current, without re-rendering them: stamp each card's
+  # sources as the baseline stale? compares against. This is the cheap way to start tracking
+  # staleness on a catalog rendered before source_digest existed — but it *asserts* that every PNG
+  # in public/cards matches today's stats and art. Re-render anything you know has drifted first
+  # (or run cards:render instead, which renders and stamps in one go).
+  desc "Baseline source tracking on the images already in public/cards (renders nothing)"
+  task baseline: :environment do
+    refs = Catalog::CardReference.includes(:profile).select { |cr| cr.source_digest.nil? }
+    refs.each(&:stamp_source!)
+
+    puts "cards:baseline — stamped #{refs.size} card(s) as rendered from their current sources"
+  end
+
+  # List the cards whose images in public/cards no longer match the stats, art or template they
+  # were rendered from — i.e. what `cards:render` would actually change. Read-only.
+  desc "List cards whose images are out of date"
+  task stale: :environment do
+    stale = Catalog::CardReference.stale
+
+    if stale.empty?
+      puts "cards:stale — every card is up to date"
+    else
+      puts "cards:stale — #{stale.size} card(s) out of date:"
+      stale.sort_by(&:identifier).each { |cr| puts "  #{cr.identifier}" }
+      puts "Run `bin/rails cards:render` (server must be up) to bring them into line."
+    end
   end
 
   # Bump internal_version for cards whose image bytes changed since the last run. Safe to run
