@@ -421,6 +421,46 @@ paths:
         "404":
           description: Not found
 
+  /list_entries/{id}/illustration:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: setListEntryIllustration
+      summary: Switch which illustration (card reference) a model is hired as
+      description: >
+        Repoints a hired model at a different card reference of the same profile — swapping the
+        illustration without changing who the model is or its cost. Rejected with 422 if the target
+        reference belongs to a different profile, or if the entry has no card (Equipment). Returns
+        404 if the entry's list doesn't belong to the current user.
+      tags: [ListEntries]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryIllustrationInput"
+      responses:
+        "200":
+          description: OK — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+        "422":
+          description: Target reference is not an illustration of the same model
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /spells:
     get:
       operationId: getSpells
@@ -1547,6 +1587,21 @@ components:
               type: integer
               minimum: 1
 
+    EntryIllustrationInput:
+      type: object
+      required: [entry]
+      properties:
+        entry:
+          type: object
+          required: [entry_id]
+          properties:
+            entry_id:
+              type: integer
+              description: >
+                Id of the card reference to switch this model to. Must be another card reference of
+                the same profile (a different illustration of the same model); the request is
+                rejected otherwise.
+
     SetEntrySpellsInput:
       type: object
       required: [entry]
@@ -1740,6 +1795,29 @@ components:
           type: integer
         name:
           type: string
+        profile_name:
+          type: string
+          nullable: true
+          description: >
+            The underlying profile's name without the card-reference letter suffix (e.g. "Beggar"
+            rather than "Beggar (A)"). Use this to label a hired model and number duplicates
+            client-side. Null for Equipment entries.
+        identifier:
+          type: string
+          nullable: true
+          description: |
+            Slug of the card reference this model is hired as — the same identifier the cards
+            manifest keys downloaded images by. A profile can have several card references, each
+            with a different illustration; this is the one currently chosen. Null for Equipment
+            entries, which have no card. Change it via PATCH /list_entries/{id}/illustration.
+        card_front:
+          type: string
+          nullable: true
+          description: Front face filename of the chosen card reference (served from /cards). Null for Equipment.
+        card_back:
+          type: string
+          nullable: true
+          description: Back face filename of the chosen card reference (served from /cards). Null for Equipment.
         cost:
           type: integer
         summoned:

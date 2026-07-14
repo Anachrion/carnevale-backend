@@ -32,6 +32,7 @@ Rails.application.routes.draw do
       resources :list_entries, only: %i[create update destroy] do
         member do
           patch :spells
+          patch :illustration
         end
       end
       resources :profiles, only: %i[index show]

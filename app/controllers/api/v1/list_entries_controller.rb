@@ -48,6 +48,22 @@ module Api
         render json: ListSerializer.new(entry.list.reload).as_json
       end
 
+      # Repoints a hired model at a different card reference of the *same* profile — i.e. swaps the
+      # illustration without changing who the model is. Same-profile references share a cost and
+      # stats, so this can't turn one fighter into another; the same-profile guard enforces that.
+      # after_commit on Gang::Entry re-validates the list, so the returned payload is current.
+      def illustration
+        entry = find_owned_entry
+        current = entry.entry
+        return render_error({ base: [ "This entry has no illustration to change" ] }) unless current.is_a?(Catalog::CardReference)
+
+        target = Catalog::CardReference.find(illustration_params[:entry_id])
+        return render_error({ entry_id: [ "must be an illustration of the same model" ] }) unless target.profile_id == current.profile_id
+
+        entry.update!(entry: target)
+        render json: ListSerializer.new(entry.list.reload).as_json
+      end
+
       private
 
       def find_owned_entry
@@ -64,6 +80,10 @@ module Api
 
       def spell_params
         params.require(:entry).permit(:discipline, spell_ids: [])
+      end
+
+      def illustration_params
+        params.require(:entry).permit(:entry_id)
       end
     end
   end

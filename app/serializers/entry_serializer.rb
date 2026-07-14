@@ -12,6 +12,11 @@ class EntrySerializer
   def as_json
     entry = @entry
     profile = entry.profile
+    # The card this member is hired as. A profile can have several card references, each with its
+    # own illustration; which one the entry points at *is* the chosen illustration, so the client
+    # needs the identifier and faces to render it and to highlight the pick among the profile's
+    # alternatives. Nil for non-card entries (e.g. Equipment), which have no card face.
+    card = entry.entry if entry.entry.is_a?(Catalog::CardReference)
     cantrip = @cantrips[entry.spell_discipline] if entry.spell_discipline.present?
     {
       id: entry.id,
@@ -19,7 +24,16 @@ class EntrySerializer
       entry_type: entry.entry_type,
       entry_id: entry.entry_id,
       name: entry.entry.name,
+      # The underlying profile's name, without the card-reference letter suffix (e.g. "Beggar"
+      # rather than "Beggar (A)"). Lets the client label a hired model by its model name and number
+      # duplicates itself, instead of showing the printed card variant. Nil for Equipment.
+      profile_name: profile&.name,
       cost: entry.cost,
+      # The chosen card reference (illustration), mirroring the shape ProfilesController exposes
+      # under `card_references` so the client can match this entry to one of them.
+      identifier: card&.identifier,
+      card_front: card&.card_front,
+      card_back: card&.card_back,
       # Conjured mid-game by a special rule rather than hired. Costs the gang nothing and is exempt
       # from the gang-building rules; the client marks it and offers to remove it again.
       summoned: entry.summoned,
