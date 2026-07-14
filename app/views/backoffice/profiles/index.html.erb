@@ -25,7 +25,6 @@
     <span class="count"><%= @profiles.size %> profile<%= "s" unless @profiles.size == 1 %></span>
     <div style="margin-left:auto;display:flex;gap:8px;">
       <%= link_to "+ New profile", new_backoffice_profile_path, class: "btn btn-emerald" %>
-      <%= link_to "⇪ Render queue", render_queue_backoffice_profiles_path, class: "btn" %>
       <button type="button" id="btn-export-pdf" class="btn btn-indigo">⬇ Export PDF</button>
       <button type="button" id="btn-export-png" class="btn btn-emerald">⬇ Export PNG</button>
     </div>
