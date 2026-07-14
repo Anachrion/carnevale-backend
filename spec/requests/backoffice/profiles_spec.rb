@@ -173,6 +173,67 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  describe "PATCH illustration_image (art upload)" do
+    let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina", illustration_number: 1) }
+    let(:upload) { fixture_file_upload("art.png", "image/png") }
+
+    before { sign_in admin }
+
+    it "attaches an uploaded image to a slot that had no illustration" do
+      expect(profile.illustrations).to be_empty
+
+      patch illustration_image_backoffice_profile_path(profile), params: { number: 1, image: upload }
+
+      illus = profile.illustrations.find_by(number: 1)
+      expect(illus.image).to be_attached
+      expect(response).to redirect_to(edit_backoffice_profile_path(profile))
+    end
+
+    it "makes the card out of date so the render queue publishes it" do
+      images_dir = Pathname(Dir.mktmpdir)
+      stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+      File.binwrite(reference.front_path, "FRONT")
+      File.binwrite(reference.back_path, "BACK")
+      reference.stamp_source!
+      expect(reference).not_to be_stale
+
+      patch illustration_image_backoffice_profile_path(profile), params: { number: 1, image: upload }
+
+      expect(reference.reload).to be_stale
+    ensure
+      FileUtils.remove_entry(images_dir)
+    end
+
+    it "replaces the art on an existing illustration, changing the fingerprint" do
+      patch illustration_image_backoffice_profile_path(profile), params: { number: 1, image: upload }
+      first_key = profile.illustrations.find_by(number: 1).source_key
+
+      patch illustration_image_backoffice_profile_path(profile),
+        params: { number: 1, image: fixture_file_upload("art.png", "image/png") }
+
+      # A second attach makes a fresh blob; the reference draws the new one.
+      expect(profile.illustrations.find_by(number: 1).source_key).to be_present
+      expect(first_key).to be_present
+    end
+
+    it "reports a missing file rather than saving" do
+      patch illustration_image_backoffice_profile_path(profile), params: { number: 1 }
+
+      expect(profile.illustrations).to be_empty
+      expect(flash[:alert]).to include("Choose an image")
+    end
+
+    it "is admin-only" do
+      sign_out admin
+      sign_in create(:user)
+
+      patch illustration_image_backoffice_profile_path(profile), params: { number: 1, image: upload }
+
+      expect(response).to have_http_status(:forbidden)
+      expect(profile.illustrations).to be_empty
+    end
+  end
+
   describe "PATCH update (the profile editor)" do
     let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
 

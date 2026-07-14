@@ -325,8 +325,8 @@
               <div style="position:relative;width:228px;height:228px;border-radius:50%;overflow:hidden;background:<%= illustration_gradient(t[:accent]) %>;">
                 <div style="position:absolute;inset:0;background-image:url(/card-template/motif-light.png);background-repeat:repeat;background-size:180px 60px;background-position:center;pointer-events:none;z-index:0;-webkit-mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.75) 75%, #000 100%);mask-image:radial-gradient(ellipse 90% 90% at 50% 50%, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0.1) 25%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.75) 75%, #000 100%);"></div>
                 <% if (illus = @illustration) %>
-                <% illus_data = @profile.illustrations.map { |i| { src: asset_path("illustrations/#{@profile.faction}/#{i.path}"), offset_x: i.offset_x, offset_y: i.offset_y, zoom: i.zoom, flipped: i.flipped, number: i.number } } %>
-                <%= image_tag "illustrations/#{@profile.faction}/#{illus.path}",
+                <% illus_data = @profile.illustrations.map { |i| { src: illustration_src(i, @profile.faction), offset_x: i.offset_x, offset_y: i.offset_y, zoom: i.zoom, flipped: i.flipped, number: i.number } } %>
+                <%= image_tag illustration_src(illus, @profile.faction),
                     id: "portrait-img",
                     style: "position:absolute;",
                     data: { offset_x: illus.offset_x, offset_y: illus.offset_y, zoom: illus.zoom, flipped: illus.flipped },

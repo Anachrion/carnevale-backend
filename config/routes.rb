@@ -77,6 +77,7 @@ Rails.application.routes.draw do
         post  :card_preview
         get   :illustration_editor
         patch :illustration_position
+        patch :illustration_image
         post  :render_to_catalog
       end
       collection do

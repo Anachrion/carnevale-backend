@@ -40,10 +40,11 @@ module Catalog
       profile.illustrations.detect { |i| i.number == illustration_number }
     end
 
-    # The illustration's file on disk, or nil when this reference has no illustration.
+    # The committed illustration file on disk, or nil when this reference has no illustration or
+    # its art is an upload (Active Storage) rather than a committed asset.
     def illustration_path
       illus = illustration
-      ILLUSTRATIONS_DIR.join(profile.faction, illus.path) if illus
+      ILLUSTRATIONS_DIR.join(profile.faction, illus.path) if illus && illus.path.present?
     end
 
     def front_path
@@ -117,7 +118,7 @@ module Catalog
     # on disk), so this eager-loads everything the fingerprint reads and returns an Array.
     def self.stale
       includes(profile: [
-        :illustrations,
+        { illustrations: { image_attachment: :blob } },
         { profile_weapons: :weapon },
         { profile_special_rules: :special_rule }
       ]).select(&:stale?)
@@ -164,9 +165,10 @@ module Catalog
       ]
     end
 
-    # The framing (offset, zoom, flip) *and* the file's bytes: re-exporting the art without
-    # touching the record has to count as a change too. A missing file hashes as nil, so it
-    # reappearing is itself a change.
+    # The framing (offset, zoom, flip), the committed file's bytes *and* the uploaded blob's
+    # checksum: re-exporting a committed file, or replacing the upload, has to count as a change
+    # even when the record's own columns do not move. A missing file / no upload hashes as nil, so
+    # its appearing is itself a change.
     def illustration_source
       illus = illustration
       return nil if illus.nil?
@@ -174,7 +176,8 @@ module Catalog
       path = illustration_path
       [
         illus.attributes.except("id", "created_at", "updated_at"),
-        path.exist? ? Digest::SHA256.file(path).hexdigest : nil
+        path&.exist? ? Digest::SHA256.file(path).hexdigest : nil,
+        illus.source_key
       ]
     end
   end

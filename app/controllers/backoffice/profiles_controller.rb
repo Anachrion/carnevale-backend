@@ -1,6 +1,6 @@
 module Backoffice
   class ProfilesController < BaseController
-    before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position render_to_catalog]
+    before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position illustration_image render_to_catalog]
     before_action :set_pickable_records, only: %i[new create edit update]
 
     # GET /backoffice/profiles
@@ -282,7 +282,7 @@ module Backoffice
       @scope = params[:scope] == "all" ? "all" : "stale"
 
       refs = Catalog::CardReference.includes(profile: [
-        :illustrations,
+        { illustrations: { image_attachment: :blob } },
         { profile_weapons: :weapon },
         { profile_special_rules: :special_rule }
       ]).to_a
@@ -317,10 +317,34 @@ module Backoffice
       redirect_to card_backoffice_profile_path(@profile, params.permit(:faction, :search, :sort, :dir))
     end
 
+    # PATCH /backoffice/profiles/:id/illustration_image
+    #
+    # Upload (or replace) the art for one illustration slot. The illustration record is created if
+    # this slot had none — a brand-new profile's cards point at illustration numbers that do not
+    # exist yet, and this is what fills them. Uploading does not render the card: like every other
+    # edit, it just makes the card stale so the render queue publishes it.
+    def illustration_image
+      number = params[:number].to_i
+      illustration = @profile.illustrations.find_or_initialize_by(number: number)
+      # path is NOT NULL; an upload-only illustration keeps it blank rather than naming a committed
+      # asset. A seeded illustration being re-arted keeps its path as a fallback.
+      illustration.path ||= ""
+
+      if params[:image].present? && illustration.tap { |i| i.image.attach(params[:image]) }.save
+        redirect_to edit_backoffice_profile_path(@profile),
+          notice: "Uploaded the art for illustration #{number}. The card is now out of date — render it to publish."
+      else
+        message = params[:image].blank? ? "Choose an image to upload." : illustration.errors.full_messages.to_sentence
+        redirect_to edit_backoffice_profile_path(@profile), alert: "Could not upload the illustration. #{message}"
+      end
+    end
+
     private
 
     def set_profile
-      @profile = Catalog::Profile.includes(:weapons, :special_rules, :illustrations).find(params.expect(:id))
+      @profile = Catalog::Profile
+        .includes(:weapons, :special_rules, illustrations: { image_attachment: :blob })
+        .find(params.expect(:id))
     end
 
     # Everything the editor's weapon and special-rule pickers can choose from. They are shared

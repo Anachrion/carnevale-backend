@@ -12,3 +12,50 @@
       url: backoffice_profile_path(@profile),
       method: :patch,
       preview_url: card_preview_backoffice_profile_path(@profile) %>
+
+<%#
+  Illustrations. A card's front draws the illustration whose number matches its reference's
+  illustration_number, so a profile needs art for each distinct number its cards point at (1, or
+  1 and 2 for an A/B pair). Uploading is its own multipart form per slot — it cannot live inside
+  the profile form above, which posts itself over fetch for the live preview.
+%>
+<% expected_numbers = @profile.card_references.map(&:illustration_number).uniq.sort.presence || [ 1 ] %>
+
+<h2 style="margin-top:32px;">Illustrations</h2>
+<div style="display:flex;gap:20px;flex-wrap:wrap;">
+  <% expected_numbers.each do |number| %>
+    <% illus = @profile.illustrations.detect { |i| i.number == number } %>
+    <div style="border:1px solid #e5e7eb;border-radius:10px;padding:14px;width:250px;">
+      <div style="font-weight:600;margin-bottom:8px;">Illustration <%= number %></div>
+
+      <div style="width:200px;height:200px;border-radius:8px;background:#f3f4f6;overflow:hidden;display:flex;align-items:center;justify-content:center;margin-bottom:10px;">
+        <% if illus && (illus.image_attached? || illus.path.present?) %>
+          <%= image_tag illustration_src(illus, @profile.faction), style: "width:100%;height:100%;object-fit:cover;" %>
+        <% else %>
+          <span style="color:#9ca3af;font-size:13px;">No art yet</span>
+        <% end %>
+      </div>
+
+      <% if illus %>
+        <div style="color:#6b7280;font-size:12px;margin-bottom:8px;">
+          <%= illus.image_attached? ? "Uploaded" : "Committed asset (#{illus.path})" %>
+        </div>
+      <% end %>
+
+      <%= form_with url: illustration_image_backoffice_profile_path(@profile), method: :patch do |f| %>
+        <%= hidden_field_tag :number, number %>
+        <%= file_field_tag :image, accept: "image/png,image/jpeg,image/webp", required: true,
+              style: "font-size:12px;width:100%;margin-bottom:8px;" %>
+        <%= f.submit illus&.image_attached? ? "Replace art" : "Upload art", class: "btn btn-emerald" %>
+      <% end %>
+
+      <% if illus %>
+        <div style="margin-top:8px;">
+          <%= link_to "Reposition / zoom →",
+                illustration_editor_backoffice_profile_path(@profile, number: number),
+                class: "btn", style: "font-size:12px;" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>

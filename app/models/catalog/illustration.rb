@@ -2,9 +2,27 @@ module Catalog
   class Illustration < ApplicationRecord
     belongs_to :profile, class_name: "Catalog::Profile"
 
-    validates :path, presence: true
+    # The card art. Two sources: an uploaded file (Active Storage), or the committed asset named by
+    # `path` under app/assets/images/illustrations/<faction>/ — how the ~375 seeded profiles carry
+    # their art. An upload wins over the committed file when both are present.
+    has_one_attached :image
+
+    # One or the other must identify the art: a committed asset name, or an uploaded image. (The
+    # path column is NOT NULL, so an upload-only illustration stores "" — see the upload action.)
+    validates :path, presence: true, unless: -> { image.attached? }
     validates :number, presence: true, numericality: { only_integer: true, greater_than: 0 }
     validates :number, uniqueness: { scope: :profile_id }
+
+    def image_attached?
+      image.attached?
+    end
+
+    # A fingerprint of the art itself for CardReference's staleness digest: the uploaded blob's
+    # checksum when there is one, else nil (a committed file is hashed separately, by its bytes,
+    # since the model holds only its name). Changes whenever the uploaded art is replaced.
+    def source_key
+      image.attached? ? image.blob.checksum : nil
+    end
   end
 end
 
