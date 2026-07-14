@@ -56,13 +56,24 @@
     <table>
       <tbody>
         <tr>
-          <th style="width:170px;"><%= f.label :name %></th>
-          <td><%= f.text_field :name, id: "profile-name", style: "width:320px;" %></td>
-        </tr>
-        <tr>
-          <th><%= f.label :faction %></th>
-          <td><%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] },
-                    {}, id: "profile-faction" %></td>
+          <th style="width:170px;vertical-align:top;padding-top:20px;">Identity</th>
+          <td>
+            <div class="field-row">
+              <div>
+                <%= f.label :name %>
+                <%= f.text_field :name, id: "profile-name", style: "width:320px;" %>
+              </div>
+              <div>
+                <%= f.label :faction %>
+                <%= f.select :faction, Catalog::Profile.factions.keys.map { |k| [ k.capitalize, k ] },
+                      {}, id: "profile-faction" %>
+              </div>
+              <div>
+                <%= f.label :version %>
+                <%= f.text_field :version, style: "width:110px;" %>
+              </div>
+            </div>
+          </td>
         </tr>
 
         <% if profile.new_record? %>
@@ -90,17 +101,22 @@
           </tr>
         <% end %>
 
-        <% Catalog::Profile::STATS.each do |stat| %>
+        <%# Laid out as the card prints them: the MOV/DEX/ATT/PRO/MIND strip, then cost and points. %>
+        <% profile_stat_rows.each do |heading, stats| %>
           <tr>
-            <th><%= f.label stat, stat.to_s.humanize %></th>
-            <td><%= f.number_field stat, min: 0, style: "width:90px;" %></td>
+            <th style="vertical-align:top;padding-top:20px;"><%= heading %></th>
+            <td>
+              <div class="stat-strip">
+                <% stats.each do |stat, label| %>
+                  <div class="stat-field">
+                    <%= f.label stat, label %>
+                    <%= f.number_field stat, min: 0 %>
+                  </div>
+                <% end %>
+              </div>
+            </td>
           </tr>
         <% end %>
-
-        <tr>
-          <th><%= f.label :version %></th>
-          <td><%= f.text_field :version, style: "width:120px;" %></td>
-        </tr>
 
         <tr>
           <th><%= f.label :keywords_text, "Keywords" %></th>
