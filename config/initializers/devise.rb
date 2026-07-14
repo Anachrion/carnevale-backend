@@ -265,8 +265,13 @@ Devise.setup do |config|
   # If you have any extra navigational formats, like :iphone or :mobile, you
   # should add them to the navigational formats lists.
   #
-  # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
+  # Devise ships with '*/*' in this list "to match Internet Explorer requests", which is not a
+  # constituency this app has — and it means any client that sends no Accept header (a proxy that
+  # strips them, an HTTP library that does not set one, curl) is treated as a browser: a failed
+  # POST /api/v1/login answers with the HTML sign-in page and a 422 instead of a JSON 401. Browsers
+  # ask for text/html and Turbo for turbo_stream, so listing only those keeps the backoffice
+  # redirecting to the sign-in page while the API always answers a machine in JSON.
+  config.navigational_formats = [ :html, :turbo_stream ]
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :delete
