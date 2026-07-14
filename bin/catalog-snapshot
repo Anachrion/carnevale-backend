@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+#
+# Snapshot the production catalog into db/catalog/, ready to commit.
+#
+# The catalog is authored in the production backoffice and lives only in that server's database
+# and storage volume. This is what gets it off the box: CatalogSnapshot.export writes it as YAML
+# plus the uploaded illustration bytes, and this script brings those files back into the working
+# tree so they can be committed to git (blobs land in LFS, per .gitattributes).
+#
+# Two things it has to get right, and the reason it exists rather than a line in a README:
+#
+#   * `kamal app exec` without --reuse starts a *fresh* container, writes the snapshot into it and
+#     throws it away. It must run in the container that is actually serving.
+#   * The container's filesystem does not survive the next deploy, so the files are pulled out
+#     immediately — over tar, so the image bytes arrive intact rather than mangled by a shell.
+#
+# It stops before committing: the point of a snapshot in git is that a human read the diff.
+#
+# Usage:  bin/catalog-snapshot
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+# From config/deploy.yml, so this keeps working when the server moves.
+service=$(ruby -ryaml -e 'puts YAML.load_file("config/deploy.yml")["service"]')
+host=$(ruby -ryaml -e 'puts Array(YAML.load_file("config/deploy.yml").dig("servers", "web")).first')
+ssh_user=$(ruby -ryaml -e 'puts (YAML.load_file("config/deploy.yml").dig("ssh", "user") || "root")')
+remote="${ssh_user}@${host}"
+
+echo "==> Exporting the catalog inside the running container on ${host}"
+# shellcheck disable=SC1091
+source .kamal/deploy.env
+kamal app exec --reuse "bin/rails catalog:export"
+
+echo "==> Locating that container"
+cid=$(ssh "$remote" "docker ps -q --filter label=service=${service} --filter label=role=web | head -1")
+if [ -z "$cid" ]; then
+  echo "No running web container for ${service} on ${host}. Is it deployed?" >&2
+  exit 1
+fi
+
+echo "==> Copying db/catalog out of ${cid:0:12}"
+ssh "$remote" "docker exec ${cid} tar -cC /rails/db catalog" | tar -xC db/
+
+echo
+echo "==> Snapshot in the working tree:"
+git add --intent-to-add db/catalog >/dev/null
+git status --short db/catalog
+
+if git diff --quiet HEAD -- db/catalog; then
+  echo "    (no change — production matches the committed snapshot)"
+  exit 0
+fi
+
+cat <<'EOF'
+
+Read the diff, then commit it:
+
+    git diff --stat db/catalog
+    git add db/catalog && git commit -m "Snapshot the production catalog" && git push
+EOF
