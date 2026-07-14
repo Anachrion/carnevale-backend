@@ -10,7 +10,11 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
-  namespace :api do
+  # Everything under /api answers in JSON, whatever the caller asked for. Without this, a client
+  # that sends no Accept header (or */*) leaves request.format as */*, and Devise's failure app —
+  # which cannot serialise that — answers a bad password in plain text rather than the JSON error
+  # every other endpoint returns.
+  namespace :api, defaults: { format: :json } do
     namespace :v1 do
       devise_scope :user do
         post "login", to: "sessions#create"
