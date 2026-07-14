@@ -555,7 +555,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: il_dottore, special_rule
 mezzetino = Catalog::Profile.find_or_create_by!(name: "Mezzetino") do |p|
   p.version = "2.3.0"; p.faction = "gifted"
   p.action_points = 2; p.life_points = 11; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 13; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 3; p.mind = 3
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 3; p.mind = 3
   p.keywords = ["Henchman", "Unique", "Commedia dell'Arte"]
   p.abilities = ["Parry (1)"]
 end
@@ -575,7 +575,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: pantaleone, special_rule
 scapino = Catalog::Profile.find_or_create_by!(name: "Scapino") do |p|
   p.version = "2.2.0"; p.faction = "gifted"
   p.action_points = 2; p.life_points = 10; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 5; p.dexterity = 5; p.attack = 2; p.protection = 2; p.mind = 3
+  p.size = 30; p.ducats = 11; p.movement = 5; p.dexterity = 5; p.attack = 2; p.protection = 2; p.mind = 3
   p.keywords = ["Henchman", "Unique", "Commedia dell'Arte"]
   p.abilities = ["Slippery"]
 end

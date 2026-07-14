@@ -440,7 +440,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: brute, special_rule: thi
 butcher = Catalog::Profile.find_or_create_by!(name: "Butcher") do |p|
   p.version = "2.2.0"; p.faction = "guild"
   p.action_points = 2; p.life_points = 13; p.will_points = 3; p.command_points = 0
-  p.size = 30; p.ducats = 13; p.movement = 4; p.dexterity = 4; p.attack = 4; p.protection = 3; p.mind = 3
+  p.size = 30; p.ducats = 13; p.movement = 4; p.dexterity = 4; p.attack = 4; p.protection = 4; p.mind = 3
   p.keywords = ["The Guild", "Hero", "Trade"]
   p.abilities = ["Brawler (1)", "Expert Grappler (2)"]
 end
@@ -610,7 +610,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: arbalest, weapon: crossbow) {
 beggar = Catalog::Profile.find_or_create_by!(name: "Beggar") do |p|
   p.version = "2.2.0"; p.faction = "guild"
   p.action_points = 2; p.life_points = 10; p.will_points = 0; p.command_points = 0
-  p.size = 30; p.ducats = 5; p.movement = 4; p.dexterity = 3; p.attack = 2; p.protection = 3; p.mind = 2
+  p.size = 30; p.ducats = 6; p.movement = 4; p.dexterity = 3; p.attack = 2; p.protection = 3; p.mind = 2
   p.keywords = ["The Guild", "Henchman"]
   p.abilities = ["Concealment (+2)"]
 end

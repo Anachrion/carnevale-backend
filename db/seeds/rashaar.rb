@@ -32,7 +32,7 @@ card_ref_data = [
   { name: "Advanced Hybrid",                identifier: "rashaar-advanced-hybrid-a",               cost: 12 },
   { name: "Advanced Hybrid",                identifier: "rashaar-advanced-hybrid-b",               cost: 12 },
   { name: "Aglaope",                        identifier: "rashaar-aglaope",                         cost: 12 },
-  { name: "Bounding Telebine",              identifier: "rashaar-bounding-telebine",               cost:  9 },
+  { name: "Bounding Telchine",              identifier: "rashaar-bounding-telebine",               cost:  9 },
   { name: "Bulbous Toad",                   identifier: "rashaar-bulbous-toad",                    cost: 13 },
   { name: "Crybaby",                        identifier: "rashaar-crybaby-a",                       cost:  0 },
   { name: "Crybaby",                        identifier: "rashaar-crybaby-b",                       cost:  0 },
@@ -358,7 +358,7 @@ drowned_nun = Catalog::Profile.find_or_create_by!(name: "The Drowned Nun") do |p
   p.action_points = 2; p.life_points = 10; p.will_points = 4; p.command_points = 2
   p.size = 40; p.ducats = 18; p.movement = 4; p.dexterity = 4; p.attack = 2; p.protection = 3; p.mind = 4
   p.keywords = ["Hero", "Unique", "Discipline (Runes of Sovereignty, Fateweaving)"]
-  p.abilities = ["Fast Swimmer (1)", "Mage (2)"]
+  p.abilities = ["Fast Swimmer (1)", "Mage (2)", "Water Creature"]
 end
 Catalog::ProfileWeapon.find_or_create_by!(profile: drowned_nun, weapon: staff) { |pw| pw.position = 0 }
 Catalog::ProfileSpecialRule.find_or_create_by!(profile: drowned_nun, special_rule: dagonite_baptism)     { |psr| psr.position = 0 }
@@ -624,7 +624,7 @@ end
 Catalog::ProfileWeapon.find_or_create_by!(profile: aglaope, weapon: unarmed) { |pw| pw.position = 0 }
 Catalog::ProfileSpecialRule.find_or_create_by!(profile: aglaope, special_rule: dragging_down) { |psr| psr.position = 0 }
 
-bounding_telebine = Catalog::Profile.find_or_create_by!(name: "Bounding Telebine") do |p|
+bounding_telebine = Catalog::Profile.find_or_create_by!(name: "Bounding Telchine") do |p|
   p.version = "2.2.1"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 11; p.will_points = 2; p.command_points = 0
   p.size = 40; p.ducats = 9; p.movement = 3; p.dexterity = 5; p.attack = 3; p.protection = 1; p.mind = 2
@@ -648,7 +648,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: bulbous_toad, special_ru
 crybaby = Catalog::Profile.find_or_create_by!(name: "Crybaby") do |p|
   p.version = "2.2.0"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 4; p.will_points = 0; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 6; p.dexterity = 4; p.attack = 2; p.protection = 0; p.mind = 1
+  p.size = 30; p.ducats = 5; p.movement = 6; p.dexterity = 4; p.attack = 2; p.protection = 0; p.mind = 1
   p.keywords = ["Henchman", "Feral"]
   p.abilities = ["Concealment (+2)", "Mindless"]
 end
@@ -669,7 +669,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: cymothoan_crusher, weapon: cr
 dagon_officiant = Catalog::Profile.find_or_create_by!(name: "Dagon Officiant") do |p|
   p.version = "2.2.0"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 12; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 4; p.mind = 3
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 4; p.mind = 3
   p.keywords = ["Henchman"]
   p.abilities = ["Expert Offence (2)"]
 end
@@ -688,7 +688,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: dagonite_page, special_r
 dagonite_zealot = Catalog::Profile.find_or_create_by!(name: "Dagonite Zealot") do |p|
   p.version = "2.2.0"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 10; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 4; p.dexterity = 6; p.attack = 3; p.protection = 1; p.mind = 1
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 6; p.attack = 3; p.protection = 1; p.mind = 1
   p.keywords = ["Henchman"]
   p.abilities = ["Aerial Attack", "Expert Offence (1)", "Mindless"]
 end
@@ -734,7 +734,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: hybrid, weapon: encrusted_wea
 infant_kraken = Catalog::Profile.find_or_create_by!(name: "Infant Kraken") do |p|
   p.version = "2.3.1"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 5; p.will_points = 1; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 4; p.dexterity = 5; p.attack = 2; p.protection = 1; p.mind = 1
+  p.size = 30; p.ducats = 5; p.movement = 4; p.dexterity = 5; p.attack = 2; p.protection = 1; p.mind = 1
   p.keywords = ["Henchman", "Hydra"]
   p.abilities = ["Concealment (2)", "Primitive", "Water Creature", "Vampiric Attack (1)"]
 end
@@ -763,7 +763,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: lesser_ugdru, weapon: claws_u
 slave = Catalog::Profile.find_or_create_by!(name: "Slave") do |p|
   p.version = "2.2.0"; p.faction = "rashaar"
   p.action_points = 2; p.life_points = 8; p.will_points = 0; p.command_points = 0
-  p.size = 30; p.ducats = 0; p.movement = 4; p.dexterity = 4; p.attack = 2; p.protection = 1; p.mind = 1
+  p.size = 30; p.ducats = 4; p.movement = 4; p.dexterity = 4; p.attack = 2; p.protection = 1; p.mind = 1
   p.keywords = ["Henchman"]
   p.abilities = ["Mindless"]
 end
@@ -825,7 +825,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: wet_nurse, special_rule:
   "Tainted Maw"                    => "p29.png",
   "Advanced Hybrid"                => ["p30_a.png", 8, -15, 95, false],
   "Aglaope"                        => ["p31.png", 34, -12, 60, false],
-  "Bounding Telebine"              => "p32.png",
+  "Bounding Telchine"              => "p32.png",
   "Bulbous Toad"                   => ["p33.png", 11, 5, 100, false],
   "Crybaby"                        => ["p34_a.png", -5, -53, 65, false],
   "Cymothoan Crusher"              => "p35.png",

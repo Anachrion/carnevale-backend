@@ -723,7 +723,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: rhino, weapon: horns) { |pw| 
 shackled_feaster = Catalog::Profile.find_or_create_by!(name: "Shackled Feaster") do |p|
   p.version = "2.2.0"; p.faction = "doctors"
   p.action_points = 2; p.life_points = 9; p.will_points = 0; p.command_points = 0
-  p.size = 30; p.ducats = 7; p.movement = 4; p.dexterity = 5; p.attack = 3; p.protection = 3; p.mind = 2
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 5; p.attack = 3; p.protection = 3; p.mind = 2
   p.keywords = ["Henchman"]
   p.abilities = ["Frenzied", "Mindless", "Vampiric Attack (2)"]
 end

@@ -10,7 +10,7 @@ card_ref_data = [
   { name: "Miriam",              identifier: "strigoi-miriam",              cost: 19 },
   { name: "Monstrous Stryx",     identifier: "strigoi-monstrous-stryx",     cost: 40 },
   { name: "Aquatic Strigoi",     identifier: "strigoi-aquatic-strigoi",     cost: 14 },
-  { name: "Cetean Upior",        identifier: "strigoi-cetean-upior",        cost: 21 },
+  { name: "Cetean Upiór",        identifier: "strigoi-cetean-upior",        cost: 21 },
   { name: "Highborn Servant",    identifier: "strigoi-highborn-servant",    cost: 13 },
   { name: "Hulking Moroi",       identifier: "strigoi-hulking-moroi",       cost: 14 },
   { name: "Leech",               identifier: "strigoi-leech",               cost: 12 },
@@ -283,7 +283,7 @@ aquatic_strigoi = Catalog::Profile.find_or_create_by!(name: "Aquatic Strigoi") d
 end
 Catalog::ProfileWeapon.find_or_create_by!(profile: aquatic_strigoi, weapon: webbed_talons) { |pw| pw.position = 0 }
 
-cetean_upior = Catalog::Profile.find_or_create_by!(name: "Cetean Upior") do |p|
+cetean_upior = Catalog::Profile.find_or_create_by!(name: "Cetean Upiór") do |p|
   p.version = "2.3.0"; p.faction = "strigoi"
   p.action_points = 2; p.life_points = 17; p.will_points = 0; p.command_points = 0
   p.size = 50; p.ducats = 21; p.movement = 3; p.dexterity = 3; p.attack = 5; p.protection = 3; p.mind = 2
@@ -529,7 +529,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: zoryi, weapon: fresh_claws)  
 al_naibii = Catalog::Profile.find_or_create_by!(name: "Al Naibii") do |p|
   p.version = "2.2.1"; p.faction = "strigoi"
   p.action_points = 2; p.life_points = 11; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 9; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 2; p.mind = 2
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 4; p.attack = 3; p.protection = 2; p.mind = 2
   p.keywords = ["Henchman"]
   p.abilities = ["Brave", "First Strike (1)", "Vampiric Attack (1)"]
 end
@@ -676,7 +676,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: poenari_scout, weapon: fangs)
   "Miriam"             => ["p09.png", -18, -9, 90, true],
   "Monstrous Stryx"    => "p10.png",
   "Aquatic Strigoi"    => ["p11.png", 26, -9, 85, false],
-  "Cetean Upior"       => ["p12.png", 8, -19, 85, false],
+  "Cetean Upiór"       => ["p12.png", 8, -19, 85, false],
   "Highborn Servant"   => ["p13.png", 22, -26, 90, false],
   "Hulking Moroi"      => ["p14.png", 2, -29, 90, true],
   "Leech"              => ["p15.png", 35, -23, 85, false],

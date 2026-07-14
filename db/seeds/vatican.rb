@@ -532,7 +532,7 @@ Catalog::ProfileSpecialRule.find_or_create_by!(profile: thomas_thieme, special_r
 altar_boy = Catalog::Profile.find_or_create_by!(name: "Altar Boy") do |p|
   p.version = "2.4.0"; p.faction = "vatican"
   p.action_points = 2; p.life_points = 8; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 8; p.movement = 4; p.dexterity = 5; p.attack = 2; p.protection = 2; p.mind = 2
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 5; p.attack = 2; p.protection = 2; p.mind = 2
   p.keywords = ["Henchman"]
   p.abilities = ["Concealment (+2)"]
 end
@@ -611,7 +611,7 @@ Catalog::ProfileWeapon.find_or_create_by!(profile: french_infantryman, weapon: c
 inquisitorial_spy = Catalog::Profile.find_or_create_by!(name: "Inquisitorial Spy") do |p|
   p.version = "2.2.0"; p.faction = "vatican"
   p.action_points = 2; p.life_points = 10; p.will_points = 2; p.command_points = 0
-  p.size = 30; p.ducats = 9; p.movement = 4; p.dexterity = 5; p.attack = 3; p.protection = 3; p.mind = 4
+  p.size = 30; p.ducats = 11; p.movement = 4; p.dexterity = 5; p.attack = 3; p.protection = 3; p.mind = 4
   p.keywords = ["Henchman"]
   p.abilities = ["Infiltration", "Pickpocket"]
 end
