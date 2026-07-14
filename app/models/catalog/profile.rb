@@ -24,6 +24,8 @@ module Catalog
     validates :faction, presence: true
     validates(*STATS, numericality: { only_integer: true, greater_than_or_equal_to: 0 })
     validates_string_list :abilities, :keywords
+    # Keywords stay free-form (Discipline (…), Leader); only abilities are held to the glossary.
+    validates_ability_glossary :abilities, category: "character"
 
     MAGE_ABILITY = /\AMage \((\d+)\)\z/
     EXPERT_SORCERER_ABILITY = /\AExpert Sorcerer \((\d+)\)\z/

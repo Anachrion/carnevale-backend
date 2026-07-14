@@ -13,6 +13,20 @@ module Catalog
 
     scope :character, -> { where(category: "character") }
     scope :weapon, -> { where(category: "weapon") }
+
+    # The trailing "(X)" rating an entry may carry — "(2)", "(-2)", "(X)". The glossary stores the
+    # base name without it, so it is stripped before a lookup.
+    RATING = /\s*\([^)]*\)\s*\z/
+
+    # "Acrobatic (2)" => "Acrobatic"; "Water Creature" => "Water Creature".
+    def self.base_name(entry)
+      entry.to_s.sub(RATING, "").strip
+    end
+
+    # The base names known in a category, as a Set for membership tests.
+    def self.known_names(category)
+      where(category: category).pluck(:name).to_set
+    end
   end
 end
 

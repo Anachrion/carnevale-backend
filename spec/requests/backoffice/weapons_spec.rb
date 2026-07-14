@@ -44,6 +44,8 @@ RSpec.describe "Backoffice::Weapons", type: :request do
 
     describe "POST create" do
       it "creates a weapon" do
+        %w[Scatter Slow].each { |a| Catalog::Ability.create!(category: "weapon", name: a) }
+
         post backoffice_weapons_path, params: {
           weapon: { name: "Blunderbuss", damage: 4, penetration: -2, range: 8, abilities_text: "Scatter\nSlow" }
         }
@@ -62,6 +64,27 @@ RSpec.describe "Backoffice::Weapons", type: :request do
         expect(Catalog::Weapon.count).to eq(1)
       end
 
+      it "rejects an ability that is not in the weapon glossary" do
+        Catalog::Ability.create!(category: "weapon", name: "Reach")
+
+        post backoffice_weapons_path, params: {
+          weapon: { name: "Halberd", damage: 4, abilities_text: "Reach\nInvented Trait" }
+        }
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(Catalog::Weapon.find_by(name: "Halberd")).to be_nil
+      end
+
+      it "accepts a glossary ability, rating and all" do
+        Catalog::Ability.create!(category: "weapon", name: "Blast")
+
+        post backoffice_weapons_path, params: {
+          weapon: { name: "Bombard", damage: 5, abilities_text: "Blast (3)" }
+        }
+
+        expect(Catalog::Weapon.find_by(name: "Bombard").abilities).to eq([ "Blast (3)" ])
+      end
+
       # This is the path the profile editor's inline "✚ New weapon" takes.
       describe "as JSON" do
         it "returns the new weapon so the picker can attach it" do
@@ -75,6 +98,8 @@ RSpec.describe "Backoffice::Weapons", type: :request do
         # The inline creator sends the weapon's abilities as a one-per-line string, so a whole
         # weapon — traits and all — can be authored without leaving the card.
         it "accepts the abilities inline" do
+          %w[Reach Two-Handed].each { |a| Catalog::Ability.create!(category: "weapon", name: a) }
+
           post backoffice_weapons_path,
             params: { weapon: { name: "Halberd", damage: 4, abilities_text: "Reach\nTwo-Handed" } }, as: :json
 

@@ -116,6 +116,7 @@
             <%= f.text_area :abilities_text, value: profile.abilities.join("\n"),
                   rows: 6, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
             <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Mage (2)</code>.</div>
+            <%= ability_glossary_hint("character") %>
           </td>
         </tr>
 
