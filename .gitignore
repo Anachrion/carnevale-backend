@@ -42,3 +42,6 @@
 # Personal research notes, not for the repo
 /docs/HOSTING_NOTES.md
 .kamal/deploy.env
+
+/app/assets/builds/*
+!/app/assets/builds/.keep
