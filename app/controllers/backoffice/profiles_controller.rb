@@ -1,7 +1,7 @@
 module Backoffice
   class ProfilesController < BaseController
     before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position render_to_catalog]
-    before_action :set_pickable_records, only: %i[edit update]
+    before_action :set_pickable_records, only: %i[new create edit update]
 
     # GET /backoffice/profiles
     def index
@@ -28,6 +28,38 @@ module Backoffice
       @filter = filter
     end
 
+    # GET /backoffice/profiles/new
+    def new
+      @profile = Catalog::Profile.new(version: "2.2.0")
+    end
+
+    # POST /backoffice/profiles
+    #
+    # Author a profile and, in the same breath, the card the app downloads for it: an identifier
+    # (the app's stable key for the card, and the basename of its image files) and either one card
+    # or an A/B pair sharing these stats. No art yet — that is uploaded from the editor afterwards,
+    # so the card starts with an empty illustration frame.
+    def create
+      @profile = Catalog::Profile.new(profile_params)
+      @card_identifier = params.dig(:card, :identifier).to_s.strip
+      @card_pair = params.dig(:card, :pair) == "1"
+
+      Catalog::Profile.transaction do
+        @profile.save!
+        build_card_references!
+        @profile.replace_weapons!(submitted_ids(:weapon_ids))
+        @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
+      end
+
+      redirect_to edit_backoffice_profile_path(@profile),
+        notice: "Created #{@profile.name}. Add its illustration, then render it to publish."
+    rescue ActiveRecord::RecordInvalid => e
+      # A failed card reference (blank or duplicate identifier) rolls the profile back too; surface
+      # its message on the form, which is otherwise about the profile.
+      e.record.errors.full_messages.each { |m| @profile.errors.add(:base, m) } unless e.record == @profile
+      render :new, status: :unprocessable_entity
+    end
+
     # GET /backoffice/profiles/:id/edit
     def edit
     end
@@ -41,14 +73,16 @@ module Backoffice
     # It renders the very template Grover screenshots (single face, @side set), so the preview is
     # not an approximation of the card — it is the card, minus the trip through Chrome.
     def card_preview
-      @profile.assign_attributes(profile_params)
-      @profile.preview_weapons(submitted_ids(:weapon_ids))
-      @profile.preview_special_rules(submitted_ids(:special_rule_ids))
-      @side = params[:side] == "back" ? "back" : "front"
-      @illustration = @profile.illustrations.find_by(number: params[:illustration]) ||
-                      @profile.illustrations.first
+      render_card_preview(@profile)
+    end
 
-      render :card, layout: false
+    # POST /backoffice/profiles/new_card_preview
+    #
+    # The same live preview for a profile that has no id yet — the new form posts here. A fresh,
+    # unsaved profile is built from the submitted values and rendered; a new profile has no
+    # illustration, so its front shows an empty frame.
+    def new_card_preview
+      render_card_preview(Catalog::Profile.new)
     end
 
     # PATCH /backoffice/profiles/:id
@@ -294,6 +328,32 @@ module Backoffice
     def set_pickable_records
       @all_weapons = Catalog::Weapon.order(:name)
       @all_special_rules = Catalog::SpecialRule.order(:name)
+    end
+
+    # Render the card template for a profile carrying the form's current (unsaved) values. Shared
+    # by the edit preview (an existing profile) and the new preview (a fresh one). Nothing is
+    # saved; the weapons and rules are assigned in memory via the preview_* setters.
+    def render_card_preview(profile)
+      @profile = profile
+      @profile.assign_attributes(profile_params)
+      @profile.preview_weapons(submitted_ids(:weapon_ids))
+      @profile.preview_special_rules(submitted_ids(:special_rule_ids))
+      @side = params[:side] == "back" ? "back" : "front"
+      @illustration = @profile.illustrations.find_by(number: params[:illustration]) ||
+                      @profile.illustrations.first
+
+      render :card, layout: false
+    end
+
+    # The card(s) the app downloads for a new profile: an A/B pair is two cards sharing the stats,
+    # each with its own illustration (numbers 1 and 2, named …-a and …-b); otherwise a single card
+    # named after the identifier as given. create! so a blank or duplicate identifier raises and
+    # rolls the whole thing back.
+    def build_card_references!
+      identifiers = @card_pair ? [ "#{@card_identifier}-a", "#{@card_identifier}-b" ] : [ @card_identifier ]
+      identifiers.each_with_index do |identifier, index|
+        @profile.card_references.create!(identifier: identifier, name: @profile.name, illustration_number: index + 1)
+      end
     end
 
     # Abilities and keywords are json arrays of strings, edited as one-per-line textareas — the
