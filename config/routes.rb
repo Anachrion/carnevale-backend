@@ -41,6 +41,8 @@ Rails.application.routes.draw do
       resources :equipment, only: %i[index]
       resources :scenarios, only: %i[index]
       resources :spells, only: %i[index]
+      # The rules PDFs the app's Rules page opens. Served from config, not the DB — see RulesDocument.
+      resources :rules_documents, only: %i[index]
 
       resources :games, only: %i[index create show destroy] do
         collection do
