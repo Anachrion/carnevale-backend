@@ -4,11 +4,17 @@
   The rows' order is the order the card prints them in, so the list is submitted as an ordered
   array of ids and rewritten wholesale on save. The trailing blank entry means a list emptied of
   every row still arrives as [] rather than as "the form said nothing" — which is what lets you
-  actually remove the last weapon.
+  actually remove the last one.
 
-  Locals: param (:weapon_ids), records (everything pickable), selected (the current ones), noun.
+  The creator at the bottom invents a *new* shared record without leaving the card being authored:
+  it posts to the weapons/special-rules controller as JSON and drops the result into every select.
+  Nested <form> tags are illegal, so it is plain inputs collected by hand — see the JS in _form.
+
+  Locals: param (:weapon_ids), records (everything pickable), selected (the current ones), noun,
+          create_url, create_fields (the columns the inline creator asks for).
 %>
-<div class="js-picker" data-noun="<%= noun %>">
+<div class="js-picker" data-noun="<%= noun %>" data-create-url="<%= create_url %>"
+     data-model="<%= param.to_s.sub("_ids", "") %>">
   <div class="js-rows">
     <% selected.each do |record| %>
       <div class="js-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
@@ -36,5 +42,29 @@
 
   <input type="hidden" name="profile[<%= param %>][]" value="">
 
-  <button type="button" class="btn js-add">+ Add <%= noun %></button>
+  <div style="display:flex;gap:8px;margin-top:2px;">
+    <button type="button" class="btn js-add">+ Add <%= noun %></button>
+    <button type="button" class="btn js-new-toggle">✚ New <%= noun %></button>
+  </div>
+
+  <%# The inline creator. Plain inputs, not a form: this lives inside the profile's own form. %>
+  <div class="js-new" style="display:none;margin-top:8px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;background:#f9fafb;">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+      <% create_fields.each do |field, label| %>
+        <label style="font-size:12px;color:#6b7280;">
+          <%= label %><br>
+          <input type="<%= field.to_s.start_with?("name", "description") ? "text" : "number" %>"
+                 data-field="<%= field %>"
+                 style="padding:6px;width:<%= field.to_s.start_with?("name", "description") ? "220px" : "80px" %>;">
+        </label>
+      <% end %>
+
+      <button type="button" class="btn btn-emerald js-new-save">Create and attach</button>
+      <span class="js-new-error" style="color:#991b1b;font-size:12px;"></span>
+    </div>
+    <div style="color:#6b7280;font-size:12px;margin-top:6px;">
+      Creates a shared <%= noun %> in the catalog, then attaches it here. Its full details can be
+      edited from the <%= noun %>s section.
+    </div>
+  </div>
 </div>

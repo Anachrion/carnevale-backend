@@ -1,0 +1,5 @@
+<% content_for :title, "Edit #{display_name(@special_rule)}" %>
+
+<h1>Edit <%= display_name(@special_rule) %></h1>
+
+<%= render "form", special_rule: @special_rule, url: backoffice_special_rule_path(@special_rule), method: :patch %>

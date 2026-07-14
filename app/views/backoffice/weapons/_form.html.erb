@@ -1,0 +1,53 @@
+<%# scope: :weapon — the model is namespaced, so the default param key would be catalog_weapon. %>
+<%= form_with model: weapon, scope: :weapon, url: url, method: method do |f| %>
+  <% if weapon.errors.any? %>
+    <div class="flash alert"><%= weapon.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="table-wrap" style="margin-top:16px;">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:170px;"><%= f.label :name %></th>
+          <td><%= f.text_field :name, style: "width:320px;" %></td>
+        </tr>
+
+        <% %i[damage evasion penetration range].each do |stat| %>
+          <tr>
+            <th><%= f.label stat %></th>
+            <td>
+              <%= f.number_field stat, style: "width:90px;" %>
+              <% if stat == :penetration %>
+                <span style="color:#6b7280;font-size:13px;margin-left:8px;">Negative is normal here.</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+
+        <tr>
+          <th><%= f.label :abilities_text, "Abilities" %></th>
+          <td>
+            <%= f.text_area :abilities_text, value: weapon.abilities.join("\n"),
+                  rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+            <div style="color:#6b7280;font-size:13px;">One per line.</div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="margin-top:16px;">
+    <% unless weapon.new_record? %>
+      <% carried = weapon.profiles.size %>
+      <span style="color:#6b7280;font-size:13px;">
+        Carried by <strong><%= carried %></strong> profile<%= "s" unless carried == 1 %> — saving marks
+        every one of their cards out of date.
+      </span>
+    <% end %>
+
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <%= link_to "Cancel", backoffice_weapons_path, class: "btn" %>
+      <%= f.submit weapon.new_record? ? "Create weapon" : "Save weapon", class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>

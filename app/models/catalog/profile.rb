@@ -1,6 +1,7 @@
 module Catalog
   class Profile < ApplicationRecord
     include HasFaction
+    include StringListColumns
 
     has_many :card_references, -> { order(:identifier) }, class_name: "Catalog::CardReference"
 
@@ -22,7 +23,7 @@ module Catalog
     validates :name, presence: true
     validates :faction, presence: true
     validates(*STATS, numericality: { only_integer: true, greater_than_or_equal_to: 0 })
-    validate :abilities_and_keywords_are_lists_of_strings
+    validates_string_list :abilities, :keywords
 
     MAGE_ABILITY = /\AMage \((\d+)\)\z/
     EXPERT_SORCERER_ABILITY = /\AExpert Sorcerer \((\d+)\)\z/
@@ -103,16 +104,6 @@ module Catalog
       by_id = klass.where(id: ids).index_by(&:id)
       association(name).target = ids.filter_map { |id| by_id[id] }
       association(name).loaded!
-    end
-
-    # These are json columns, so the database will happily take a string or a nested hash. Every
-    # reader — the card view, mage_level, disciplines — assumes a flat list of strings.
-    def abilities_and_keywords_are_lists_of_strings
-      { abilities: abilities, keywords: keywords }.each do |attribute, value|
-        next if value.is_a?(Array) && value.all?(String)
-
-        errors.add(attribute, "must be a list of strings")
-      end
     end
   end
 end
