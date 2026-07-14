@@ -72,6 +72,16 @@ RSpec.describe "Backoffice::Weapons", type: :request do
           expect(response.parsed_body["id"]).to eq(Catalog::Weapon.find_by(name: "Cutlass").id)
         end
 
+        # The inline creator sends the weapon's abilities as a one-per-line string, so a whole
+        # weapon — traits and all — can be authored without leaving the card.
+        it "accepts the abilities inline" do
+          post backoffice_weapons_path,
+            params: { weapon: { name: "Halberd", damage: 4, abilities_text: "Reach\nTwo-Handed" } }, as: :json
+
+          expect(response).to have_http_status(:created)
+          expect(Catalog::Weapon.find_by(name: "Halberd").abilities).to eq([ "Reach", "Two-Handed" ])
+        end
+
         it "returns the errors when it is invalid" do
           post backoffice_weapons_path, params: { weapon: { name: "" } }, as: :json
 

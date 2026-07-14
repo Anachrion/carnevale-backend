@@ -53,9 +53,15 @@
       <% create_fields.each do |field, label| %>
         <label style="font-size:12px;color:#6b7280;">
           <%= label %><br>
-          <input type="<%= field.to_s.start_with?("name", "description") ? "text" : "number" %>"
-                 data-field="<%= field %>"
-                 style="padding:6px;width:<%= field.to_s.start_with?("name", "description") ? "220px" : "80px" %>;">
+          <% if field.to_s.end_with?("_text") %>
+            <%# A list field (a weapon's abilities): one per line, mapped to *_text on the server. %>
+            <textarea data-field="<%= field %>" rows="3"
+                      style="padding:6px;width:220px;font-family:ui-monospace,monospace;vertical-align:top;"></textarea>
+          <% elsif field.to_s.start_with?("name", "description") %>
+            <input type="text" data-field="<%= field %>" style="padding:6px;width:220px;">
+          <% else %>
+            <input type="number" data-field="<%= field %>" style="padding:6px;width:80px;">
+          <% end %>
         </label>
       <% end %>
 
@@ -63,8 +69,8 @@
       <span class="js-new-error" style="color:#991b1b;font-size:12px;"></span>
     </div>
     <div style="color:#6b7280;font-size:12px;margin-top:6px;">
-      Creates a shared <%= noun %> in the catalog, then attaches it here. Its full details can be
-      edited from the <%= noun %>s section.
+      Creates a shared <%= noun %> in the catalog, then attaches it here — it can also be edited or
+      removed later from the <%= noun %>s section.
     </div>
   </div>
 </div>
