@@ -1,0 +1,1973 @@
+---
+- key: agonising-strike
+  name: Agonising Strike
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+- key: ahlspiess
+  name: Ahlspiess
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: alchemical-bomb
+  name: Alchemical Bomb
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Black Powder
+  - Blast
+  - Reload (1)
+- key: ancient-claws
+  name: Ancient Claws
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: ancient-trident
+  name: Ancient Trident
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Aquatic
+  - Two-handed
+- key: angelic-touch
+  name: Angelic Touch
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: arming-blade
+  name: Arming Blade
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities: []
+- key: a-thousand-teeth
+  name: A Thousand Teeth
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Aquatic
+- key: atrezzo-crossbow
+  name: Atrezzo Crossbow
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 30
+  abilities:
+  - Reload (2)
+  - Two-handed
+- key: balanced-rapier
+  name: Balanced Rapier
+  damage: 0
+  evasion: -1
+  penetration: -2
+  range: 0
+  abilities: []
+- key: balanced-throwing-knife
+  name: Balanced Throwing Knife
+  damage: -1
+  evasion: 0
+  penetration: -4
+  range: 6
+  abilities: []
+- key: baleful-screech
+  name: Baleful Screech
+  damage: 0
+  evasion: -2
+  penetration: 0
+  range: 6
+  abilities:
+  - Blast
+  - Harmless
+  - Stun
+- key: barbed-tentacles
+  name: Barbed Tentacles
+  damage: -1
+  evasion: 0
+  penetration: -2
+  range: 2
+  abilities:
+  - Aquatic
+  - Stun
+- key: bardiche
+  name: Bardiche
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: barnacle-claymore
+  name: Barnacle Claymore
+  damage: 1
+  evasion: 1
+  penetration: -1
+  range: 1
+  abilities:
+  - Two-handed
+  - Knockback
+- key: battle-axe
+  name: Battle Axe
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: bayonet
+  name: Bayonet
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities: []
+- key: beak-claws
+  name: Beak & Claws
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: big-club
+  name: Big Club
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities:
+  - Knockback
+- key: bird-kick
+  name: Bird Kick
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: bite
+  name: Bite
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: black-powder-grenade
+  name: Black Powder Grenade
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Black Powder
+  - Blast
+  - Reload (1)
+- key: bladed-limbs
+  name: Bladed Limbs
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: bladed-oar
+  name: Bladed Oar
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 2
+  abilities:
+  - Two-handed
+- key: blade-of-gozo
+  name: Blade of Gozo
+  damage: 2
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: blessed-sword
+  name: Blessed Sword
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: blinding-flash
+  name: Blinding Flash
+  damage: 0
+  evasion: 1
+  penetration: -2
+  range: 6
+  abilities:
+  - Knockback
+  - Reload (2)
+- key: blunderbuss
+  name: Blunderbuss
+  damage: 2
+  evasion: -1
+  penetration: 1
+  range: 0
+  abilities:
+  - Black Powder
+  - Reload (1)
+  - Template
+- key: bomb
+  name: Bomb
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Black Powder
+  - Blast
+  - Reload (1)
+- key: book-of-destiny
+  name: Book of Destiny
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: boot-knife
+  name: Boot Knife
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: bottle-burner
+  name: Bottle Burner
+  damage: 1
+  evasion: 2
+  penetration: -1
+  range: 5
+  abilities:
+  - Black Powder
+  - Blast
+- key: bottles
+  name: Bottles
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 6
+  abilities: []
+- key: brawling-tentacles
+  name: Brawling Tentacles
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: bronze-chisel
+  name: Bronze Chisel
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: brutal-claws
+  name: Brutal Claws
+  damage: 0
+  evasion: -1
+  penetration: -3
+  range: 0
+  abilities: []
+- key: brutal-fists
+  name: Brutal Fists
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: burning-brand
+  name: Burning Brand
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 2
+  abilities:
+  - Smoke
+  - Two-handed
+- key: burning-longsword
+  name: Burning Longsword
+  damage: 1
+  evasion: 0
+  penetration: -5
+  range: 1
+  abilities:
+  - Two-handed
+- key: butcher-s-knives
+  name: Butcher's Knives
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: calcified-fists
+  name: Calcified Fists
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: cane-sword
+  name: Cane Sword
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: canine-claws
+  name: Canine Claws
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: cannon-barrel
+  name: Cannon Barrel
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: carving-knife
+  name: Carving Knife
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: cast-iron-utensil
+  name: Cast Iron Utensil
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: cat-o-nine-tails
+  name: Cat O'Nine Tails
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: clawed-hands
+  name: Clawed Hands
+  damage: 1
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: claw-of-anguish
+  name: Claw of Anguish
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Reload (2)
+  - Template
+- key: claws
+  name: Claws
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: claws-2
+  name: Claws
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Aquatic
+- key: clockwork-pistol
+  name: Clockwork Pistol
+  damage: 1
+  evasion: 1
+  penetration: -1
+  range: 6
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: club
+  name: Club
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: coach-gun
+  name: Coach Gun
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 12
+  abilities:
+  - Black Powder
+  - Reload (1)
+  - Two-handed
+- key: colossal-jaws
+  name: Colossal Jaws
+  damage: 2
+  evasion: 2
+  penetration: -3
+  range: 2
+  abilities:
+  - Aquatic
+- key: compelled-confession
+  name: Compelled Confession
+  damage: 0
+  evasion: -2
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: concealed-pistol
+  name: Concealed Pistol
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 4
+  abilities:
+  - Black Powder
+  - Reload (1)
+  - Knockback
+- key: cornelius-bite
+  name: Cornelius' Bite
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 6
+  abilities: []
+- key: corseque
+  name: Corseque
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Two-handed
+- key: costume-pistol
+  name: Costume Pistol
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 6
+  abilities:
+  - Black Powder
+  - Harmless
+  - Knockback
+- key: coustille
+  name: Coustille
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: crosier
+  name: Crosier
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities: []
+- key: crossbow
+  name: Crossbow
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 30
+  abilities:
+  - Reload (1)
+  - Two-handed
+- key: crushing-claws
+  name: Crushing Claws
+  damage: 3
+  evasion: 2
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: crusted-fist
+  name: Crusted Fist
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Stun
+- key: cup-rapier
+  name: Cup Rapier
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: dagger
+  name: Dagger
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: daisho
+  name: Daishō
+  damage: 1
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: dementing-tentacles
+  name: Dementing Tentacles
+  damage: 0
+  evasion: -1
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+  - Stun
+- key: distended-jaws
+  name: Distended Jaws
+  damage: 0
+  evasion: 1
+  penetration: -3
+  range: 0
+  abilities: []
+- key: dive-knife
+  name: Dive Knife
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: divine-flame
+  name: Divine Flame
+  damage: 0
+  evasion: -2
+  penetration: -2
+  range: 0
+  abilities:
+  - Template
+- key: divine-justice
+  name: Divine Justice
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Knockback
+  - Stun
+- key: divine-touch
+  name: Divine Touch
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: divine-winds
+  name: Divine Winds
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Template
+- key: diving-trident
+  name: Diving Trident
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Aquatic
+  - Two-handed
+- key: dove-s-kiss
+  name: Dove's Kiss
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 8
+  abilities:
+  - Knockback
+  - Reload (2)
+- key: dual-stilettos
+  name: Dual Stilettos
+  damage: 1
+  evasion: -1
+  penetration: 1
+  range: 0
+  abilities: []
+- key: duelling-pistol
+  name: Duelling Pistol
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 8
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: eldritch-maw
+  name: Eldritch Maw
+  damage: 0
+  evasion: 0
+  penetration: -4
+  range: 1
+  abilities:
+  - Aquatic
+- key: electrified-mace
+  name: Electrified Mace
+  damage: 1
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities:
+  - Stun
+- key: electro-gauntlet
+  name: Electro Gauntlet
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities:
+  - Stun
+- key: electron-cannon
+  name: Electron Cannon
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 12
+  abilities:
+  - Black Powder
+  - Two-handed
+  - Reload (1)
+- key: encrusted-hands
+  name: Encrusted Hands
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: encrusted-weapon
+  name: Encrusted Weapon
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: endless-grasping-hands
+  name: Endless Grasping Hands
+  damage: 0
+  evasion: -1
+  penetration: 1
+  range: 0
+  abilities: []
+- key: enhanced-jaws
+  name: Enhanced Jaws
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities:
+  - Aquatic
+- key: executioner-s-axe
+  name: Executioner's Axe
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities: []
+- key: fanged-maw
+  name: Fanged Maw
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: fanged-tentacles
+  name: Fanged Tentacles
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Aquatic
+- key: fangs
+  name: Fangs
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: feathers-of-holy-light
+  name: Feathers of Holy Light
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 6
+  abilities: []
+- key: fiery-explosion
+  name: Fiery Explosion
+  damage: 2
+  evasion: 0
+  penetration: -7
+  range: 0
+  abilities:
+  - Black Powder
+  - Blast
+  - Reload (1)
+- key: fireball
+  name: Fireball
+  damage: 2
+  evasion: 0
+  penetration: -2
+  range: 8
+  abilities:
+  - Black Powder
+  - Two-handed
+  - Reload (2)
+- key: fire-breath
+  name: Fire Breath
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities:
+  - Black Powder
+  - Template
+  - Two-handed
+  - Reload (1)
+- key: fire-of-persecution
+  name: Fire of Persecution
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: fishing-spear
+  name: Fishing Spear
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Aquatic
+  - Two-handed
+- key: fishmonger-s-knives
+  name: Fishmonger's Knives
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: flail
+  name: Flail
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 2
+  abilities: []
+- key: flaming-bottles
+  name: Flaming Bottles
+  damage: 0
+  evasion: 0
+  penetration: -5
+  range: 6
+  abilities:
+  - Black Powder
+- key: flaming-mace
+  name: Flaming Mace
+  damage: 1
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities:
+  - Stun
+- key: flanged-mace
+  name: Flanged Mace
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Knockback
+- key: flint-dagger
+  name: Flint Dagger
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: forge-hammer
+  name: Forge Hammer
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities: []
+- key: fresh-claws
+  name: Fresh Claws
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: gaping-maw
+  name: Gaping Maw
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: garter-pistol
+  name: Garter Pistol
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 6
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: gavel
+  name: Gavel
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: gilded-mirror
+  name: Gilded Mirror
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: gilded-sabre
+  name: Gilded Sabre
+  damage: 1
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: gilded-sword
+  name: Gilded Sword
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: gilded-table-scraps
+  name: Gilded Table Scraps
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 6
+  abilities:
+  - Harmless
+  - Stun
+  - Reload (1)
+- key: golden-tipped-claws
+  name: Golden Tipped Claws
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: grapeshot
+  name: Grapeshot
+  damage: 0
+  evasion: -1
+  penetration: -4
+  range: 0
+  abilities:
+  - Black Powder
+  - Template
+  - Reload (1)
+- key: grasping-jaws
+  name: Grasping Jaws
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: grasping-tentacles
+  name: Grasping Tentacles
+  damage: 0
+  evasion: -1
+  penetration: 0
+  range: 2
+  abilities: []
+- key: greatsword
+  name: Greatsword
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities:
+  - Two-handed
+- key: halberd-swing
+  name: Halberd (swing)
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: halberd-thrust
+  name: Halberd (thrust)
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 2
+  abilities: []
+- key: hammer-nails
+  name: Hammer & Nails
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities:
+  - Two-handed
+- key: hammer-stake
+  name: Hammer & Stake
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Two-handed
+- key: handbow
+  name: Handbow
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 15
+  abilities:
+  - Reload (2)
+- key: hands-of-god
+  name: Hands of God
+  damage: 0
+  evasion: 0
+  penetration: 1
+  range: 0
+  abilities: []
+- key: harpoon-gun
+  name: Harpoon Gun
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 12
+  abilities:
+  - Reload (1)
+  - Two-handed
+- key: heavenly-clamour
+  name: Heavenly Clamour
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities: []
+- key: heavenly-grasp
+  name: Heavenly Grasp
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: heavy-tentacles
+  name: Heavy Tentacles
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 1
+  abilities:
+  - Knockback
+- key: hellfire
+  name: Hellfire
+  damage: 3
+  evasion: 0
+  penetration: -2
+  range: 8
+  abilities:
+  - Black Powder
+  - Reload (1)
+- key: herding-spear
+  name: Herding Spear
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Two-handed
+- key: hidden-claws
+  name: Hidden Claws
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Aquatic
+- key: holy-icon
+  name: Holy Icon
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: holy-instruments
+  name: Holy Instruments
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: hoof-stomp
+  name: Hoof Stomp
+  damage: 1
+  evasion: -1
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: horns
+  name: Horns
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Knockback
+- key: impaling-stake
+  name: Impaling Stake
+  damage: 2
+  evasion: 0
+  penetration: -1
+  range: 2
+  abilities:
+  - Two-handed
+- key: implanted-tools
+  name: Implanted Tools
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: improvised-weapon
+  name: Improvised Weapon
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: infantry-sabre
+  name: Infantry Sabre
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: iron-mace
+  name: Iron Mace
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 1
+  abilities:
+  - Stun
+- key: khopesh-daggers
+  name: Khopesh Daggers
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: knife
+  name: Knife
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: lashing-swipe
+  name: Lashing Swipe
+  damage: 0
+  evasion: -1
+  penetration: -1
+  range: 0
+  abilities: []
+- key: long-rifle
+  name: Long Rifle
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 30
+  abilities:
+  - Black Powder
+  - Knockback
+  - Reload (1)
+  - Two-handed
+- key: longsword
+  name: Longsword
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: mace
+  name: Mace
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Knockback
+- key: mauling-talons
+  name: Mauling Talons
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: maw-press
+  name: Maw Press
+  damage: 0
+  evasion: -1
+  penetration: -4
+  range: 0
+  abilities: []
+- key: meathook
+  name: Meathook
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: meat-hook
+  name: Meat Hook
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: mighty-jaws
+  name: Mighty Jaws
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities:
+  - Aquatic
+- key: minty-fresh-breath
+  name: Minty Fresh Breath
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Poisoned
+  - Template
+  - Reload (1)
+- key: monstrous-claws
+  name: Monstrous Claws
+  damage: 2
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities: []
+- key: monstrous-tentacles
+  name: Monstrous Tentacles
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 3
+  abilities:
+  - Stun
+- key: musket
+  name: Musket
+  damage: 1
+  evasion: 1
+  penetration: -1
+  range: 24
+  abilities:
+  - Black Powder
+  - Reload (1)
+  - Two-handed
+- key: mutated-limbs
+  name: Mutated Limbs
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 4
+  abilities:
+  - Aquatic
+- key: naval-cutlass
+  name: Naval Cutlass
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: nock-gun
+  name: Nock Gun
+  damage: 3
+  evasion: 0
+  penetration: -1
+  range: 12
+  abilities:
+  - Black Powder
+  - Reload (1)
+- key: oar
+  name: Oar
+  damage: 1
+  evasion: 0
+  penetration: 1
+  range: 2
+  abilities:
+  - Two-handed
+- key: officer-s-sabre
+  name: Officer's Sabre
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: ornate-trident
+  name: Ornate Trident
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Aquatic
+- key: paintbrush
+  name: Paintbrush
+  damage: 0
+  evasion: 0
+  penetration: 1
+  range: 0
+  abilities: []
+- key: pestle
+  name: Pestle
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities:
+  - Knockback
+  - Two-handed
+- key: pistol
+  name: Pistol
+  damage: 0
+  evasion: 1
+  penetration: -1
+  range: 8
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: pithing-needle
+  name: Pithing Needle
+  damage: 0
+  evasion: 1
+  penetration: -1
+  range: 0
+  abilities:
+  - Stun
+- key: pliers
+  name: Pliers
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: poison-bomb
+  name: Poison Bomb
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 6
+  abilities:
+  - Reload (1)
+  - Poisoned
+- key: poisoned-blade
+  name: Poisoned Blade
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Poisoned
+- key: poisoned-needle
+  name: Poisoned Needle
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Poisoned
+- key: pole-spear-net
+  name: Pole Spear & Net
+  damage: 1
+  evasion: -1
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: predictive-tools
+  name: Predictive Tools
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 4
+  abilities:
+  - Reload (2)
+- key: prop-sword
+  name: Prop Sword
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: quilled-spines
+  name: Quilled Spines
+  damage: 0
+  evasion: 1
+  penetration: -1
+  range: 8
+  abilities: []
+- key: rapier
+  name: Rapier
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: razor-maw
+  name: Razor Maw
+  damage: 1
+  evasion: 0
+  penetration: -2
+  range: 0
+  abilities:
+  - Aquatic
+- key: rending-spine
+  name: Rending Spine
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 6
+  abilities:
+  - Knockback
+- key: rifled-duelling-pistol
+  name: Rifled Duelling Pistol
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 12
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: ripping-teeth
+  name: Ripping Teeth
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: riveting-hammer
+  name: Riveting Hammer
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Two-handed
+- key: rusty-blade
+  name: Rusty Blade
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: rusty-knife
+  name: Rusty Knife
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: sabre
+  name: Sabre
+  damage: 0
+  evasion: -1
+  penetration: 0
+  range: 0
+  abilities: []
+- key: sacrificial-dagger
+  name: Sacrificial Dagger
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: sailor-s-knife
+  name: Sailor's Knife
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Aquatic
+- key: scalpel
+  name: Scalpel
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: scalpel-2
+  name: Scalpel
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: scorpio
+  name: Scorpio
+  damage: 2
+  evasion: 1
+  penetration: -2
+  range: 18
+  abilities:
+  - Knockback
+  - Two-handed
+  - Reload (1)
+- key: service-pistol
+  name: Service Pistol
+  damage: 0
+  evasion: 0
+  penetration: -2
+  range: 8
+  abilities:
+  - Black Powder
+  - Reload (2)
+- key: shadow-touch
+  name: Shadow Touch
+  damage: 0
+  evasion: 0
+  penetration: 1
+  range: 0
+  abilities:
+  - Stun
+- key: sharpened-dagger
+  name: Sharpened Dagger
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: shattered-touch
+  name: Shattered Touch
+  damage: 0
+  evasion: 0
+  penetration: -4
+  range: 0
+  abilities: []
+- key: shock-prod
+  name: Shock Prod
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: shock-staff
+  name: Shock Staff
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Stun
+  - Two-handed
+- key: short-bow
+  name: Short Bow
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 12
+  abilities:
+  - Reload (3)
+  - Two-handed
+- key: short-sword
+  name: Short Sword
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: sica
+  name: Sica
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: sinking-weights
+  name: Sinking Weights
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+- key: smoke-bomb
+  name: Smoke Bomb
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Blast
+  - Harmless
+  - Smoke
+  - Reload (1)
+- key: snare
+  name: Snare
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+- key: sodden-longsword
+  name: Sodden Longsword
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Two-handed
+- key: soul-bombard
+  name: Soul Bombard
+  damage: 2
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities:
+  - Black Powder
+  - Blast
+- key: soul-burner
+  name: Soul Burner
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities:
+  - Template
+  - Reload (1)
+- key: spear
+  name: Spear
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Two-handed
+  - Knockback
+- key: spectral-touch
+  name: Spectral Touch
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: spiked-warhammer-swing
+  name: Spiked Warhammer (swing)
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: spiked-warhammer-thrust
+  name: Spiked Warhammer (thrust)
+  damage: 0
+  evasion: -1
+  penetration: -2
+  range: 1
+  abilities: []
+- key: spirit-cannon
+  name: Spirit Cannon
+  damage: 2
+  evasion: 1
+  penetration: -1
+  range: 12
+  abilities:
+  - Reload (1)
+  - Two-handed
+- key: staff
+  name: Staff
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities: []
+- key: staff-of-credit
+  name: Staff of Credit
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities: []
+- key: sticky-burst
+  name: Sticky Burst
+  damage: 0
+  evasion: 2
+  penetration: 0
+  range: 6
+  abilities:
+  - Stun
+  - Reload (2)
+- key: stiletto
+  name: Stiletto
+  damage: 1
+  evasion: 0
+  penetration: 1
+  range: 0
+  abilities: []
+- key: stone-fists
+  name: Stone Fists
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities: []
+- key: straight-razor
+  name: Straight Razor
+  damage: 0
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities: []
+- key: strice-s-paw
+  name: Strice's Paw
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: surgical-tools
+  name: Surgical Tools
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: sword
+  name: Sword
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: sword-of-balance
+  name: Sword of Balance
+  damage: 1
+  evasion: 0
+  penetration: -4
+  range: 1
+  abilities:
+  - Two-handed
+- key: talons
+  name: Talons
+  damage: 1
+  evasion: 0
+  penetration: -3
+  range: 0
+  abilities: []
+- key: teeth
+  name: Teeth
+  damage: 1
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities: []
+- key: tender-claws
+  name: Tender Claws
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: tentacled-rebar
+  name: Tentacled Rebar
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 1
+  abilities:
+  - Knockback
+- key: thorned-grasp
+  name: Thorned Grasp
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 2
+  abilities:
+  - Stun
+- key: thrown-harpoon
+  name: Thrown Harpoon
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 4
+  abilities:
+  - Reload (1)
+- key: titanic-fists
+  name: Titanic Fists
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: tongue-harpoon
+  name: Tongue Harpoon
+  damage: 0
+  evasion: 1
+  penetration: 0
+  range: 12
+  abilities:
+  - Aquatic
+  - Knockback
+  - Reload (1)
+- key: tools-of-penance
+  name: Tools of Penance
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: training-whip
+  name: Training Whip
+  damage: 0
+  evasion: -1
+  penetration: 0
+  range: 3
+  abilities: []
+- key: tranquilliser-harpoon-gun
+  name: Tranquilliser Harpoon Gun
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Reload (1)
+  - Aquatic
+  - Two-handed
+- key: trident
+  name: Trident
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 2
+  abilities:
+  - Aquatic
+  - Two-handed
+- key: trumpet
+  name: Trumpet
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: twin-blades
+  name: Twin Blades
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: twin-duelling-pistols
+  name: Twin Duelling Pistols
+  damage: 3
+  evasion: 0
+  penetration: -1
+  range: 8
+  abilities:
+  - Black Powder
+  - Reload (1)
+- key: twin-rifled-duelling-pistols
+  name: Twin Rifled Duelling Pistols
+  damage: 3
+  evasion: 0
+  penetration: -1
+  range: 12
+  abilities:
+  - Black Powder
+  - Reload (1)
+- key: twin-swords
+  name: Twin Swords
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: unarmed
+  name: Unarmed
+  damage: 0
+  evasion: 0
+  penetration: 1
+  range: 0
+  abilities: []
+- key: underwater-limelight
+  name: Underwater Limelight
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Harmless
+  - Stun
+  - Template
+- key: venomous-spray
+  name: Venomous Spray
+  damage: 0
+  evasion: 1
+  penetration: -2
+  range: 0
+  abilities:
+  - Poisoned
+  - Template
+- key: voice-of-madness
+  name: Voice of Madness
+  damage: 0
+  evasion: -1
+  penetration: -3
+  range: 0
+  abilities:
+  - Stun
+  - Template
+- key: wallachian-halberd
+  name: Wallachian Halberd
+  damage: 1
+  evasion: 0
+  penetration: -2
+  range: 2
+  abilities:
+  - Two-handed
+- key: warhammer
+  name: Warhammer
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 1
+  abilities:
+  - Stun
+  - Two-handed
+- key: water-portal
+  name: Water Portal
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 6
+  abilities:
+  - Aquatic
+  - Blast
+  - Reload (1)
+  - Stun
+- key: wave-blade-knife
+  name: Wave-blade Knife
+  damage: 1
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: weak-claws
+  name: Weak Claws
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: webbed-appendages
+  name: Webbed Appendages
+  damage: 1
+  evasion: 1
+  penetration: 0
+  range: 0
+  abilities:
+  - Aquatic
+- key: webbed-fists
+  name: Webbed Fists
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities: []
+- key: webbed-talons
+  name: Webbed Talons
+  damage: 0
+  evasion: 0
+  penetration: -1
+  range: 0
+  abilities:
+  - Aquatic
+- key: whaling-lance
+  name: Whaling Lance
+  damage: 3
+  evasion: 1
+  penetration: 0
+  range: 6
+  abilities:
+  - Knockback
+  - Two-handed
+- key: wine-bottle
+  name: Wine Bottle
+  damage: 0
+  evasion: 0
+  penetration: 0
+  range: 0
+  abilities:
+  - Stun
+- key: zweihander
+  name: Zweihänder
+  damage: 3
+  evasion: 1
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Two-handed

@@ -1,0 +1,2981 @@
+---
+- key: creative-creation
+  name: ''
+  description: Maria Fioritura may use the following unique Magic Spell. This spell
+    cannot be used by other characters. She knows this in addition to any other spells.
+  spell_name: Creative Creation
+  spell_cost: 2
+  spell_difficulty: 7
+  spell_description: Place 1 Painted Protector anywhere within 3" of this character.
+    A Painted Protector counts as a friendly character and may take a turn that round
+    as normal.
+- key: dagonite-baptism
+  name: ''
+  description: The Drowned Nun may use the following unique Magic Spell. This spell
+    cannot be used by other characters. She knows this in addition to any other spells.
+  spell_name: Dagonite Baptism
+  spell_cost: 1
+  spell_difficulty: 6
+  spell_description: Total up every Ace rolled then pick one enemy character in line
+    of sight within 3". That character loses that many Life Points plus 1.
+- key: a-choice-cut
+  name: A Choice Cut
+  description: When this character kills a character with the Monster keyword, it
+    replenishes 1CP.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: aerial-aggression
+  name: Aerial Aggression
+  description: When this character moves into base contact with an enemy character
+    that is either 3" above or 3" below it at the start of the action, that enemy
+    character skips their Protection roll for this character's Attack of Opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: aetheric-control
+  name: Aetheric Control
+  description: This character replenishes all of its Command Points at the start of
+    each of its turns.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: aetheric-gaze
+  name: Aetheric Gaze
+  description: This character may select its Magic Spells from up to 2 different Disciplines.
+    It also gains Cantrips from both Disciplines chosen.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: affirmation
+  name: Affirmation
+  description: At the start of this character's turn, pick one character with the
+    Councillor keyword in line of sight. Both this character and that character replenish
+    1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: african-bewitching
+  name: African Bewitching
+  description: PULSE Command Ability. Every friendly character with the Bride keyword
+    gains Stun on their weapons until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: a-hero-among-thieves
+  name: A Hero Among Thieves
+  description: If this is the only character with the Leader keyword in the gang,
+    this character loses the Hero keyword. However, if there is another character
+    with the Leader keyword, this character loses the Leader keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: aim-fire
+  name: Aim Fire!
+  description: PULSE Command Ability. Any friendly characters with the Soldier keyword
+    in line of sight gain Expert Marksman (1) until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: a-light-in-the-dark
+  name: A Light in the Dark
+  description: Every time another character uses 2 of their own Will Points (and not
+    those from other characters) in a single action, this character replenishes 2
+    Will Points. Additionally, this character may use more than 2 Will Points to increase
+    a roll.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: all-according-to-plan
+  name: All According to Plan
+  description: Colombina has a plan, and provided everyone plays their role, it'll
+    all work out in the end. Once per round, when any character with line of sight
+    to this character (including herself) is about to make a roll with at least 1
+    dice, you can decide to score a single Ace instead of rolling.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: all-eyes-on-me
+  name: All Eyes On Me
+  description: For every friendly character in line of sight to this character (including
+    this character) at the start of the round, add a re-roll to your All Eyes On Me
+    Pool. Until the end of the round, any friendly character may use these re-rolls
+    on any roll - one re-roll per dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: always-scheming
+  name: Always Scheming
+  description: When a friendly character with the Leader keyword uses a Command while
+    in line of sight, Brighella gains 1AP until the end of the round. Remember that
+    no character can use more than 3AP in one round!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: annoying-tune
+  name: Annoying Tune
+  description: All enemy characters have -1 DEXTERITY while within 3" of Coviello.
+    However, all enemy characters within 3" may re-roll 1 failed dice roll in Combat
+    actions when Coviello is the target.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: apprenticeship
+  name: Apprenticeship
+  description: When choosing this character, pick one character in your gang with
+    both the Doctor and Hero keywords to be this character's mentor. Choose one Character
+    Ability, unique skill, or weapon profile that mentor has for this character to
+    gain. A character can only be a mentor to one Apprentice Doctor. If choosing the
+    Mage ability, the disciplines available are the same as the mentor. If choosing
+    a weapon with a relevant unique rule, that rule is taken as well (such as Unstable
+    on Alchemical Bombs).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: arcane-totem
+  name: Arcane Totem
+  description: This character knows every spell (including the Cantrip) from the Wild
+    Magic Discipline. Each spell costs 0 Will Points to cast, but may only be attempted
+    once per game. In addition, if this character ever fails to cast a spell, another
+    spell is also removed at random.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: armourer
+  name: Armourer
+  description: 'At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character''s Masks. For the entirety of the game
+    that character gains one of the following: Universal Shielding (2); or whenever
+    that character makes a Combat action against a character with 0 Will Points remaining,
+    if the attack deals at least 1 Damage, increase the damage caused by 1 (before
+    any PROTECTION rolls). A character can only be given a single Mask. Unique characters
+    without Faction (Gifted) and Mindless characters cannot be given a Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: atonement-from-above
+  name: Atonement from Above
+  description: Before applying Stoneskin, if this character would take damage from
+    falling, all other characters (friendly and enemy) within 3" also take that much
+    damage. When this character charges from above, it may be placed on top of other
+    characters, which are moved by their controlling player to be in base contact.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: aura-of-inevitability-1ap
+  name: Aura of Inevitability - 1AP
+  description: Pick an enemy character in line of sight within 6" and make an Opposed
+    Mind Roll. If successful, the target loses 2 Will Points and 2 Life Points, and
+    this character replenishes 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: auxiliary-systems
+  name: Auxiliary Systems
+  description: At the start of this character's turn, it gains +2 to either its MOVEMENT,
+    DEXTERITY, or PROTECTION until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bait
+  name: Bait
+  description: Friendly characters may attack this character as if it were an enemy.
+    If a friendly character kills this character, it loses the Mindless rule for the
+    rest of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bankroll
+  name: Bankroll
+  description: For every character with this ability in your gang at the start of
+    the round, select a different piece of Equipment that you have already used. You
+    may use this piece of Equipment once more this round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: barbary-discipline
+  name: Barbary Discipline
+  description: AURA Command Ability. Until the end of the round, all friendly characters
+    within 6" gain +2 MOVEMENT if their Run/Climb action is used to charge.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: barbed
+  name: Barbed
+  description: If a Combat action with the Cat O'Nine Tails results in no Protection
+    roll for the target, add 2 to the Damage.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: barbed-tongue
+  name: Barbed Tongue
+  description: The Tongue Harpoon's Knockback moves the target directly towards this
+    character rather than away.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bask-in-my-magnificence
+  name: Bask in my Magnificence!
+  description: This character replenishes all of its Command Points at the start of
+    each of its character turns and may use each type of Command (PLAN, COUNTER, etc.)
+    twice per game round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: beast-master
+  name: Beast Master
+  description: All friendly characters with the Animal keyword gain Companion (Doctor)
+    while in line of sight of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bereft-of-will
+  name: Bereft of Will
+  description: Other characters within 3" cannot use Will Points (including Frenzied
+    and Will Points of other characters). When this character dies, all other characters
+    within 3" lose 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: be-thou-afraid
+  name: Be Thou Afraid?
+  description: If an enemy character would roll no Aces on its basic MIND roll due
+    to this character's Fear ability, that character loses 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bifurcation
+  name: Bifurcation
+  description: When this character makes a Combat action (not an Attack of Opportunity)
+    with the Executioner's Axe against a target character with a Size of 40mm or less
+    and rolls at least 4 Aces, they are bifurcated! Instead of calculating Damage
+    as normal, the target character loses half their remaining Life Points (rounding
+    up).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: biological-studies
+  name: Biological Studies
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain Penetration -2 on their weapons.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: birth
+  name: Birth
+  description: PULSE Command Ability. Place one Crybaby within 6" of this character.
+    The new Crybaby acts just like any other friendly character, and can be activated
+    this round as normal.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: black-powder-arrows
+  name: Black Powder Arrows
+  description: Any friendly Ottoman Archer within 3" of this character may use its
+    Black Powder Grenade as if it were listed on their own profile when making a Combat
+    action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blessed-water-1ap
+  name: Blessed Water - 1AP
+  description: Place the Blast marker in water in line of sight within 8". The area
+    under the Blast marker is treated as solid ground for friendly characters. Enemy
+    characters treat the area as water, and characters with the Water Creature rule
+    can be drowned while at least partially on the marker. Remove the marker at the
+    end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blessing-of-dagon
+  name: Blessing of Dagon
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 6" gain Expert Offence (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blinding-flash-2ap
+  name: Blinding Flash - 2AP
+  description: Place the Blast marker on White Dove. Every enemy character at least
+    partially touched by it receives a Stunned counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blood-for-magic
+  name: Blood for Magic
+  description: At the start of this character's turn, it may replenish up to 3 of
+    its Will Points, costing 1 Life Point for each Will Point replenished.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blood-frenzy
+  name: Blood Frenzy
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    with the Vampire keyword within Line of Sight increase their Vampiric Attack by
+    1 to a maximum of 2.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bloodletting
+  name: Bloodletting
+  description: At the start of a friendly character with the Vampire keyword's turn,
+    if they are within 3" of this character they may drain blood. The Vampire character
+    gains 1AP to use during their turn, and the Thrall loses 4 Life Points. This may
+    only be done if the Thrall has at least 4 Life Points remaining, and can result
+    in them dying!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bloodline
+  name: Bloodline
+  description: All friendly characters with the Vampire keyword in line of sight to
+    this character gain Companion (Noble Strigoi).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blood-nexus
+  name: Blood Nexus
+  description: Every time this character loses Life Points (including from the Frenzied
+    rule), you may replenish that many Will Points from all characters within 6" with
+    the Nexus ability.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: blood-rights
+  name: Blood Rights
+  description: 1AP. Pick one character within 3" (friendly or enemy). That character
+    loses 1 Life Point, and this character replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bolster-your-faith
+  name: Bolster Your Faith
+  description: AURA Command Ability. Until the end of the round, all friendly characters
+    within 3" gain +1 PROTECTION.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bored-to-inaction
+  name: Bored to Inaction
+  description: Any character (friendly or enemy) within 3" of Il Dottore must listen
+    to him drone on. These characters do not benefit from any Commands used on them,
+    including any Command Abilities they may be in range of. Il Dottore finds himself
+    extremely interesting, and so can be the target of Commands as normal.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: born-of-blood
+  name: Born of Blood
+  description: Whenever any character (friendly or enemy) is killed within 3", this
+    character replenishes 3 Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: born-to-swim
+  name: Born to Swim
+  description: Other friendly characters add +2 to their Fast Swimmer number as long
+    as this character is on the board. Friendly characters without Fast Swimmer instead
+    gain Fast Swimmer (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: brain-leech
+  name: Brain Leech
+  description: When this character replenishes Life Points due to the Vampiric Attack
+    ability, the target character lowers any abilities with a number down by 1 until
+    the end of the game, to a minimum of 0. For example Acrobatic (3) becomes Acrobatic
+    (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: brawling-tentacles
+  name: Brawling Tentacles
+  description: The Flame's tentacles thrash around, hitting anyone that gets close!
+    When making a Combat action with this weapon, roll once, and apply the roll to
+    every character (friendly and enemy) in base contact.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bring-it-down
+  name: Bring it Down!
+  description: PULSE Command Ability. One friendly character within 6" gains Hunter
+    until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: bucket-of-blood
+  name: Bucket of Blood
+  description: At the start of the game, when selecting spells, you may select a Blood
+    Rites spell not known by any other friendly Mage for this character to store.
+    While this character is within line of sight to a friendly Mage, that character
+    can cast the stored spell as if it were their own.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: burned-flesh
+  name: Burned Flesh
+  description: If a Combat action with the Burning Brand results in no Protection
+    roll for the target, add 2 to the Damage.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: burning-aura
+  name: Burning Aura
+  description: Any friendly characters without this ability within 3" gain -2 Penetration
+    on their weapons.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: burn-with-the-fire-of-charity
+  name: Burn With The Fire of Charity
+  description: While within 6" of this character, friendly characters are immune to
+    the Stun, Poisoned, and their own Full Plate abilities. At the end of each friendly
+    character's turn, remove any Stun counters from friendly characters within 6"
+    of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: business-or-pleasure
+  name: Business or Pleasure?
+  description: Any friendly character with the Councillor keyword with 0 Command Points
+    remaining replenishes 1 Command Point if they start their turn within 6" and line
+    of sight of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: candid-soul
+  name: Candid Soul
+  description: For every Life Point this character uses as a Will Point due to Frenzied,
+    all other friendly characters without this rule within 3" replenish 1 Life Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: carrion
+  name: Carrion
+  description: Before deployment, choose 3 friendly characters. They gain Infiltration.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: cartomancy
+  name: Cartomancy
+  description: If this character successfully casts a Cantrip, this character or any
+    friendly character within 6" replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: cast-sentence
+  name: Cast Sentence
+  description: Whenever a character Judged by this character is killed, this character
+    replenishes 3 Life Points or 1 Command Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: censer-bearer
+  name: Censer Bearer
+  description: Any friendly character that starts its turn within 6" and in line of
+    sight of this character replenishes 1 Will Point. Characters with the Censer Bearer
+    rule cannot be affected by this rule. Characters cannot be affected by multiple
+    instances of this rule in one turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: chain-of-command
+  name: Chain of Command
+  description: This character may only use the ORDER or COUNTER Commands on characters
+    with the Soldier keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: cheat
+  name: Cheat
+  description: If this is the only character with the Leader keyword in the gang,
+    this character loses the Hero keyword. However, if the gang contains Il Capitano,
+    this character loses the Leader keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: clairvoyancy
+  name: Clairvoyancy
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 6" may re-roll 1 dice on any of their rolls. Note that this does not include
+    the Destiny dice!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: climber
+  name: Climber
+  description: This character always counts as rolling at least one Ace when making
+    Climb rolls.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: climbing-suckers
+  name: Climbing Suckers
+  description: When this character makes a DEXTERITY roll as part of a Run/Climb action,
+    it counts all fumbles as failures.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: collector-of-treasures
+  name: Collector of Treasures
+  description: When building your gang, if it contains this character, you may purchase
+    a second Artifact. This character may also have a purchased Artifact as if it
+    did not have the Unique keyword. If this character is killed while carrying an
+    Artifact, place a marker (use a 30mm base) for that Artifact in base contact with
+    this character, then remove this character from the board. Any character that
+    ends an action in base contact with one of these markers may remove that marker
+    to claim and carry that Artifact.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: come-let-us-make-bricks-and-burn-them-thoroughly
+  name: Come Let Us Make Bricks and Burn Them Thoroughly
+  description: PULSE Command Ability. Remove 1 friendly character with the Construct
+    keyword from the board. Place it within 3" of this character (with no changes
+    to its Life Points).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: communicative-dance
+  name: Communicative Dance
+  description: PULSE Command Ability. Pick one friendly character within 3" and one
+    different friendly character with the House of Virtue keyword within line of sight.
+    Both of those characters make an immediate Run/Climb action. This movement cannot
+    be used to charge, but can be used to disengage.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: communion-for-the-sinless
+  name: Communion for the Sinless
+  description: When this character kills an enemy character that has 0 Will Points
+    remaining (after absolving its sins), it replenishes 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: confusing-exit
+  name: Confusing Exit
+  description: When this character successfully disengages, any enemy characters that
+    were in base contact receive a Stunned counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: connoisseur
+  name: Connoisseur
+  description: Vlad will not drink the blood of just anyone. When attacking a character
+    with the Hero keyword, he gains Vampiric Attack (1). When attacking a character
+    with the Leader keyword, he gains Vampiric Attack (3).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: convulsing
+  name: Convulsing
+  description: This character is able to move through spaces smaller than its base
+    to a minimum of 2". It must be able to fit where it ends its turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: coordinated-attack
+  name: Coordinated Attack
+  description: PULSE Command Ability. All friendly characters with the Ottoman keyword
+    within 3" (including this one) gain First Strike (2) until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: corpse
+  name: Corpse
+  description: If this character takes 4 or more Damage in one action (before making
+    a Protection roll), add 2 extra Damage to the attack.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: corrupted-relic
+  name: Corrupted Relic
+  description: Whenever an enemy character within 6" and Line of Sight of this character
+    makes a Basic roll, they must re-roll a single Ace in that roll.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: cosmic-harmony
+  name: Cosmic Harmony
+  description: At the start of this character's turn, choose a friendly character
+    within 6" and in line of sight. This character and the chosen character both replenish
+    1 Command Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: crimson-feast
+  name: Crimson Feast
+  description: When this character kills an enemy character with a Combat action,
+    make a Basic MIND roll. All other friendly characters within 3" with the Vampire
+    keyword replenish 1 Life Point for each Ace rolled.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: crucifixion
+  name: Crucifixion
+  description: When this character makes a Combat action with the Hammer & Nails and
+    rolls at least 3 Aces, change its Penetration to -4.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: dead-weight
+  name: Dead Weight
+  description: This character gains +1 PROTECTION while in water (in addition to any
+    cover bonuses), but cannot make Dive actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: dead-weights
+  name: Dead Weights
+  description: This character is not deployed like normal. Instead, at the end of
+    the first round, deploy it anywhere on the board in water at least 3" away from
+    any enemy characters in water. From that point on they take turns just like normal.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: death-throes-overload
+  name: Death Throes Overload
+  description: When this character dies, every character with the Doctor keyword within
+    6" replenishes 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: deathwish
+  name: Deathwish
+  description: This character may not make Unarmed Combat actions. Additionally, any
+    failed Combat actions with Bombs always count as fumbles.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: deep-dive
+  name: Deep Dive
+  description: Whenever this character makes a Dive action, you may spend 1 Will Point.
+    If you do, you automatically score a Critical without rolling any dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: defensive-lines
+  name: Defensive Lines
+  description: PULSE Command Ability. Until the end of the round, all other friendly
+    characters within 3" gain Universal Shielding (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: destined-for-victory
+  name: Destined For Victory
+  description: All friendly characters with the Hospitaller keyword may choose to
+    re-roll the Destiny Dice when making re-rolls as long as this character is on
+    the board.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: detonation
+  name: Detonation
+  description: When placing the Blast template for Soul Bombard, it must be centred
+    over this character (and is also hit).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: devil-incarnate
+  name: Devil Incarnate
+  description: This character may attempt to Dispel magic spells as if it has Mage
+    (2). In addition, enemy characters may not use Will Points when in base contact
+    with this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: devourer-of-will
+  name: Devourer of Will
+  description: When this character kills an enemy character, it gains their starting
+    Will Points. This is cumulative and can take this character above its starting
+    Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: dimensional-pool
+  name: Dimensional Pool
+  description: After resolving an attack with the Water Portal, leave the blast marker
+    in place. Until the end of the round the space beneath counts as water.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: diminutive
+  name: Diminutive
+  description: This character counts all base sizes as larger than it. This affects
+    Hunter, Grappling, and Drowning, for example.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: disappear-2ap
+  name: Disappear - 2AP
+  description: If this character is in base contact with any enemy characters, it
+    may Disappear in a cloud of smoke. All characters in base contact are counted
+    as being hit with a weapon with the Smoke ability. Place the Duke anywhere out
+    of base contact within 12". This does not cause Attacks of Opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: disciplined-momentum
+  name: Disciplined Momentum
+  description: When a friendly character with the Ottoman keyword within 6" and line
+    of sight kills an enemy character, this character replenishes 1 lost Command Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: do-as-i-say-not-as-i-do
+  name: Do As I Say, Not As I Do
+  description: All other friendly characters with the End of Days keyword lose Mindless
+    for the entire game, even if this character is killed. This character still keeps
+    Mindless.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: domination
+  name: Domination
+  description: PULSE Command Ability. Every friendly character in base contact makes
+    an immediate Move action for 0AP. This action cannot be used to move into base
+    contact with an enemy character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: don-t-let-them-take-you
+  name: Don't Let Them Take You!
+  description: PULSE Command Ability. One other friendly character in line of sight
+    within 3" (not including this one) gains Parry (2) until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: doot
+  name: Doot
+  description: Whenever this character makes a Combat action with its Trumpet weapon,
+    all friendly characters within 3" cheer and replenish 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: do-try-to-keep-up
+  name: Do Try To Keep Up!
+  description: Once per round, before this character makes a Run/Climb action, you
+    may choose 1 other friendly character with the Councillor, Soldier, or Animal
+    keyword within 3". After this character completes that Run/Climb action, the chosen
+    character makes an out of sequence Run/Climb action. This out of sequence action
+    cannot cause Attacks of Opportunity from charging, but may require a character
+    to Disengage as normal.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: dragging-down
+  name: Dragging Down
+  description: This character may re-roll failed dice rolls when making Drown actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: drag-through-the-void
+  name: Drag Through The Void
+  description: Targets of this character's Grapple actions may be moved as if they
+    had the Ethereal special rule.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: drag-to-the-depths
+  name: Drag to the Depths
+  description: If a Combat action with Mutated Limbs results in an enemy character
+    losing Life Points, move that character into base contact with this character,
+    ignoring attacks of opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: dredge
+  name: Dredge
+  description: When this character makes a Row action, any friendly characters with
+    the Water Creature special rule in base contact with the Gondola at the start
+    of its movement may be placed in base contact with the Gondola at the end of its
+    movement.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: eastern-swiftness
+  name: Eastern Swiftness
+  description: PULSE Command Ability. Every friendly character with the Bride keyword
+    gains 1 AP until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: eldritch-incense
+  name: Eldritch Incense
+  description: Any friendly character making a Combat action within 3" gains Fear
+    (0) for that action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: electrical-stimulation
+  name: Electrical Stimulation
+  description: PULSE Command Ability. All friendly characters within 3" gain +1 ATTACK
+    until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: elixir
+  name: Elixir
+  description: PULSE Command Ability. One friendly character within 3" gains either
+    Acrobatic (3), Engage, or Slippery until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: elixir-of-death
+  name: Elixir of Death
+  description: 'Every friendly character who starts the game with Will Points loses
+    all of their Will Points and gains Frenzied. This change remains in play even
+    if this character is killed. Note that characters with the Nexus ability may still
+    use their Life Points as Will Points, even for other characters! In addition,
+    change the Nexus Link Reconfiguration Command Ability: every time it mentions
+    Will Points, change it to Life Points.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: encouragement
+  name: '"Encouragement"'
+  description: This character may only use the ORDER or COUNTER Commands on characters
+    with the Henchman keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: encouragement-2
+  name: Encouragement
+  description: Friendly characters with the Feral keyword that start their turn within
+    6" and line of sight of this character automatically pass their Primitive roll.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: ensoul-3lp
+  name: Ensoul - 3LP
+  description: One other friendly character with the Construct keyword without this
+    ability replenishes 3 Life Points. This ability can only be used once per turn,
+    but can be used even if it would kill this character. If this character uses its
+    last Life Points on this ability, the target replenishes 5 Life Points instead.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: enspirit-4lp
+  name: Enspirit - 4LP
+  description: This character may use the ORDER command on friendly characters with
+    the Construct keyword, consuming 4 Life Points instead of 1 Command Point. This
+    can be used even if it would kill this character. If this character uses its last
+    Life Points on this ability, the target replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: entwined-magics
+  name: Entwined Magics
+  description: When picking spells for this character, the additional spells granted
+    by Expert Sorcerer may be from any discipline it has access to (though it does
+    not gain an additional cantrip if it is different).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: everyman
+  name: Everyman
+  description: If a friendly character is charged within 6" of one or more characters
+    with this rule, you may choose to swap them with one friendly Pierrot that isn't
+    in base contact with an enemy. This is done before any Attacks of Opportunity.
+    Turns out it was Pierrot all along!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: exorcism
+  name: Exorcism
+  description: When making a Combat action with Divine Touch, if it causes at least
+    1 Damage, the target loses 1 Will Point. If the target has 0 Will Points remaining,
+    the attack instead does +3 Damage.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: explosive-mind
+  name: Explosive Mind
+  description: Whenever this character loses Will Points (through using them itself
+    or being used as part of the Nexus special rule), after the action is resolved,
+    it must immediately make an out of sequence Combat action using Soul Bombard.
+    This is done only once per action. Combat actions caused by Explosive Mind cannot
+    cause additional Combat actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: extortion
+  name: Extortion
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    with the Henchman keyword within 6" gain Bodyguard (Hero).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fade-to-the-shadow
+  name: Fade to the Shadow
+  description: 2AP. If this character is within 1" of impassable terrain, they can
+    be removed from the board and then placed back down within 1" of another piece
+    of impassable terrain on ground level at least 6" away from enemy characters.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fanaticism-for-dagon
+  name: Fanaticism For Dagon
+  description: PULSE Command Ability. Friendly characters in line of sight within
+    3" lose 1 Life Point and gain Frenzied until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fancy-a-tipple
+  name: Fancy a Tipple?
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 5" gain Brave and First Strike (1).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fanged-visage
+  name: Fanged Visage
+  description: 'At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character''s Masks. For the entirety of the game
+    that character gains one of the following: Frenzied and Vampiric Attack (2) but
+    reduce Will Points to 0; or First Strike (1) and Vampiric Attack (1). A character
+    can only be given a single Mask. Unique characters without Faction (Gifted) and
+    Mindless characters cannot be given a Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fear-the-lord
+  name: Fear the Lord
+  description: PULSE Command Ability. Pick 1 enemy character within 6". Until the
+    end of the round, whenever that character is hit by a Combat action, the attacker
+    gains Fear (-2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: feast-for-dagon
+  name: Feast for Dagon
+  description: If this character ends its turn in base contact with a friendly character
+    with the Monster keyword, you may choose to remove it from play as a casualty.
+    The Monster character immediately replenishes 5 Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: feeder
+  name: Feeder
+  description: This character's Vampiric Attack special rule activates even if it
+    isn't in base contact with its target.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: feline-indifference
+  name: Feline Indifference
+  description: This character cannot be picked as a target for magic and is not affected
+    by the effects of magic (other characters affected by magic are still affected).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fight-for-the-guild
+  name: Fight For the Guild!
+  description: PULSE Command Ability. One friendly character in line of sight with
+    the Trade keyword replenishes 2 Will Points instead of 1 from Companion until
+    the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fight-until-the-last
+  name: Fight Until the Last
+  description: PULSE Command Ability. Used out of sequence at the start of the round
+    before rolling initiative. Pick 1 friendly character in line of sight within 6".
+    If that character is reduced to 0 Life Points before they take their turn, they
+    are not removed from the board — only removed after their turn is complete.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: flambe
+  name: Flambé
+  description: This character may only use Flaming Bottles when within 3" of a Pulcinella
+    Firebreather.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: flesheater
+  name: Flesheater
+  description: If this character makes a Combat action against a target in base contact
+    that causes it to lose at least 1 Life Point, it replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: flesh-golem
+  name: Flesh Golem
+  description: Every time this character kills a character, it replenishes a number
+    of Life Points equal to that character's starting Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: foetid-pheromones
+  name: Foetid Pheromones
+  description: Other friendly characters that start their activation within 6" of
+    this character gain First Strike (1) until the end of their activation.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: for-the-glory-of-god
+  name: For the Glory of God
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain Expert Offence (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: full-plate
+  name: Full Plate
+  description: If this character ever enters water, it receives a Stunned counter
+    which is only removed if it ends its turn out of water.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: full-tilt
+  name: Full Tilt!
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    with the End of Days keyword in line of sight gain +1 MOVEMENT.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: fury-of-dagon
+  name: Fury of Dagon
+  description: PULSE Command Ability. Pick a friendly character in line of sight within
+    6". That character gains First Strike (2) until the end of their next turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gates-of-heaven
+  name: Gates of Heaven
+  description: PULSE Command Ability. Until the end of the round, whenever a friendly
+    character with the Construct keyword in line of sight within 6" uses a Will Point
+    to increase a roll, it instead counts as 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: get-over-here
+  name: Get Over Here
+  description: A Whaling Lance's Knockback can move the target in any direction.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: get-to-the-roof
+  name: Get to the Roof
+  description: PULSE Command Ability. One friendly character with the Henchman keyword
+    within 6" gains Acrobatic (3) until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gift-of-the-elder-gods
+  name: Gift of the Elder Gods
+  description: PULSE Command Ability. Until the end of the round, all friendly characters
+    with the Henchman keyword gain +1 ATTACK while they are within 6" and line of
+    sight of any number of other friendly characters with the Monster keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gifts-of-dried-meats
+  name: Gifts of Dried Meats
+  description: This character starts the game with 3 Dried Meats counters. At the
+    end of its activation, you may use a Dried Meats counter to have another friendly
+    character in base contact with this character replenish 2 Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gleeful-charge
+  name: Gleeful Charge
+  description: When this character makes an Attack of Opportunity due to charging,
+    Gilded Sabre's Evasion becomes -4 for that Attack of Opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: go-for-the-eyes
+  name: Go For the Eyes
+  description: When a critical is scored by Pithing Needle in a Combat action, the
+    applied Stun counter cannot be removed for the rest of the game and is unaffected
+    by any spells or abilities.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: grappling-hook
+  name: Grappling Hook
+  description: This character never takes damage from Falling.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: grasp-of-the-abyss
+  name: Grasp of the Abyss
+  description: 'A gang that includes this character also automatically includes the
+    following (and count towards Henchman taken): 1 Maw Tentacle, 1 Lash Tentacle,
+    1 Dagger Tentacle, 1 Thorn Tentacle. You may pay an additional 12 Ducats to take
+    2 of each Tentacle instead. After you complete this character''s activation, place
+    each of its remaining Tentacles within 6" of it.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gun-laying
+  name: Gun Laying
+  description: 1AP. Pick a friendly character within 6" and line of sight. Until the
+    end of that character's next activation, it gains -2 Evasion against targets outside
+    of base contact with it.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: gusher
+  name: Gusher
+  description: This character can make Drown actions against opponents no matter whether
+    they're in water or not. Additionally, it gains +2 ATTACK when making a Drown
+    action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hasten-your-steps-the-unfaithful-must-be-cleansed
+  name: Hasten Your Steps, The Unfaithful Must Be Cleansed
+  description: PULSE Command Ability. All other friendly characters within 3" gain
+    +1 MOVEMENT until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: healer
+  name: Healer
+  description: 1AP. Pick a character within 3" and make a basic MIND roll. That character
+    replenishes 2 Life Points for each Ace rolled.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hearty-fish-soup
+  name: Hearty Fish Soup
+  description: PULSE Command Ability. All friendly characters with the Trade keyword
+    within 6" gain Brave and Expert Protection (1) until the end of this character's
+    next turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: heavenly-vision
+  name: Heavenly Vision
+  description: Whenever a friendly character in line of sight within 6" is instructed
+    to replenish Will Points, increase the amount replenished by 1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: helm-of-penitence
+  name: Helm of Penitence
+  description: This character may attempt to Dispel magic spells as if it has Mage
+    (3). In addition, enemy characters may not use Will Points when within 3" of this
+    character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: herald-of-an-old-god
+  name: Herald of an Old God
+  description: Whenever this character uses an ORDER or COUNTER Command, roll a dice.
+    On a 7+ this Command doesn't use a Command Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: herding
+  name: Herding
+  description: Any friendly character with the Monster keyword that starts a Run/Climb
+    action within 2" of one or more characters with this rule gains +2" MOVE for that
+    action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: he-searches-your-soul-alone
+  name: He Searches Your Soul Alone
+  description: Enemy characters that can draw line of sight to this character cannot
+    use the MIND value of other characters.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: he-will-strengthen-you-and-protect-you
+  name: He Will Strengthen You and Protect You
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain Universal Shielding (3).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hidden-in-plain-sight
+  name: Hidden in Plain Sight
+  description: This character can be deployed anywhere on the board at ground level,
+    at least 6" away from any enemy characters or objectives.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hide-of-the-deep
+  name: Hide of The Deep
+  description: AURA Command Ability. Until the end of the round, all friendly characters
+    within 3" of this character gain Expert Protection (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hoarded-wealth
+  name: Hoarded Wealth
+  description: At the end of each round, if this character hasn't used any Will Points
+    during that round, he gains 1 Will Point. This can take him above his starting
+    number.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hofuku-kogeki
+  name: Hōfuku Kōgeki
+  description: If this character's Undying Deathseeker roll is a critical, it may
+    make either a 0AP Attack of Opportunity against an enemy character in base contact,
+    or it may make a 0AP Run/Climb action, but must end this action in base contact
+    with an enemy character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: holy-grace
+  name: Holy Grace
+  description: Whenever this character makes a successful Combat action (before Protection
+    rolls), the target loses 1 Will Point and this character gains 1 Will Point. This
+    can take this character above its starting Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: holy-relic
+  name: Holy Relic
+  description: Any other friendly character (not including this one) that starts their
+    turn within 6" of this character replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hydra-s-gifts
+  name: Hydra's Gifts
+  description: PULSE Command Ability. Mutating tentacles emerge from flesh nearby.
+    Every other character (friendly and enemy, not including this one) within 2" loses
+    2 Life Points and gains +2 DEXTERITY until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hydrodynamic
+  name: Hydrodynamic
+  description: This character increases its DEXTERITY to 5 while in water.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: hypnotic-song
+  name: Hypnotic Song
+  description: AURA Command Ability. Until the end of the round, any enemy characters
+    within 6" of this character have -2 MIND.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: illicit-information
+  name: Illicit Information
+  description: For every friendly character with this ability in your gang at the
+    start of the round, add a re-roll to your Illicit Information Pool. Until the
+    end of the round, any friendly character may use these re-rolls on any roll -
+    one re-roll per dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: impaler
+  name: Impaler
+  description: Each time an enemy character is killed within 3" of this character,
+    this character increases its Fear and Vampiric Attack value by 1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: impart-will
+  name: Impart Will
+  description: At the start of the game, all friendly characters with the Construct
+    keyword increase their starting Will Points by 1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: inferiority-complex
+  name: Inferiority Complex
+  description: This character cannot use the ORDER or COUNTER Commands.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: infernal-ally
+  name: Infernal Ally
+  description: While this character is on solid ground, enemy characters that end
+    their turn in base contact with this character lose 1 Life Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: inspiring
+  name: Inspiring
+  description: Whenever another friendly character with the Soldier keyword in line
+    of sight within 6" of this character uses one of its own Will Points (and not
+    those from other characters), it instead counts as 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: inspiring-hero
+  name: Inspiring Hero
+  description: If this is the only character with the Leader keyword in the gang,
+    this character loses the Hero keyword. However, if there is another character
+    with the Leader keyword, this character loses the Leader keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: instigator
+  name: Instigator
+  description: All friendly characters with Companion (Trade) gain +1 ATTACK while
+    within 6" of one or more characters with this special rule. Characters with the
+    Instigator rule are unaffected.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: intimidation
+  name: Intimidation
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain First Strike (1).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: i-will-guard-against-thee-witch
+  name: I will guard against thee, Witch
+  description: This character may attempt to Dispel magic spells as if it has Mage
+    (1). In addition, enemy characters may not use Will Points when in base contact
+    with this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: judgement
+  name: Judgement
+  description: PULSE Command Ability. Pick an enemy character within 6". That character
+    is Judged until the end of the round. Friendly characters may re-roll their entire
+    Attack Roll (all of it - including the Destiny dice) against an enemy Judged character.
+    When a friendly Mage attempts to Dispel a spell cast by a Judged character, count
+    their Mage (X) level as 1 higher.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: justice-served
+  name: Justice Served
+  description: During deployment, pick 1 enemy character. Justice re-rolls all failed
+    dice rolls when making Combat actions against this character, including the Destiny
+    Dice!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: keeper-of-the-fire-of-the-persecution
+  name: Keeper of the Fire of the Persecution
+  description: Any friendly characters without this ability within 3" gain +1 Damage
+    on their weapons.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: keep-it-flowing
+  name: Keep it Flowing
+  description: Any enemy character in base contact with this character can be the
+    target of a Drown action, regardless of whether they're in water.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: killing-blow
+  name: Killing Blow
+  description: If this character causes an enemy character to lose more Life Points
+    than they have left (ie. they'd go to minus numbers), this character replenishes
+    all of its Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: kraken-nurse
+  name: Kraken Nurse
+  description: When you place a new Infant Kraken in line of sight of this character,
+    this character recovers 1 lost Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: lead-through-fear
+  name: Lead Through Fear
+  description: Whenever another character (friendly or enemy) is killed within 6"
+    of this character, this character replenishes 1 Command Point and 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: leaper
+  name: Leaper
+  description: When this character makes a successful Jump action, add 2" to the movement
+    distance.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: let-your-sins-be-absolved
+  name: Let Your Sins Be Absolved
+  description: When making a Combat action with Compelled Confession, if it causes
+    at least 1 Damage, the target loses 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: levatesi-di-mezzo-imbecilli
+  name: Levatesi di Mezzo, Imbecilli!
+  description: This character may freely move over other characters as part of a Run/Climb
+    action, but cannot end its action overlapping any other character. While making
+    a Run/Climb action, this character ignores the normal rules for disengaging. At
+    the end of this character's Run/Climb actions, make a Basic DEXTERITY roll. For
+    each ace rolled, each character (friendly and enemy) moved over loses 1 Life Point.
+    If the roll is a Fumble, this character receives a Stun counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: little-gremlin-cornelius
+  name: Little Gremlin Cornelius
+  description: This character automatically carries this Artifact at the start of
+    the game (not counting towards Artifact limits). A character with this Artifact
+    gains the Cornelius' Bite weapon and Pickpocket special rule.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: living-flame
+  name: Living Flame
+  description: This character loses double Life Points from Drown actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: living-proof-of-god-s-majesty
+  name: Living Proof of God's Majesty
+  description: Friendly characters with the Companion ability also have Companion
+    (Cherubim).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: living-sacrifice
+  name: Living Sacrifice
+  description: Any character with the House of Virtue keyword within 6" and line of
+    sight may use this character's Life Points as if they were their own Will Points,
+    costing 2 Life Points per Will Point. This ability can be used even if it would
+    kill this character. If a Will Point granted by this ability would kill this character
+    and be used on a Cast Spell action, the destiny dice is counted as automatically
+    rolling a 10.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: living-tide
+  name: Living Tide
+  description: This character can re-roll any failed dice rolls when making Drown
+    and Dive actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: living-vessel
+  name: Living Vessel
+  description: When this character is killed, before removing it from the game, make
+    a basic MIND roll. Place an Infant Kraken in base contact with this character,
+    plus an additional Infant Kraken for each Ace in the roll. The new Infant Krakens
+    act just like any other friendly character and can be activated as normal this
+    round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: locomotive-nexus-link
+  name: Locomotive Nexus Link
+  description: Whenever this character makes a Combat action, total up the amount
+    of Damage caused (before Protection rolls). That many characters within 6" with
+    the Nexus ability replenish 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: long-dive
+  name: Long Dive
+  description: PULSE Command Ability. All friendly characters with an Underwater Counter
+    gain an additional Underwater Counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: lookout
+  name: Lookout
+  description: Once per round, this character may use a single ORDER or COUNTER Command
+    for 0 Command Points if at least 3" above the target character. However, those
+    Commands may still only be done once per round as usual.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: look-with-satisfaction-upon-my-enemies
+  name: Look With Satisfaction Upon My Enemies
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain Parry (2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: lunar-might
+  name: Lunar Might
+  description: During deployment let your opponent know when the moon will be brightest.
+    Choose either the first 3 rounds, or the remaining rounds. When the moon is brightest,
+    all characters with this rule increase their MOVEMENT, DEXTERITY, and ATTACK by
+    1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: madness-infused-muscle
+  name: Madness Infused Muscle
+  description: If this character rolls no Aces for its Primitive rolls, instead of
+    receiving a Stunned counter, it makes a Run/Climb action towards the nearest other
+    character (friendly or enemy) and then makes a Combat action against it. This
+    character then replenishes 1 Will Point and activates as normal (with full AP).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: magic-for-blood
+  name: Magic for Blood
+  description: Whenever this character successfully makes a Cast Spell action, it
+    gains 2 Life Points. This can take this character above its Starting Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: major-arcana
+  name: Major Arcana
+  description: When picking spells, this character always knows all Cantrips from
+    all Disciplines (even those she doesn't have access to).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: maps-and-charts
+  name: Maps and Charts
+  description: Whenever this character uses a Plan command, draw 2 extra Agendas,
+    take a look, and discard 2 of your choice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: martial-elite
+  name: Martial Elite
+  description: Friendly characters with the Ottoman keyword within 6" may use their
+    Expert Offence ability on the Destiny Dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: mask-of-dagon
+  name: Mask of Dagon
+  description: 'At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character''s Masks. For the entirety of the game
+    that character gains one of the following: Water Creature and the Monster keyword;
+    or Fear (0) and +1 ATTACK. A character can only be given a single Mask. Unique
+    characters without Faction (Gifted) and Mindless characters cannot be given a
+    Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: mask-of-many-faces
+  name: Mask of Many Faces
+  description: 'At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character''s Masks. For the entirety of the game
+    that character gains one of the following: Pickpocket and Slippery (2); or Aerial
+    Attack and Infiltrate. A character can only be given a single Mask. Unique characters
+    without Faction (Gifted) and Mindless characters cannot be given a Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: master-bloodline
+  name: Master Bloodline
+  description: All friendly characters with the Vampire keyword in line of sight to
+    this character gain Bodyguard (Vlad Dracula) and Companion (Vlad Dracula).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: masterful-summoning
+  name: Masterful Summoning
+  description: Friendly characters with the Construct keyword lose Mindless for the
+    rest of the game, even if this character is killed.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: matriarch
+  name: Matriarch
+  description: All friendly characters with the Feral keyword gain Companion (Leader)
+    as long as this character is on the board.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: maximum-fastness
+  name: Maximum Fastness
+  description: This character cannot have more than a +1 modifier to its DEXTERITY
+    (e.g. due to Evasion or Reactions). Dice gained through spending Will Points are
+    unaffected.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: mind-gazing
+  name: Mind Gazing
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 6" gain Fear (-2), or increase their Fear number to (-2).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: minor-arcana
+  name: Minor Arcana
+  description: When picking spells for this character, you must also choose 1 additional
+    Cantrip for it to know from a different available Discipline.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: minor-incantata
+  name: Minor Incantata
+  description: This character may cast a Cantrip for 0AP once per character turn.
+    All the standard rules for casting spells apply.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: mischievous
+  name: Mischievous
+  description: Whenever an enemy character uses a Will Point within 3" of this character,
+    roll a dice. On a 7+ the Will Point is still discarded, but there is no effect.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: mucus
+  name: Mucus
+  description: This character gains +4 DEXTERITY for any Combat actions (including
+    Attacks of Opportunity) if the attacker is within 3". Additionally, any enemy
+    character within 3" of this character suffers -1 to their MOVEMENT and DEXTERITY.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: murderous-patron
+  name: Murderous Patron
+  description: Any other friendly character that kills an enemy character replenishes
+    1 Will Point if both are in line of sight to the Venetian Noble.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: my-girls-boys
+  name: My Girls & Boys
+  description: While this character is on the board, all characters with the House
+    of Virtue keyword gain Companion (House of Virtue).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: natural-camouflage
+  name: Natural Camouflage
+  description: PULSE Command Ability. Pick one friendly character within 6". That
+    character gains Concealment (+2) until the end of the game. A character can only
+    be affected by this Command Ability once.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: nautical-bearings
+  name: Nautical Bearings
+  description: Any friendly character that makes a Combat action within 3" with a
+    weapon that has a range of 6" or higher increases their range by 6".
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: naval-discipline
+  name: Naval Discipline
+  description: PULSE Command Ability. Other friendly characters on the same Boat as
+    this character replenish 1 Will Point. Other friendly characters with Boat Crew
+    on the same Boat as this character instead replenish 2 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: nexus
+  name: Nexus
+  description: Any character with the Doctor keyword within 6" and line of sight may
+    use this character's Will Points as if they were their own.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: one-mind
+  name: One Mind
+  description: When this character makes a Combat action, it gains +1 to its ATTACK
+    for every other Infant Kraken in base contact with the target.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: overcharged-discipline
+  name: Overcharged Discipline
+  description: PULSE Command Ability. One friendly character with the Animal keyword
+    within 6" gains Berserk until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: pain-suppression
+  name: Pain Suppression
+  description: Whenever this character takes Damage from a Combat action, reduce the
+    amount of Damage caused by 1 (to a minimum of 1).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: part-of-the-whole
+  name: Part of the Whole
+  description: This character can only be taken with the Emissary of Mother Hydra
+    and cannot move or be moved further than 6" from it. At the end of each enemy
+    turn, if this character is further than 6" away from the Emissary, it moves the
+    shortest distance to be within 6" of it, ignoring disengaging or charging. If
+    the Emissary is killed, this character is also killed.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: patient-hunter
+  name: Patient Hunter
+  description: If this character exits water and charges in the same action, it counts
+    as charging from above.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: patriarch-bishop
+  name: Patriarch Bishop
+  description: All friendly characters with the Faction (The Vatican) keyword gain
+    Companion (Leader) while in line of sight of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: paying-off-my-debts
+  name: Paying Off My Debts
+  description: When this character kills an enemy character with a Combat action,
+    add 1 re-roll to your Mob Mentality pool.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: pay-out
+  name: Pay Out
+  description: Any friendly character within 6" may use this character's Will Points
+    as if they were their own.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: piercing-wail
+  name: Piercing Wail
+  description: Any enemy characters within 6" of this character have -1 DEXTERITY.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: plague-infused-anatomy
+  name: Plague-infused Anatomy
+  description: If an enemy character kills a friendly character in base contact while
+    either are within 6" of this character, the enemy receives a Stunned counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: poison-burst
+  name: Poison Burst
+  description: When this character is killed, before removing it from the game, each
+    character in base contact (friendly and enemy) loses Life Points as if they were
+    damaged by an attack with the Poisoned rule.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: postpartum
+  name: Postpartum
+  description: If one or more Crybabies are killed within 6" of this character, it
+    gains +3 ATT for the rest of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: power-over-death
+  name: Power Over Death
+  description: 'PULSE Command Ability. Used out of sequence when any other friendly
+    character within 3" is killed. Make a Basic MIND Roll: Success — for each Ace
+    rolled, the target replenishes 2 Life Points. Fail — no effect. Critical — for
+    each Ace rolled, the target replenishes 4 Life Points. Fumble — this character
+    loses half its remaining Life Points (rounding up).'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: premonition
+  name: Premonition
+  description: Whenever rolling dice for this character, you may re-roll the Destiny
+    Dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: prey-upon
+  name: Prey Upon
+  description: At the start of the game, nominate an enemy character to be this character's
+    Prey. When this character makes a Combat action against its Prey, that combat
+    action is a critical if the Destiny Dice is a 9 or a 10 and there is at least
+    1 other Ace in that roll.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: probable-statistics
+  name: Probable Statistics
+  description: 1WP. Change the result of the Destiny Dice in any roll (for you or
+    your opponent) for a character within 6" and line of sight to either a 1 or a
+    10.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: procession-of-brides
+  name: Procession of Brides
+  description: While building your Gang, if it contains Vlad Dracula, this character
+    counts as having the Henchman keyword instead of the Hero keyword for the purposes
+    of Frequency.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: protective-bubble-1ap
+  name: Protective Bubble - 1AP
+  description: Pick a number from 1-6. Until the end of the round, any characters
+    (friendly and enemy) gain Universal Shielding (4) and Expert Protection (4) while
+    within that many inches of Fadhila.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: protective-field
+  name: Protective Field
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 3" gain Universal Shielding (4).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: prove-yourselves-to-dagon
+  name: Prove Yourselves to Dagon!
+  description: AURA Command Ability. Until the end of the round, any friendly character
+    that starts a Run/Climb action within 6" gains +2 MOVE for that action provided
+    they charge.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: psychic-communion
+  name: Psychic Communion
+  description: Whenever this character or any other character with line of sight to
+    this character uses the ORDER or COUNTER Commands, they ignore any other restrictions
+    about line of sight.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: purifying-ungents
+  name: Purifying Ungents
+  description: While within 6" of this character, friendly characters are immune to
+    the Stun Ability. At the end of each friendly character's turn, remove any Stun
+    counters from friendly characters within 6" of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: pursuit
+  name: Pursuit
+  description: When using a COUNTER Command on this character, it does not cost a
+    Command Point (although still counts as a use of the Command for all other purposes).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: put-it-through-the-heart
+  name: Put it Through the Heart!
+  description: PULSE Command Ability. Pick a friendly character in line of sight within
+    12". One of that character's weapons gains -4 Penetration until the end of the
+    round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: raise-a-crew
+  name: Raise a Crew
+  description: All friendly characters may be set up on a Boat.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rally-to-the-light
+  name: Rally to the Light!
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    in line of sight gain Companion (Black Lamp) and Brave.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: reflected-reality
+  name: Reflected Reality
+  description: Unless this character has been killed, every time you draw any Agendas,
+    draw one extra, take a look, and then discard one.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: regenerating
+  name: Regenerating
+  description: This character's Vampiric Attack special rule can cause it to gain
+    Life Points above its starting value. If they start their turn with 10 or more
+    Life Points, they increase their ATTACK by 2 until the start of their next turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rejuvenated
+  name: Rejuvenated
+  description: This character starts the game with only 5 Life Points remaining. However,
+    if they start any turn with 6 or more Life Points, they increase their MOVEMENT,
+    DEXTERITY, ATTACK, and MIND by 1 until the start of their next turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: relics-of-malta
+  name: Relics of Malta
+  description: Once per each of their turns, any friendly character within 6" and
+    line of sight of a friendly character with this rule may re-roll 1 single dice
+    on any roll they make. This character is affected by its own Relics of Malta rule.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: renewed-vigour
+  name: Renewed Vigour
+  description: When this character kills an enemy character, he replenishes his full
+    Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rent-born
+  name: Rent-born
+  description: Each round, one friendly character (including this one) may subtract
+    1 from the Cost of a Magic Spell they attempt to cast (to a minimum of 0).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: resurrection
+  name: Resurrection
+  description: When this character is killed, do not remove it from the board. At
+    the start of the next round, make a Basic MIND Roll (Will Points may be used as
+    normal). If successful, this character comes back to life with 5 Life Points and
+    gains Berserk for the rest of the game. If the MIND Roll is unsuccessful, the
+    character is completely dead and removed from the board.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: righteous-zeal
+  name: Righteous Zeal
+  description: Every friendly character gains Brave while in line of sight of this
+    character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rings-of-puissance
+  name: Rings of Puissance
+  description: This character automatically carries this Artifact at the start of
+    the game (not counting towards Artifact limits). A character with this Artifact
+    gains Slippery and Universal Shielding (3).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rip-and-tear
+  name: Rip and Tear
+  description: When this character makes a Combat action with Monstrous Claws against
+    an enemy character with full Life Points, for the rest of this character's activation,
+    it may re-roll any failed dice for Combat actions against that enemy character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rip-apart
+  name: Rip Apart
+  description: When one of this character's Tentacles kills an enemy character, this
+    character replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rise-up
+  name: Rise Up
+  description: All friendly characters with the Trade keyword gain Companion (Trade)
+    as long as this character is on the board.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: romani-fury
+  name: Romani Fury
+  description: PULSE Command Ability. Every friendly character with the Bride keyword
+    gains Expert Offence (3) until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: ronin
+  name: Ronin
+  description: This character cannot receive ORDER or COUNTER Commands.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: rope-arrow
+  name: Rope Arrow
+  description: 2AP. Pick a point on a piece of vertical terrain within 12" at least
+    1" below this character. Move the character to that point as if moving down a
+    zipline.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sacrifice
+  name: Sacrifice
+  description: For every Life Point this character causes a character to lose with
+    a Combat action using the Sacrificial Dagger, it replenishes 1 Will Point. This
+    character may make Combat actions against friendly characters.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sadism
+  name: Sadism
+  description: PULSE Command Ability. This character loses 1 Life Point and gains
+    +2 Attack until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sanguine-sabotage
+  name: Sanguine Sabotage
+  description: The Noble Strigoi has infiltrated the opponent's gang to take them
+    down from within. Whenever an enemy character uses a Command within 6" of this
+    character, roll a dice. On a 7+ the Command costs an extra Command Point if possible.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sanguine-sorcery
+  name: Sanguine Sorcery
+  description: This character's Vampiric Attack also activates when making a Cast
+    Spell action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sculler
+  name: Sculler
+  description: For each character with this ability, you may purchase 1 extra Gondola
+    from the Equipment list. This character may be deployed in water or on a Gondola
+    and may also re-roll failed dice rolls when making Row actions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: search-of-satisfaction
+  name: Search of Satisfaction
+  description: PULSE Command Ability. Add up every character (friendly or enemy) within
+    3" of this character. She replenishes that many Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: second-in-command
+  name: Second in Command
+  description: If this is the only character with the Leader keyword in the gang,
+    this character loses the Hero keyword and no other Sopracomitos may be chosen.
+    However, if there is another character with the Leader keyword, this character
+    loses the Leader keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: self-immolate
+  name: Self-Immolate
+  description: When making a Combat action with Fiery Explosion, centre the Blast
+    marker on Zovena Vela herself. She is hit by this attack like anyone else touched
+    by the marker.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: serpentine
+  name: Serpentine
+  description: This character is able to move through spaces smaller than its base
+    to a minimum of 2". It must be able to fit where it ends its turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: shadow-walker
+  name: Shadow Walker
+  description: PULSE Command Ability. Pick one friendly character with the Vampire
+    keyword within 1". Remove this character and place them anywhere out of base contact
+    within 8" of this character. This placement does not cause Attacks of Opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: shattered-nexus
+  name: Shattered Nexus
+  description: When this character is reduced to 0 Will Points, after the current
+    action is finished, place the Blast Marker over its head. Every character under
+    the marker (including this one) takes 3 Damage, with Protection Rolls as normal.
+    If this character survives, it replenishes 3 Will Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: shepherd
+  name: Shepherd
+  description: This character gains +2 ATTACK when making Grapple actions against
+    characters with a larger base size.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: shield-to-the-enlightened
+  name: Shield to the Enlightened
+  description: PULSE Command Ability. Until the end of the round, all friendly characters
+    within 3" gain Universal Shielding (3). Additionally, until the end of the round,
+    all friendly characters with the Feral keyword within 3" gain Expert Protection
+    (1).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: sisters-of-gelo
+  name: Sisters of Gélo
+  description: This character replenishes 1 Command Point at the start of each character
+    turn if it has line of sight to any other friendly character with the Bride keyword.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: slavering-horror
+  name: Slavering Horror
+  description: When this character makes Combat, Drown, or Grapple actions, it may
+    re-roll any failed dice rolls (remember, you cannot re-roll the Destiny dice).
+    Yes, even against Brave characters!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: smuggling
+  name: Smuggling
+  description: When you achieve an Agenda, one character within 6" and line of sight
+    replenishes 1 Command Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: soothsaying
+  name: Soothsaying
+  description: PULSE Command Ability. For every enemy character in line of sight to
+    this character, add a re-roll to your Soothsaying Pool. Until the end of the round,
+    any friendly character may use these re-rolls on any roll this round - one re-roll
+    per dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: soul-ammunition
+  name: Soul Ammunition
+  description: 'When making a Combat action with the Spirit Cannon, this character
+    may use 2 Will Points to have it gain one of the following for that action: Increase
+    Range from 12" to 18"; Gain the Blast ability; Gain the Knockback ability.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: spawn-3lp
+  name: Spawn - 3LP
+  description: Place a new Infant Kraken in base contact with this character. The
+    new Infant Kraken acts just like any other friendly character, and can be activated
+    this round as normal. This ability may only be used once each round and only if
+    this character has 4 or more Life Points remaining.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: spined-hide
+  name: Spined Hide
+  description: At the end of this character's turn, all enemy characters in base contact
+    lose 1 Life Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: split-personalities
+  name: Split Personalities
+  description: 'At the start of this character''s turn, he puts on a mask. Pick one
+    of the following for the Mask Maker to gain until the start of his next turn:
+    Fear (-2); Slippery; Vampiric Attack (2); Water Creature.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: spurring-incense-1ap
+  name: Spurring Incense - 1AP
+  description: Until the end of the round, any friendly character that starts its
+    action within 6" and line of sight of this character gains First Strike (2) for
+    that action and any subsequent Attacks of Opportunity.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: stage-manager
+  name: Stage Manager
+  description: PULSE Command Ability. 2 friendly characters within line of sight may
+    make an immediate Run/Climb action. This movement cannot be used to move into
+    or out of base contact with an enemy.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: start-the-horrorshow
+  name: Start the Horrorshow!
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    with the End of Days keyword in line of sight gain +1 ATTACK.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: stigmata
+  name: Stigmata
+  description: If this character uses one or more Life Points as Will Points (due
+    to Frenzied) either to increase the dice pool or to perform an action, it may
+    re-roll an equal number of dice (including the Destiny Dice) during that action.
+    If it does this on a Combat action, Hands of God instead has Penetration -3 for
+    that action.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: stoneskin
+  name: Stoneskin
+  description: Whenever this character takes damage, reduce the amount of damage caused
+    by 3 (to a minimum of 1). In addition, if this character is hit by a Poisoned
+    weapon, roll 2 dice and choose 1 to see if they shrug off the poison.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: stop-them-damn-you-i-don-t-care-what-it-takes
+  name: Stop them, damn you! I don't care what it takes!
+  description: Friendly characters in line of sight of this character gain Bodyguard
+    (Pinnacle of Affluence).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: stride-through-the-void
+  name: Stride Through The Void
+  description: 1AP. This character gains Ethereal until the end of its turn.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: strike-true
+  name: Strike True
+  description: 1AP. Pick one friendly character in line of sight within 6". The next
+    Combat action they make this round while in base contact with the target ignores
+    all Protection Rolls - even Universal Shielding!
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: strike-when-they-re-vulnerable
+  name: Strike When They're Vulnerable
+  description: AURA Command Ability. Until the end of the round, any other friendly
+    characters with the House of Virtue keyword in line of sight (not including this
+    one) gain Penetration -2 on their weapons.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: suffer-not-a-witch
+  name: Suffer Not a Witch
+  description: This character may attempt to Dispel magic spells as if it has Mage
+    (2). In addition, enemy characters may not use Will Points when in base contact
+    with this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: supernatural
+  name: Supernatural
+  description: When making Protection Rolls against Spectral Touch, the target must
+    use their MIND value instead of their PROTECTION value. If the character failed
+    their Fear test, they must re-roll any Aces.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: surrogate
+  name: Surrogate
+  description: Friendly characters with the Hydra keyword within 6" and line of sight
+    may use this character's Will Points as if they were their own.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: swallow-whole
+  name: Swallow Whole
+  description: When this character makes a Combat action (not an Attack of Opportunity)
+    against a target character with a Size of 40mm or less and rolls at least 5 Aces,
+    instead of calculating Damage as normal, instead immediately remove the target
+    character from play as a casualty.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: take-aim
+  name: Take Aim!
+  description: AURA Command Ability. Until the end of the round, all friendly characters
+    with the Soldier keyword within 6" gain Expert Marksman (1) and Expert Offence
+    (1).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: take-arms
+  name: Take Arms
+  description: PULSE Command Ability. Until the end of the round, all friendly characters
+    with the Soldier keyword within 3" gain +1 ATTACK.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: take-it-for-the-guild
+  name: Take it for the Guild!
+  description: Any friendly characters in line of sight replenish 2 Will Points instead
+    of 1 when Pickpocketing.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: take-the-oath
+  name: Take the Oath
+  description: At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character's Masks. For the entirety of the game
+    that character increases their starting Will Points by 2 and gains Companion (Francisco
+    De Lorme). Any friendly character within 6" and line of sight of them may use
+    that character's Will Points as if they were their own. A character can only be
+    given a single Mask. Unique characters without Faction (Gifted) and Mindless characters
+    cannot be given a Mask.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: tarot
+  name: Tarot
+  description: When using more than one model with this ability, each must select
+    magic from a different Discipline until all are represented.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-end-is-near
+  name: The End is Near
+  description: At the start of each of this character's turns, this character loses
+    2 Life Points and gains 1 to either MOVEMENT, DEXTERITY, or ATTACK for the rest
+    of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-hunger
+  name: The Hunger
+  description: If this character starts its turn within 4" of one or more enemy characters,
+    it must attempt to move into base contact with one of them.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-lamp
+  name: The Lamp
+  description: This character may attempt to Dispel magic spells as if it has Mage
+    (3) and Expert Sorcerer (3). In addition, enemy characters may not use Will Points
+    when within 3" of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-mask-makes-the-noble
+  name: The Mask Makes the Noble
+  description: 'At the beginning of the game, before deployment, select another friendly
+    character to wear one of this character''s Masks. For the entirety of the game
+    that character gains one of the following: Increase their starting Command Points
+    by 2; or Boat Crew and Bodyguard (Leader). A character can only be given a single
+    Mask. Unique characters without Faction (Gifted) and Mindless characters cannot
+    be given a Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-monster-behind-the-mask
+  name: The Monster Behind the Mask
+  description: PULSE Command Ability. This character gains +1 to its MOVEMENT, DEXTERITY,
+    and ATTACK until the end of the round. However, it reduces its MIND to 1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-other-other-white-meat
+  name: The Other, Other White Meat
+  description: AURA Command Ability. Until the end of the round, every other friendly
+    character in line of sight gains the Flesheater ability while in line of sight
+    of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: the-other-side-of-the-coin-1ap
+  name: The Other Side of the Coin - 1AP
+  description: If both Fate and Justice are on the board (as friendly characters),
+    swap their positions.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: there-s-coin-in-it-for-you
+  name: There's Coin in it for You
+  description: PULSE Command Ability. One friendly character with the Henchman keyword
+    in line of sight within 6" gains First Strike (2) until the end of the round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: thick-skull
+  name: Thick Skull
+  description: This character cannot receive Stunned counters.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: thieves-guild-training
+  name: Thieves Guild Training
+  description: PULSE Command Ability. One friendly character within 6" gains Pickpocket
+    until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: thirsty
+  name: Thirsty
+  description: Any time a friendly or enemy character successfully casts a Magic Spell,
+    after resolving all effects, this character replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: till-death-do-us-part
+  name: Till Death Do Us Part
+  description: When this character is reduced to 5 Life Points or less, it gains +2
+    ATTACK and Mindless.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: toot-toot-toot-charge
+  name: Toot Toot Toot... Charge!
+  description: PULSE Command Ability. Up to 2 friendly characters within 3" may make
+    an immediate Run/Climb action, but this movement must be used to charge an enemy
+    (doesn't have to be the same enemy!).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: toughen-up
+  name: Toughen Up
+  description: AURA Command Ability. Until the end of the round, any friendly characters
+    within 6" gain Expert Protection (3).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: transformation
+  name: Transformation
+  description: PULSE Command Ability. Remove this character and place it anywhere
+    on solid ground within 8", at least 3" away from any enemy characters. This ability
+    cannot be used while in base contact with an enemy character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: transfusion
+  name: Transfusion
+  description: 1WP. One friendly character in base contact replenishes 1 Life Point
+    or one enemy character loses 1 Life Point. If an enemy character is killed by
+    this life loss, this character replenishes 2 Will Points. This character may do
+    this once during each of its turns.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: troupe-leader
+  name: Troupe Leader
+  description: All friendly characters with the Commedia dell'Arte keyword gain Companion
+    (Il Capitano) as long as this character is on the board. Remember, that Companion
+    characters must use the MIND value of their Companion, even if its lower (only
+    Il Capitano thinks he's a great leader).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: truth-of-dagon
+  name: Truth of Dagon
+  description: Whenever an enemy character in line of sight loses life due to Drowning
+    or Dagonite Baptism, it must roll a Basic MIND roll. If it rolls no Aces, it receives
+    a Stunned counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: twin-pistols
+  name: Twin Pistols
+  description: This character's weapons share the Reload ability - you may make 2
+    Combat actions with the Single Duelling Pistol or 1 with Twin Duelling Pistols
+    in one round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unassuming
+  name: Unassuming
+  description: If this character disengages successfully and does not use the action
+    to charge another enemy character, make a 0AP Attack of Opportunity with this
+    character before moving.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: uncoordinated-assault
+  name: Uncoordinated Assault
+  description: After this character makes a Combat action, it may make a single 0AP
+    Attack of Opportunity using a weapon it did not attack with in that Combat action.
+    Attacks of Opportunity from this rule cannot cause additional Attacks of Opportunity
+    and do not count as Attacks of Opportunity from charging & charging from above.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: undying-deathseeker
+  name: Undying Deathseeker
+  description: When this character is killed, do not remove it from the board, it
+    remains in play but cannot be targeted or chosen. At the start of the next round,
+    make a Basic MIND Roll (Will Points may be used as normal). If successful, this
+    character comes back to life with 7 Life Points. If the MIND Roll is unsuccessful,
+    the character is completely dead and removed from the board.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unliving-curse
+  name: Unliving Curse
+  description: PULSE Command Ability. One friendly character within 1" gains Vampiric
+    Attack (2) until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unsightly
+  name: Unsightly
+  description: This character can be deployed anywhere on the board at ground level,
+    at least 6" away from any enemy characters or objectives.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unstable
+  name: Unstable
+  description: Any failed Combat actions with Alchemical Bombs and Poison Bombs always
+    count as fumbles.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unstable-wretch
+  name: Unstable Wretch
+  description: From the start of the second round onwards, at the end of this character's
+    turn all characters (friendly and enemy, including this character) within 3" lose
+    1 Life Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: unwieldy
+  name: Unwieldy
+  description: This character may only make Combat actions with the Twin Duelling
+    Pistols as the first action of their turn (including using it for Attacks of Opportunity).
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: vampire-hunter
+  name: Vampire Hunter
+  description: When making a Combat action against a character with 0 Will Points
+    remaining, Thomas may re-roll all dice, including the Destiny Dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: vatican-apostate
+  name: Vatican Apostate
+  description: This character can re-roll the destiny dice when making Attack or Protection
+    rolls.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: venetian-drive
+  name: Venetian Drive
+  description: PULSE Command Ability. This character gains First Strike (2) until
+    the end of the round, however it reduces its PROTECTION to 1.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: victory-rush
+  name: Victory Rush
+  description: 'When this character kills an enemy character with a Combat action,
+    it gains your choice of either: an additional 1AP, replenish 4 Life Points, or
+    replenish 2 Will Points.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: vindictive
+  name: Vindictive
+  description: If an enemy character causes damage to Mezzetino (before Protection
+    Rolls), he may re-roll any failed dice rolls for Combat actions against that character
+    for the rest of the game, including the Destiny Dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: void-walker
+  name: Void Walker
+  description: PULSE Command Ability. One friendly character within 3" gains Ethereal
+    until the end of the game.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: volatile-arc-power
+  name: Volatile Arc Power
+  description: After resolving a successful Combat action with an Electron Cannon,
+    pick 1 other character within 3" of the target (friend or foe – including this
+    character), they lose an equal amount of Life Points as the original target. If
+    there are no other characters in range, this rule has no effect.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: voltaic-shield
+  name: Voltaic Shield
+  description: If an enemy character makes a Combat action against this character
+    in base contact and they don't lose any Life Points from the attack, the enemy
+    character loses 3 Life Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: wages-are-here
+  name: Wages Are Here
+  description: PULSE Command Ability. Any friendly characters in line of sight with
+    the Soldier keyword that aren't in base contact with an enemy may immediately
+    make a Run/Climb action for 0AP, but must move into base contact with this character.
+    This move does not cause Attacks of Opportunity. Any characters that move into
+    base contact immediately replenish 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: walk-through-the-fire-and-you-will-not-be-burned
+  name: Walk Through The Fire And You Will Not Be Burned
+  description: 1AP. The Saint summons holy flame around her! At the end of the round,
+    place the Blast marker over this character. Any enemy character at least partially
+    touched by this template (and within 1" vertically of the Burning Saint) loses
+    3 Life Points. Characters may only be affected by this ability once per round,
+    no matter how many times it's used by any number of Burning Saints! If the Burning
+    Saint enters water after using this ability it is cancelled.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: warlord
+  name: Warlord
+  description: Friendly characters with the Soldier keyword may use this character's
+    MIND instead of their own while they are in Line of Sight of this character.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: water-affinity
+  name: Water Affinity
+  description: This character always knows the magic spell Waves of Force in addition
+    to its regular allowance, even if choosing to take spells from a different discipline.
+    This character may use the Cast Spell action while in water.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: watered-down
+  name: Watered Down
+  description: At the end of the round, if this character is in water, it is killed.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: we-trained-for-this
+  name: We Trained For This
+  description: AURA Command Ability. All friendly characters within 6" increase their
+    Fast Swimmer (X) value by 2 until the end of the round. Any characters without
+    Fast Swimmer are unaffected.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: whispers-on-the-street
+  name: Whispers on the Street
+  description: For every friendly character with this ability in your gang at the
+    start of the round, add a re-roll to your Mob Mentality Pool. Until the end of
+    the round, any friendly character may use these re-rolls on any roll - one re-roll
+    per dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: work-of-art
+  name: Work of Art
+  description: This character cannot be chosen as part of a gang, and gives no Victory
+    Points if killed. In addition, if this character is killed, the Maria Fioritura
+    that created it replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: writhe-inside
+  name: Writhe Inside
+  description: When this character successfully damages an enemy character (after
+    its Protection roll), you may remove this character from the game as if it were
+    killed. If you do, place it on the damaged character's card. For the rest of the
+    game, that character always counts as having a Stun counter.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: you-there-do-something
+  name: You there! Do something!
+  description: AURA Command Ability. Until the end of the round, other friendly characters
+    that start their turn within 6" and line of sight of this character gain First
+    Strike (2) until the end of their turn. Characters can only be affected by this
+    Command Ability once each game round.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
