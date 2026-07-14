@@ -129,7 +129,7 @@ RSpec.describe "Backoffice::Weapons", type: :request do
       end
 
       # The payoff of the source fingerprint: a shared record changing puts every card that
-      # carries it into the render queue, with nobody having to remember which ones those are.
+      # carries it onto the publish page, with nobody having to remember which ones those are.
       it "makes the cards of every profile carrying it stale" do
         images_dir = Pathname(Dir.mktmpdir)
         stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)

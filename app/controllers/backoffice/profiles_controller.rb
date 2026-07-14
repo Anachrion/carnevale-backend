@@ -89,7 +89,7 @@ module Backoffice
     #
     # The catalog is now authored here rather than in db/seeds, so this is the one place a stat can
     # change. Saving does not re-render the card: the profile's cards simply start reporting as
-    # stale (Catalog::CardReference#stale?) and the render queue picks them up.
+    # stale (Catalog::CardReference#stale?) and the publish page picks them up.
     def update
       saved = false
 
@@ -216,7 +216,7 @@ module Backoffice
     # Every card reference gets both of its faces. The front is drawn with the reference's own
     # illustration, so an A/B pair delivers two different cards; the back has no illustration, so
     # it is rendered once and written to each reference.
-    # Also answers JSON, which is what the render queue (see #render_queue) drives it with, one
+    # Also answers JSON, which is what the publish page (see #publish) drives it with, one
     # profile per request.
     def render_to_catalog
       refs = @profile.card_references.to_a
@@ -271,14 +271,14 @@ module Backoffice
       end
     end
 
-    # GET /backoffice/profiles/render_queue
+    # GET /backoffice/profiles/publish
     #
-    # The catalog's render queue: the profiles whose cards are out of date, or the whole catalog
+    # The publish page: the profiles whose cards are out of date, or the whole catalog
     # with ?scope=all. The rendering itself is driven from the page, one POST to render_to_catalog
     # per profile, because a single request rendering hundreds of faces through headless Chrome
     # would run for minutes and time out — and a request per profile is also what lets the page
     # show progress and survive being closed halfway.
-    def render_queue
+    def publish
       @scope = params[:scope] == "all" ? "all" : "stale"
 
       refs = Catalog::CardReference.includes(profile: [
@@ -322,7 +322,7 @@ module Backoffice
     # Upload (or replace) the art for one illustration slot. The illustration record is created if
     # this slot had none — a brand-new profile's cards point at illustration numbers that do not
     # exist yet, and this is what fills them. Uploading does not render the card: like every other
-    # edit, it just makes the card stale so the render queue publishes it.
+    # edit, it just makes the card stale so the publish page offers it.
     def illustration_image
       number = params[:number].to_i
       illustration = @profile.illustrations.find_or_initialize_by(number: number)

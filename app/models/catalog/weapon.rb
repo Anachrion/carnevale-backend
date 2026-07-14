@@ -14,7 +14,7 @@ module Catalog
 
     # A weapon is shared, so editing one is a catalog-wide edit: every profile carrying it prints
     # it. Nothing re-renders automatically, but a card's source fingerprint covers its weapons, so
-    # all of these turn up in the render queue as out of date the moment this record changes.
+    # all of these turn up on the publish page as out of date the moment this record changes.
     def cards_affected
       Catalog::CardReference.where(profile_id: profile_weapons.select(:profile_id))
     end

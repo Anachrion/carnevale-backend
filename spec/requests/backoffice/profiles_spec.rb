@@ -189,7 +189,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response).to redirect_to(edit_backoffice_profile_path(profile))
     end
 
-    it "makes the card out of date so the render queue publishes it" do
+    it "makes the card out of date so the publish page offers it" do
       images_dir = Pathname(Dir.mktmpdir)
       stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
       File.binwrite(reference.front_path, "FRONT")
@@ -570,7 +570,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(reference.reload).to be_stale
     end
 
-    describe "driven by the render queue (JSON)" do
+    describe "driven by the publish page (JSON)" do
       it "reports what it rendered" do
         stub_grover_returning(front: "FRONT-1", back: "BACK-1")
         post render_to_catalog_backoffice_profile_path(profile), as: :json
@@ -594,7 +594,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
-  describe "GET render_queue" do
+  describe "GET publish" do
     let(:images_dir) { Pathname(Dir.mktmpdir) }
     let!(:stale_ref) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
     let(:fresh_profile) { create(:profile, faction: "guild", name: "Bravo") }
@@ -613,7 +613,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     after { FileUtils.remove_entry(images_dir) }
 
     it "lists only the profiles whose cards are out of date" do
-      get render_queue_backoffice_profiles_path
+      get publish_backoffice_profiles_path
 
       expect(response.body).to include("Capodecina")
       expect(response.body).not_to include(">Bravo<")
@@ -621,7 +621,7 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
 
     it "lists the whole catalog with scope=all" do
-      get render_queue_backoffice_profiles_path(scope: "all")
+      get publish_backoffice_profiles_path(scope: "all")
 
       expect(response.body).to include("Capodecina")
       expect(response.body).to include("Bravo")
@@ -630,14 +630,14 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     it "says there is nothing to do when every card is up to date" do
       stale_ref.destroy!
 
-      get render_queue_backoffice_profiles_path
+      get publish_backoffice_profiles_path
 
       expect(response.body).to include("Nothing to render.")
     end
 
     it "is admin-only" do
       sign_in create(:user)
-      get render_queue_backoffice_profiles_path
+      get publish_backoffice_profiles_path
 
       expect(response).to have_http_status(:forbidden)
     end
