@@ -1,0 +1,35 @@
+# The rules PDFs the app's Rules page offers, in the order they are listed there.
+#
+# TT Combat publishes these for free at https://ttcombat.com/pages/carnevale-resources and we link
+# straight to their Shopify CDN rather than re-hosting: the files are theirs, and this way a reader
+# always gets the current edition. The catch is that the `?v=` parameter is a cache buster Shopify
+# rewrites on every re-upload, so a URL here goes stale the moment TT Combat publishes an errata.
+# That is why this list lives in the backend and not baked into the app — refreshing a link is an
+# edit here plus a deploy, not an app-store release.
+#
+# `key` is the app's cache filename and must stay stable across URL changes; renaming one only
+# costs a re-download, but it must not be reused for a different document.
+
+- key: rulebook
+  title: Carnevale Rulebook
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Carnevale_after_party_rulebook_smaller_size.pdf?v=1762249524
+
+- key: faq
+  title: 2.3 Carnevale FAQ
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Carnevale_FAQ_1.3.pdf?v=1739524214
+
+- key: magic_disciplines
+  title: Magic Disciplines
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Magic_Disciplines_250214.pdf?v=1739524207
+
+- key: agendas
+  title: Agendas
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Agendas.pdf?v=1648219958
+
+- key: abilities
+  title: Abilities Sheet
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Abilities_514011ee-a22f-46ae-8146-29d35c743f0f.pdf?v=1648219958
+
+- key: quick_reference
+  title: Quick Reference Sheet
+  url: https://cdn.shopify.com/s/files/1/0965/1274/files/Quick_Reference_250214.pdf?v=1739524192

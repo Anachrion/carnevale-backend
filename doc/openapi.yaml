@@ -608,6 +608,25 @@ paths:
                 items:
                   $ref: "#/components/schemas/Scenario"
 
+  /rules_documents:
+    get:
+      operationId: getRulesDocuments
+      summary: List the rules PDFs the app's Rules page offers, in display order
+      description: >
+        Links to TT Combat's own published PDFs. The URLs carry a Shopify `?v=` cache buster that
+        changes whenever a document is re-uploaded, so a client that caches a file should re-download
+        it when the URL for a `key` differs from the one it cached.
+      tags: [Rules]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RulesDocument"
+
   /games:
     get:
       operationId: getGames
@@ -2140,6 +2159,25 @@ components:
             type: array
             items:
               type: string
+
+    RulesDocument:
+      type: object
+      required:
+        - key
+        - title
+        - url
+      properties:
+        key:
+          type: string
+          description: Stable identifier, safe to use as a client-side cache key. Never reused.
+          example: rulebook
+        title:
+          type: string
+          example: Carnevale Rulebook
+        url:
+          type: string
+          format: uri
+          description: Absolute URL of the PDF, on TT Combat's CDN.
 
     Scenario:
       type: object
