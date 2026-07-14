@@ -86,6 +86,9 @@
         <%= link_to "Profiles", backoffice_profiles_path %>
         <%= link_to "Weapons", backoffice_weapons_path %>
         <%= link_to "Special rules", backoffice_special_rules_path %>
+        <%# Up here rather than in the profiles toolbar: a card is out of date the moment its
+            profile is saved, and that is worth seeing from wherever you happen to be. %>
+        <%= link_to "Render queue", render_queue_backoffice_profiles_path %>
       </nav>
       <div class="spacer"></div>
       <% if respond_to?(:current_user) && current_user %>
