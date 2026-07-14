@@ -588,6 +588,7 @@
   </div>
 
   <div id="card-pdf-btn" style="display:flex;gap:10px;align-items:center;">
+    <a href="<%= edit_backoffice_profile_path(@profile, (@query_params || {})) %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Edit this profile's stats, with the card drawn live">✎ Edit profile</a>
     <a href="<%= card_pdf_backoffice_profile_path(@profile) %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download this card as PDF">⬇ PDF</a>
     <a href="<%= card_png_backoffice_profile_path(@profile, side: 'front') %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download front as PNG">⬇ Front PNG</a>
     <a href="<%= card_png_backoffice_profile_path(@profile, side: 'back') %>" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(0,0,0,0.45);border-radius:6px;color:rgba(255,255,255,0.85);font-family:'EB Garamond',serif;font-size:13px;letter-spacing:.5px;text-decoration:none;" title="Download back as PNG">⬇ Back PNG</a>
