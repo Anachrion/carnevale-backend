@@ -1,6 +1,7 @@
 module Backoffice
   class ProfilesController < BaseController
     before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position render_to_catalog]
+    before_action :set_pickable_records, only: %i[edit update]
 
     # GET /backoffice/profiles
     def index
@@ -41,6 +42,8 @@ module Backoffice
     # not an approximation of the card — it is the card, minus the trip through Chrome.
     def card_preview
       @profile.assign_attributes(profile_params)
+      @profile.preview_weapons(submitted_ids(:weapon_ids))
+      @profile.preview_special_rules(submitted_ids(:special_rule_ids))
       @side = params[:side] == "back" ? "back" : "front"
       @illustration = @profile.illustrations.find_by(number: params[:illustration]) ||
                       @profile.illustrations.first
@@ -54,7 +57,20 @@ module Backoffice
     # change. Saving does not re-render the card: the profile's cards simply start reporting as
     # stale (Catalog::CardReference#stale?) and the render queue picks them up.
     def update
-      if @profile.update(profile_params)
+      saved = false
+
+      # The weapons and rules are join rows, so they are rewritten rather than assigned. One
+      # transaction, so an invalid profile cannot leave a half-rewritten weapon list behind.
+      Catalog::Profile.transaction do
+        @profile.assign_attributes(profile_params)
+        saved = @profile.save
+        raise ActiveRecord::Rollback unless saved
+
+        @profile.replace_weapons!(submitted_ids(:weapon_ids))
+        @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
+      end
+
+      if saved
         redirect_to edit_backoffice_profile_path(@profile),
           notice: "Saved #{@profile.name}. Its card is now out of date — render it to publish the change."
       else
@@ -273,20 +289,40 @@ module Backoffice
       @profile = Catalog::Profile.includes(:weapons, :special_rules, :illustrations).find(params.expect(:id))
     end
 
+    # Everything the editor's weapon and special-rule pickers can choose from. They are shared
+    # records, so the whole catalog of them is on offer, not just this faction's.
+    def set_pickable_records
+      @all_weapons = Catalog::Weapon.order(:name)
+      @all_special_rules = Catalog::SpecialRule.order(:name)
+    end
+
     # Abilities and keywords are json arrays of strings, edited as one-per-line textareas — the
     # form's only concession to their shape, and cheaper to use than a row of nested fields.
     def profile_params
       permitted = params.expect(profile: [
-        :name, :faction, :version, :abilities_text, :keywords_text, *Catalog::Profile::STATS
+        :name, :faction, :version, :abilities_text, :keywords_text, *Catalog::Profile::STATS,
+        { weapon_ids: [], special_rule_ids: [] }
       ])
 
+      # weapon_ids= and special_rule_ids= are real has_many-through setters: assigning them to a
+      # persisted profile writes the join rows *immediately*, which would make the live preview
+      # save the very thing it promises not to. They are handled separately, via submitted_ids.
       permitted
-        .except(:abilities_text, :keywords_text)
+        .except(:abilities_text, :keywords_text, :weapon_ids, :special_rule_ids)
         .to_h
         .merge(
           abilities: text_to_list(permitted[:abilities_text]),
           keywords: text_to_list(permitted[:keywords_text])
         )
+    end
+
+    # The ordered ids the form submitted for an association, or nil when it said nothing about it.
+    # The form always posts a blank entry so an emptied list arrives as [] rather than as nil.
+    def submitted_ids(key)
+      list = params.dig(:profile, key)
+      return nil if list.nil?
+
+      Array(list).compact_blank.map(&:to_i)
     end
 
     def text_to_list(text)

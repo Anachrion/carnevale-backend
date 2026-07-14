@@ -1,0 +1,40 @@
+<%#
+  An ordered list of shared records (weapons, special rules) attached to the profile.
+
+  The rows' order is the order the card prints them in, so the list is submitted as an ordered
+  array of ids and rewritten wholesale on save. The trailing blank entry means a list emptied of
+  every row still arrives as [] rather than as "the form said nothing" — which is what lets you
+  actually remove the last weapon.
+
+  Locals: param (:weapon_ids), records (everything pickable), selected (the current ones), noun.
+%>
+<div class="js-picker" data-noun="<%= noun %>">
+  <div class="js-rows">
+    <% selected.each do |record| %>
+      <div class="js-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+        <%= select_tag "profile[#{param}][]",
+              options_from_collection_for_select(records, :id, :name, record.id),
+              class: "js-select", style: "flex:1;max-width:420px;padding:6px;" %>
+        <button type="button" class="btn js-up" title="Move up">↑</button>
+        <button type="button" class="btn js-down" title="Move down">↓</button>
+        <button type="button" class="btn js-remove" title="Remove">✕</button>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Cloned by the "add" button — kept out of the form's own markup so it is never submitted. %>
+  <template class="js-template">
+    <div class="js-row" style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+      <%= select_tag "profile[#{param}][]",
+            options_from_collection_for_select(records, :id, :name),
+            class: "js-select", style: "flex:1;max-width:420px;padding:6px;" %>
+      <button type="button" class="btn js-up" title="Move up">↑</button>
+      <button type="button" class="btn js-down" title="Move down">↓</button>
+      <button type="button" class="btn js-remove" title="Remove">✕</button>
+    </div>
+  </template>
+
+  <input type="hidden" name="profile[<%= param %>][]" value="">
+
+  <button type="button" class="btn js-add">+ Add <%= noun %></button>
+</div>

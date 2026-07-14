@@ -60,7 +60,50 @@ module Catalog
       keyword[DISCIPLINE_KEYWORD, 1].split(",").map { |name| name.strip.parameterize(separator: "_") }
     end
 
+    # Weapons and special rules are shared records — one "Stiletto" row, referenced by every
+    # profile that carries it — so a profile owns only its *claim* on them, held in the join rows
+    # along with the order the card prints them in. Replacing the list therefore rewrites those
+    # join rows; the weapon itself is never touched, and no other profile is affected.
+    #
+    # A nil list means the form said nothing about them (Grover's card fetch, for one), so the
+    # current list stands.
+    def replace_weapons!(ids)
+      replace_join!(profile_weapons, :weapon_id, ids)
+    end
+
+    def replace_special_rules!(ids)
+      replace_join!(profile_special_rules, :special_rule_id, ids)
+    end
+
+    # Draw these instead of what the database holds, without writing anything — the editor's live
+    # preview renders a card that has not been saved (and may never be).
+    def preview_weapons(ids)
+      preview_association(:weapons, Catalog::Weapon, ids)
+    end
+
+    def preview_special_rules(ids)
+      preview_association(:special_rules, Catalog::SpecialRule, ids)
+    end
+
     private
+
+    def replace_join!(collection, foreign_key, ids)
+      return if ids.nil?
+
+      transaction do
+        collection.destroy_all
+        ids.each_with_index { |id, index| collection.create!(foreign_key => id, :position => index + 1) }
+      end
+    end
+
+    # Ordered by the ids as given: the list's order *is* the print order.
+    def preview_association(name, klass, ids)
+      return if ids.nil?
+
+      by_id = klass.where(id: ids).index_by(&:id)
+      association(name).target = ids.filter_map { |id| by_id[id] }
+      association(name).loaded!
+    end
 
     # These are json columns, so the database will happily take a string or a nested hash. Every
     # reader — the card view, mage_level, disciplines — assumes a flat list of strings.
