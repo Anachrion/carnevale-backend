@@ -505,6 +505,25 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response).to redirect_to(card_backoffice_profile_path(profile))
     end
 
+    # Production sets CARD_RENDER_BASE_URL to the container-internal http://localhost, where
+    # Thruster listens; TLS is terminated out at kamal-proxy, so nothing answers on 443 inside the
+    # container. Handing that base to a _url helper as `host:` dropped the scheme and rebuilt it
+    # from force_ssl, sending Chrome to https://localhost — connection refused, every time.
+    it "navigates Chrome to CARD_RENDER_BASE_URL exactly, scheme and all" do
+      stub_grover_returning(front: "FRONT-1", back: "BACK-1")
+      allow(ENV).to receive(:[]).and_call_original
+      allow(ENV).to receive(:[]).with("CARD_RENDER_BASE_URL").and_return("http://localhost")
+
+      # Over HTTPS, as the backoffice is reached in production: the _url helper took its protocol
+      # from *this* request, which is what turned the http:// base into https://.
+      post render_to_catalog_backoffice_profile_path(profile), headers: { "HTTPS" => "on" }
+
+      expect(Grover).to have_received(:new)
+        .with(a_string_starting_with("http://localhost/backoffice/profiles/#{profile.id}/card"), any_args)
+        .at_least(:once)
+      expect(Grover).not_to have_received(:new).with(a_string_including("https://localhost"), any_args)
+    end
+
     it "bumps internal_version when a re-render changes the bytes" do
       stub_grover_returning(front: "FRONT-1", back: "BACK-1")
       post render_to_catalog_backoffice_profile_path(profile)

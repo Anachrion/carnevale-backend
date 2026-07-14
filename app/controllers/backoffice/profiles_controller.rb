@@ -424,10 +424,18 @@ module Backoffice
     # CARD_RENDER_BASE_URL to the container-internal address (e.g. http://localhost, where
     # Thruster listens) so Chrome loops straight back to Puma instead of hair-pinning out to
     # the public host and back through kamal-proxy.
+    #
+    # The origin is glued on rather than handed to a _url helper as `host:`, because that helper
+    # keeps only the hostname out of it and rebuilds the scheme from Rails' own config: under
+    # force_ssl it turned http://localhost into https://localhost, and Chrome — pointed at a port
+    # nothing listens on inside the container, since TLS is terminated at kamal-proxy — refused
+    # the connection. Rendering in production has never worked for that reason.
     def card_url_for(profile, side, illustration: nil)
       base = ENV["CARD_RENDER_BASE_URL"].presence || request.base_url
-      card_backoffice_profile_url(profile, host: base, side: side, illustration: illustration,
+      path = card_backoffice_profile_path(profile, side: side, illustration: illustration,
         render_token: BaseController.render_token)
+
+      "#{base.chomp("/")}#{path}"
     end
 
     # Transparent rounded corners — for the images the app downloads.
