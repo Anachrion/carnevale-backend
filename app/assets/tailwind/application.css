@@ -1,6 +1,71 @@
 @import "tailwindcss";
 
 /*
+  The backoffice's shared furniture.
+
+  These were plain CSS in layouts/backoffice.html.erb until Tailwind arrived. They stay as classes
+  rather than being dissolved into utilities because the screens this file does *not* own still lean
+  on them — the card editor, the illustration editor, the weapon and rule forms — and Tailwind's
+  preflight strips every browser default, so an unported .btn or <table> would come out naked.
+  Screens that have been reworked use utilities directly and only reach for these where the markup
+  is shared.
+*/
+/* Preflight strips the browser's own h1 sizing, and every backoffice screen has one. */
+@layer base {
+  h1 { @apply text-2xl font-bold tracking-tight text-gray-900; }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-300 bg-white
+           px-3 py-1.5 text-sm font-medium text-gray-700 no-underline shadow-xs transition
+           hover:bg-gray-50 hover:text-gray-900;
+  }
+  .btn-indigo  { @apply border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-800; }
+  .btn-emerald { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800; }
+  .btn:disabled { @apply cursor-not-allowed opacity-50; }
+
+  .toolbar { @apply my-4 flex flex-wrap items-center gap-3; }
+  .count { @apply text-xs text-gray-400; }
+
+  /* Forms outside the reworked lists (the editors) still post plain fields. */
+  input[type="text"], input[type="number"], input[type="search"], select, textarea {
+    @apply rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700
+           placeholder:text-gray-400 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/5 focus:outline-none;
+  }
+
+  .table-wrap { @apply overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xs; }
+  .table-wrap table { @apply w-full border-collapse text-sm; }
+  .table-wrap thead { @apply border-b border-gray-200 bg-gray-50; }
+  .table-wrap th {
+    @apply px-4 py-3 text-left text-[11px] font-semibold tracking-wider text-gray-500 uppercase;
+  }
+  .table-wrap th a { @apply text-inherit no-underline hover:text-gray-900; }
+  .table-wrap td { @apply border-t border-gray-100 px-4 py-3 text-gray-700; }
+  .table-wrap td a { @apply font-medium text-gray-900 no-underline hover:underline; }
+  .table-wrap tbody tr:hover { @apply bg-gray-50; }
+
+  .pill { @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium; }
+
+  .flash { @apply mb-2 rounded-lg px-3.5 py-2.5 text-sm; }
+  .flash.notice { @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100; }
+  .flash.alert  { @apply bg-red-50 text-red-700 ring-1 ring-red-100; }
+
+  /* The card editor's stat strip: MOV/DEX/ATT/PRO/MIND laid out as the card prints them. */
+  .stat-strip { @apply flex flex-wrap gap-1.5; }
+  .stat-field { @apply flex w-[74px] flex-col; }
+  .stat-field label {
+    @apply pb-1 text-center text-[11px] font-semibold tracking-wider text-gray-500 uppercase;
+  }
+  .stat-field input[type="number"] { @apply w-full px-1 py-1.5 text-center text-[15px] tabular-nums; }
+
+  .field-row { @apply flex flex-wrap items-end gap-4; }
+  .field-row label {
+    @apply block pb-1 text-[11px] font-semibold tracking-wider text-gray-500 uppercase;
+  }
+}
+
+/*
   The Devise screens (see layouts/auth.html.erb).
 
   Sign-up and password-reset render Devise's own markup, which we do not own: bare <label>, <input>
