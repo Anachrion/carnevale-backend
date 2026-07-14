@@ -91,12 +91,22 @@
         </tr>
 
         <tr>
-          <th>Weapons</th>
-          <td style="color:#6b7280;"><%= @profile.weapons.map(&:name).join(", ").presence || "—" %></td>
+          <th style="vertical-align:top;padding-top:14px;">Weapons</th>
+          <td>
+            <%= render "association_picker", param: :weapon_ids, noun: "weapon",
+                  records: @all_weapons, selected: @profile.weapons %>
+          </td>
         </tr>
         <tr>
-          <th>Special rules</th>
-          <td style="color:#6b7280;"><%= @profile.special_rules.map(&:name).join(", ").presence || "—" %></td>
+          <th style="vertical-align:top;padding-top:14px;">Special rules</th>
+          <td>
+            <%= render "association_picker", param: :special_rule_ids, noun: "special rule",
+                  records: @all_special_rules, selected: @profile.special_rules %>
+            <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+              Weapons and special rules are shared across the catalog — attaching one here does not
+              change it for any other profile. The order is the order the card prints them in.
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -170,13 +180,43 @@
     }
   }
 
-  form.addEventListener('input', function () {
+  function scheduleRefresh() {
     clearTimeout(timer);
     timer = setTimeout(refresh, 250);
-  });
-  form.addEventListener('change', function () {
-    clearTimeout(timer);
-    timer = setTimeout(refresh, 250);
+  }
+
+  form.addEventListener('input', scheduleRefresh);
+  form.addEventListener('change', scheduleRefresh);
+
+  // ── Weapon / special-rule pickers ──────────────────────────────────────────────
+  // Rows are plain selects named profile[weapon_ids][]; their DOM order is the print order, so
+  // moving a row is all "reorder" means. Adding and removing rows fires no input event of its
+  // own, so the preview is asked to redraw by hand.
+  document.querySelectorAll('.js-picker').forEach(function (picker) {
+    const rows = picker.querySelector('.js-rows');
+    const template = picker.querySelector('.js-template');
+
+    picker.querySelector('.js-add').addEventListener('click', function () {
+      rows.appendChild(template.content.cloneNode(true));
+      scheduleRefresh();
+    });
+
+    picker.addEventListener('click', function (event) {
+      const row = event.target.closest('.js-row');
+      if (!row) return;
+
+      if (event.target.classList.contains('js-remove')) {
+        row.remove();
+      } else if (event.target.classList.contains('js-up') && row.previousElementSibling) {
+        row.parentNode.insertBefore(row, row.previousElementSibling);
+      } else if (event.target.classList.contains('js-down') && row.nextElementSibling) {
+        row.parentNode.insertBefore(row.nextElementSibling, row);
+      } else {
+        return;
+      }
+
+      scheduleRefresh();
+    });
   });
 
   refresh();

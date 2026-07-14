@@ -153,6 +153,91 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(profile.reload.ducats).to eq(10)
     end
 
+    describe "weapons and special rules" do
+      let!(:stiletto) { Catalog::Weapon.create!(name: "Stiletto", damage: 2) }
+      let!(:pistol)   { Catalog::Weapon.create!(name: "Pistol", damage: 3, range: 12) }
+      let!(:aura)     { Catalog::SpecialRule.create!(name: "Aura", description: "…") }
+
+      # A second profile carrying the same shared weapon: attaching or detaching it here must
+      # leave that one alone.
+      let!(:other) { create(:profile, faction: "guild", name: "Bravo") }
+      let!(:other_claim) { Catalog::ProfileWeapon.create!(profile: other, weapon: stiletto, position: 1) }
+
+      it "attaches them in the order the card prints them" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", pistol.id, stiletto.id ] })
+
+        expect(profile.reload.weapons.map(&:name)).to eq([ "Pistol", "Stiletto" ])
+        expect(profile.profile_weapons.map(&:position)).to eq([ 1, 2 ])
+      end
+
+      it "reorders them" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", pistol.id, stiletto.id ] })
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", stiletto.id, pistol.id ] })
+
+        expect(profile.reload.weapons.map(&:name)).to eq([ "Stiletto", "Pistol" ])
+      end
+
+      it "empties the list when every row is removed" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", pistol.id ] })
+        expect(profile.reload.weapons).to be_present
+
+        # The form's trailing blank entry is what distinguishes "no weapons" from "said nothing".
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "" ] })
+
+        expect(profile.reload.weapons).to be_empty
+      end
+
+      it "leaves the shared record, and other profiles' claims on it, alone" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", stiletto.id ] })
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "" ] })
+
+        expect(stiletto.reload.damage).to eq(2)
+        expect(other.reload.weapons).to eq([ stiletto ])
+        expect(Catalog::ProfileWeapon.exists?(other_claim.id)).to be(true)
+      end
+
+      it "attaches special rules too" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { special_rule_ids: [ "", aura.id ] })
+
+        expect(profile.reload.special_rules.map(&:name)).to eq([ "Aura" ])
+      end
+
+      it "keeps the lists when the form says nothing about them (Grover's card fetch)" do
+        Catalog::ProfileWeapon.create!(profile: profile, weapon: pistol, position: 1)
+
+        patch backoffice_profile_path(profile), params: valid_params(ducats: 21)
+
+        expect(profile.reload.ducats).to eq(21)
+        expect(profile.weapons).to eq([ pistol ])
+      end
+
+      it "rolls the weapons back when the profile itself is invalid" do
+        Catalog::ProfileWeapon.create!(profile: profile, weapon: pistol, position: 1)
+
+        patch backoffice_profile_path(profile),
+          params: valid_params(ducats: -1).deep_merge(profile: { weapon_ids: [ "", stiletto.id ] })
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(profile.reload.weapons).to eq([ pistol ])
+      end
+
+      it "previews an unsaved weapon list without writing the join rows" do
+        post card_preview_backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", pistol.id ] }).merge(side: "back")
+
+        expect(response.body).to include("Pistol")
+        expect(profile.reload.weapons).to be_empty
+      end
+    end
+
     describe "POST card_preview (the live card)" do
       it "draws the card from the form's values without saving them" do
         post card_preview_backoffice_profile_path(profile), params: valid_params(name: "Renamed", ducats: 44)
