@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/*
+  The Devise screens (see layouts/auth.html.erb).
+
+  Sign-up and password-reset render Devise's own markup, which we do not own: bare <label>, <input>
+  and <p>, with no classes to hang utilities on. Tailwind's preflight strips every browser default,
+  so left alone those inputs would come out with no border at all. They are therefore styled by
+  element, scoped inside .auth-card — utilities still win wherever a view asks for something else.
+*/
+@layer components {
+  .auth-card h2 { @apply mb-5 text-center text-sm text-gray-500; }
+
+  .auth-card .field { @apply mb-4; }
+  .auth-card label { @apply mb-1.5 block text-xs font-medium text-gray-700; }
+
+  .auth-card input[type="text"],
+  .auth-card input[type="email"],
+  .auth-card input[type="password"] {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900
+           transition placeholder:text-gray-400
+           focus:border-gray-900 focus:ring-4 focus:ring-gray-900/5 focus:outline-none;
+  }
+
+  /* Sign-up's "(6 characters minimum)" — a hint under the label, not an aside in italics. */
+  .auth-card .field em { @apply mb-1.5 block text-xs text-gray-400 not-italic; }
+
+  .auth-card .field-check { @apply mb-5 flex items-center gap-2; }
+  .auth-card .field-check input[type="checkbox"] { @apply size-4 rounded border-gray-300 accent-gray-900; }
+  .auth-card .field-check label { @apply mb-0 text-sm font-normal text-gray-600; }
+
+  .auth-card input[type="submit"] {
+    @apply w-full cursor-pointer rounded-lg bg-gray-900 px-4 py-2.5 text-sm font-medium text-white
+           transition hover:bg-gray-800 active:bg-black;
+  }
+
+  .auth-links {
+    @apply mt-6 flex flex-wrap items-center justify-center gap-2 border-t border-gray-100 pt-4 text-xs;
+  }
+  .auth-links a { @apply text-gray-500 transition hover:text-gray-900; }
+  .auth-links .sep { @apply text-gray-300; }
+
+  .flash { @apply mb-5 rounded-lg px-3.5 py-2.5 text-sm; }
+  .flash-notice { @apply bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100; }
+  .flash-alert { @apply bg-red-50 text-red-700 ring-1 ring-red-100; }
+
+  #error_explanation { @apply mb-5 rounded-lg bg-red-50 px-3.5 py-2.5 text-red-700 ring-1 ring-red-100; }
+  #error_explanation h2 { @apply mb-1 text-left text-sm font-medium text-red-700; }
+  #error_explanation ul { @apply list-disc pl-5 text-sm; }
+}

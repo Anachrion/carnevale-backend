@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
-  devise_for :users
+  # No web sign-up: the only thing behind a browser login here is the backoffice, and that is
+  # admin-only — an account anyone could mint for themselves would be refused at the door anyway.
+  # The Flutter app still registers its users through POST /api/v1/signup below, which is why the
+  # model keeps :registerable; it is only the HTML /users/sign_up screen that is gone.
+  devise_for :users, skip: [ :registrations ]
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -103,5 +107,15 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # TODO: replace with the backoffice dashboard once it exists.
-  root to: redirect("/users/sign_in")
+  #
+  # A signed-in visitor's root is the backoffice. Without this branch, root sends *everyone* to the
+  # sign-in page — and Devise bounces an already-signed-in visitor straight back off it, which is
+  # the redirect loop Firefox reports as "the page isn't redirecting properly".
+  authenticated :user do
+    root to: "backoffice/profiles#index", as: :authenticated_root
+  end
+
+  # 302, not redirect()'s default 301: a permanent redirect on the site's own root is cached by the
+  # browser for good, so it cannot be taken back once there is a dashboard here to land on.
+  root to: redirect("/users/sign_in", status: 302)
 end
