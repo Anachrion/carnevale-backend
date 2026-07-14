@@ -71,6 +71,108 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  describe "POST create (a new profile and its card)" do
+    before { sign_in admin }
+
+    def new_params(profile: {}, card: {})
+      {
+        profile: {
+          name: "New Bravo", faction: "guild", version: "2.2.0",
+          ducats: 12, movement: 4, attack: 2, dexterity: 2, protection: 1, mind: 2,
+          action_points: 2, will_points: 2, command_points: 0, life_points: 8, size: 30,
+          keywords_text: "", abilities_text: ""
+        }.merge(profile),
+        card: { identifier: "guild-new-bravo" }.merge(card)
+      }
+    end
+
+    it "renders the new form" do
+      get new_backoffice_profile_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('id="card-preview-front"')
+      expect(response.body).to include("card[identifier]")
+    end
+
+    it "creates the profile and a single card reference" do
+      expect {
+        post backoffice_profiles_path, params: new_params
+      }.to change(Catalog::Profile, :count).by(1).and change(Catalog::CardReference, :count).by(1)
+
+      created = Catalog::Profile.find_by(name: "New Bravo")
+      expect(created.ducats).to eq(12)
+      expect(created.card_references.map(&:identifier)).to eq([ "guild-new-bravo" ])
+      expect(created.card_references.first.illustration_number).to eq(1)
+      expect(response).to redirect_to(edit_backoffice_profile_path(created))
+    end
+
+    it "creates an A/B pair sharing the stats" do
+      post backoffice_profiles_path, params: new_params(card: { identifier: "guild-twins", pair: "1" })
+
+      created = Catalog::Profile.find_by(name: "New Bravo")
+      expect(created.card_references.map(&:identifier)).to contain_exactly("guild-twins-a", "guild-twins-b")
+      expect(created.card_references.map(&:illustration_number)).to contain_exactly(1, 2)
+    end
+
+    it "attaches weapons chosen on the new form" do
+      weapon = Catalog::Weapon.create!(name: "Rapier", damage: 2)
+
+      post backoffice_profiles_path,
+        params: new_params(profile: { weapon_ids: [ "", weapon.id ] })
+
+      expect(Catalog::Profile.find_by(name: "New Bravo").weapons).to eq([ weapon ])
+    end
+
+    it "rejects a blank identifier and saves nothing" do
+      expect {
+        post backoffice_profiles_path, params: new_params(card: { identifier: "" })
+      }.not_to change(Catalog::Profile, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("Identifier can&#39;t be blank")
+    end
+
+    it "rejects a duplicate identifier and saves nothing" do
+      create(:card_reference, identifier: "guild-taken")
+
+      expect {
+        post backoffice_profiles_path, params: new_params(card: { identifier: "guild-taken" })
+      }.not_to change(Catalog::Profile, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "rejects an invalid profile without creating a card" do
+      expect {
+        post backoffice_profiles_path, params: new_params(profile: { ducats: -1 })
+      }.not_to change(Catalog::Profile, :count)
+
+      expect(Catalog::CardReference.count).to eq(0)
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "is admin-only" do
+      sign_out admin
+      sign_in create(:user)
+
+      expect {
+        post backoffice_profiles_path, params: new_params
+      }.not_to change(Catalog::Profile, :count)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    describe "POST new_card_preview (live card for an unsaved profile)" do
+      it "renders the card from the form without creating anything" do
+        expect {
+          post new_card_preview_backoffice_profiles_path,
+            params: { profile: new_params[:profile], side: "front" }
+        }.not_to change(Catalog::Profile, :count)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("New Bravo")
+      end
+    end
+  end
+
   describe "PATCH update (the profile editor)" do
     let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
 
