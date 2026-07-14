@@ -23,10 +23,22 @@ picture. To make it production-ready (roughly in priority order):
   `pg_dump` (from the Postgres container) → gzip → upload *off the server*, with
   rotation (e.g. 7 daily + 4 weekly). Destination TBD: Cloudflare R2 (free at this
   scale, recommended) or Hetzner Storage Box (~€3/mo). Test a restore before trusting it.
+  Note: `catalog:export` now snapshots the *catalog* to git, but that is not a substitute —
+  it does not cover **player data** (lists, games, users) or Active Storage anything beyond
+  illustration blobs. This `pg_dump` is what protects everything on the box's single volume.
 - **P2: Real domain + DNS** — replaces the temporary `sslip.io` host (also unblocks the
   App Links note under Auth above).
 - **P2: Finish the Solid stack** — generate the solid_queue/cache/cable schemas so
   background jobs and WebSockets (ActionCable) work; both are disabled/Redis-pointed today.
+- **P2: Automate the daily catalog snapshot.** `catalog:export` exists but is run by hand.
+  A game creator authors ~10 cards/year in the prod backoffice (uploading art as Active
+  Storage blobs); those live only on the box until exported. Want a daily
+  export → commit → push to git, so the catalog + its blobs land in version control
+  automatically. The awkward part is *where it runs*: it needs both prod access (the DB is
+  bound to localhost on the box, so the export must run there) and git push rights. Options:
+  a GitHub Actions cron (native git creds; needs SSH access to the box) or a host cron with a
+  deploy key. A background worker (finish the Solid stack, or add Redis + Sidekiq) could own
+  the schedule, but the git-push-from-prod step is the real design question, not the queue.
 - **P3:** Email/SMTP, Hetzner firewall (22/80/443 only), error tracking + `/up` uptime
   monitoring, rotate the GitHub deploy token.
 
