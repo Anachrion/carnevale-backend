@@ -1,6 +1,6 @@
 module Backoffice
   class ProfilesController < BaseController
-    before_action :set_profile, only: %i[show card card_pdf card_png illustration_editor illustration_position render_to_catalog]
+    before_action :set_profile, only: %i[show edit update card card_pdf card_png illustration_editor illustration_position render_to_catalog]
 
     # GET /backoffice/profiles
     def index
@@ -29,6 +29,24 @@ module Backoffice
 
     # GET /backoffice/profiles/:id
     def show
+    end
+
+    # GET /backoffice/profiles/:id/edit
+    def edit
+    end
+
+    # PATCH /backoffice/profiles/:id
+    #
+    # The catalog is now authored here rather than in db/seeds, so this is the one place a stat can
+    # change. Saving does not re-render the card: the profile's cards simply start reporting as
+    # stale (Catalog::CardReference#stale?) and the render queue picks them up.
+    def update
+      if @profile.update(profile_params)
+        redirect_to backoffice_profile_path(@profile),
+          notice: "Updated #{@profile.name}. Its card is now out of date — render it to publish the change."
+      else
+        render :edit, status: :unprocessable_entity
+      end
     end
 
     # GET /backoffice/profiles/:id/card
@@ -240,6 +258,26 @@ module Backoffice
 
     def set_profile
       @profile = Catalog::Profile.includes(:weapons, :special_rules, :illustrations).find(params.expect(:id))
+    end
+
+    # Abilities and keywords are json arrays of strings, edited as one-per-line textareas — the
+    # form's only concession to their shape, and cheaper to use than a row of nested fields.
+    def profile_params
+      permitted = params.expect(profile: [
+        :name, :faction, :version, :abilities_text, :keywords_text, *Catalog::Profile::STATS
+      ])
+
+      permitted
+        .except(:abilities_text, :keywords_text)
+        .to_h
+        .merge(
+          abilities: text_to_list(permitted[:abilities_text]),
+          keywords: text_to_list(permitted[:keywords_text])
+        )
+    end
+
+    def text_to_list(text)
+      text.to_s.split("\n").map(&:strip).compact_blank
     end
 
     def export_scope

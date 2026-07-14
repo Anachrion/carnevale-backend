@@ -71,6 +71,80 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  describe "PATCH update (the profile editor)" do
+    let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
+
+    before { sign_in admin }
+
+    def valid_params(overrides = {})
+      {
+        profile: {
+          name: "Capodecina", faction: "guild", version: "2.2.0",
+          ducats: 20, movement: 4, attack: 3, dexterity: 2, protection: 1, mind: 3,
+          action_points: 2, will_points: 3, command_points: 1, life_points: 2, size: 2,
+          keywords_text: "Leader\nDiscipline (Blood Rites)",
+          abilities_text: "Mage (2)\nExpert Sorcerer (1)"
+        }.merge(overrides)
+      }
+    end
+
+    it "edits the stats, keywords and abilities" do
+      patch backoffice_profile_path(profile), params: valid_params
+
+      expect(response).to redirect_to(backoffice_profile_path(profile))
+      profile.reload
+      expect(profile.ducats).to eq(20)
+      expect(profile.attack).to eq(3)
+
+      # The one-per-line textareas become json arrays of strings, which is what every reader of
+      # these columns (the card view, mage_level, disciplines) assumes.
+      expect(profile.keywords).to eq([ "Leader", "Discipline (Blood Rites)" ])
+      expect(profile.abilities).to eq([ "Mage (2)", "Expert Sorcerer (1)" ])
+      expect(profile.mage_level).to eq(2)
+      expect(profile.disciplines).to eq([ "blood_rites" ])
+    end
+
+    it "leaves the card out of date rather than re-rendering it" do
+      images_dir = Pathname(Dir.mktmpdir)
+      stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+      File.binwrite(reference.front_path, "FRONT")
+      File.binwrite(reference.back_path, "BACK")
+      reference.stamp_source!
+      expect(reference).not_to be_stale
+
+      expect(Grover).not_to receive(:new)
+      patch backoffice_profile_path(profile), params: valid_params(ducats: 99)
+
+      expect(reference.reload).to be_stale
+      expect(File.binread(reference.front_path)).to eq("FRONT")
+    ensure
+      FileUtils.remove_entry(images_dir)
+    end
+
+    it "rejects a negative stat and re-renders the form" do
+      patch backoffice_profile_path(profile), params: valid_params(ducats: -1)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include("Ducats must be greater than or equal to 0")
+      expect(profile.reload.ducats).to eq(10)
+    end
+
+    it "rejects a blank name" do
+      patch backoffice_profile_path(profile), params: valid_params(name: "")
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(profile.reload.name).to eq("Capodecina")
+    end
+
+    it "is admin-only" do
+      sign_in create(:user)
+      patch backoffice_profile_path(profile), params: valid_params
+
+      expect(response).to have_http_status(:forbidden)
+      expect(profile.reload.ducats).to eq(10)
+    end
+  end
+
   describe "render token bypass (used by Grover)" do
     it "serves the card page with a valid render token and no session" do
       get card_backoffice_profile_path(profile), params: {
