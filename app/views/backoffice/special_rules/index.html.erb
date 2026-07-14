@@ -48,8 +48,14 @@
               <%= carried %> profile<%= "s" unless carried == 1 %>
             </span>
           </td>
-          <td class="text-center">
+          <td class="text-center" style="white-space:nowrap;">
             <%= link_to "✎ Edit", edit_backoffice_special_rule_path(rule), class: "btn" %>
+            <% if carried.zero? %>
+              <%= button_to "🗑", backoffice_special_rule_path(rule), method: :delete,
+                    class: "btn", form: { style: "display:inline;margin:0;" },
+                    data: { turbo_confirm: "Delete #{display_name(rule)}? No profile carries it." },
+                    title: "Delete this unused special rule" %>
+            <% end %>
           </td>
         </tr>
       <% end %>

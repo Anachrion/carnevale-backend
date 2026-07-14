@@ -3,7 +3,7 @@ module Backoffice
   # spell; when it is a spell the card prints it under the spell's name, so the rule's own name is
   # allowed to be blank in that case and in no other.
   class SpecialRulesController < BaseController
-    before_action :set_special_rule, only: %i[edit update]
+    before_action :set_special_rule, only: %i[edit update destroy]
 
     # GET /backoffice/special_rules
     def index
@@ -51,6 +51,19 @@ module Backoffice
           notice: "Saved #{display_name(@special_rule)}. #{affected} card#{"s" unless affected == 1} now out of date."
       else
         render :edit, status: :unprocessable_entity
+      end
+    end
+
+    # DELETE /backoffice/special_rules/:id
+    #
+    # Only an orphaned rule may go — see WeaponsController#destroy for why the guard lives here.
+    def destroy
+      if @special_rule.profile_special_rules.exists?
+        redirect_to backoffice_special_rules_path,
+          alert: "#{display_name(@special_rule)} is still carried by #{@special_rule.profiles.count} profile(s) and cannot be deleted."
+      else
+        @special_rule.destroy
+        redirect_to backoffice_special_rules_path, notice: "Deleted #{display_name(@special_rule)}."
       end
     end
 

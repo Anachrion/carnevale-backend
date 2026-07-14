@@ -114,5 +114,33 @@ RSpec.describe "Backoffice::Weapons", type: :request do
         FileUtils.remove_entry(images_dir)
       end
     end
+
+    describe "DELETE destroy" do
+      it "deletes a weapon no profile carries" do
+        delete backoffice_weapon_path(stiletto)
+
+        expect(Catalog::Weapon.exists?(stiletto.id)).to be(false)
+        expect(response).to redirect_to(backoffice_weapons_path)
+      end
+
+      it "refuses to delete a weapon a profile still carries" do
+        Catalog::ProfileWeapon.create!(profile: create(:profile), weapon: stiletto, position: 1)
+
+        delete backoffice_weapon_path(stiletto)
+
+        expect(Catalog::Weapon.exists?(stiletto.id)).to be(true)
+        expect(flash[:alert]).to include("cannot be deleted")
+      end
+
+      it "is admin-only" do
+        sign_out admin
+        sign_in create(:user)
+
+        delete backoffice_weapon_path(stiletto)
+
+        expect(response).to have_http_status(:forbidden)
+        expect(Catalog::Weapon.exists?(stiletto.id)).to be(true)
+      end
+    end
   end
 end
