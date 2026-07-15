@@ -474,6 +474,21 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       }
       expect(response).to redirect_to(new_user_session_path)
     end
+
+    it "ignores the render token on other GET actions (index, edit, export)" do
+      # The token exists only for Grover's internal fetch of the `card` action; it must not
+      # also unlock the rest of the backoffice's read surface (regression for B-18).
+      token = Backoffice::BaseController.render_token
+
+      get backoffice_profiles_path(render_token: token)
+      expect(response).to redirect_to(new_user_session_path)
+
+      get edit_backoffice_profile_path(profile, render_token: token)
+      expect(response).to redirect_to(new_user_session_path)
+
+      get export_pdf_backoffice_profiles_path(render_token: token)
+      expect(response).to redirect_to(new_user_session_path)
+    end
   end
 
   describe "POST render_to_catalog" do
