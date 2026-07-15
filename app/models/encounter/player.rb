@@ -71,27 +71,30 @@ module Encounter
 
     # This player ends the game from their side. Only offered on the final turn. Also archives the
     # game for this player (drops it into their archived list); the opponent is untouched and can
-    # keep scoring at their own pace. Game-level completion is then re-derived.
+    # keep scoring at their own pace. Game-level completion is then re-derived — under a game-row
+    # lock so two players finishing at once serialize: the second reads the first's committed
+    # `finished` flag and the game reaches "completed" (unlocked, each read the other's stale
+    # pre-commit flag and completion was lost — B-P2-3).
     def finish!
-      return false unless game.in_progress? && !finished? && on_last_turn?
+      game.with_lock do
+        next false unless game.in_progress? && !finished? && on_last_turn?
 
-      transaction do
         update!(finished: true, visibility: "archived")
         game.refresh_completion!
+        true
       end
-      true
     end
 
     # Undo: reopen the game for this player (and un-archive it), reverting game-level completion if
     # the game had completed. Allowed any time this player is finished.
     def unfinish!
-      return false unless finished?
+      game.with_lock do
+        next false unless finished?
 
-      transaction do
         update!(finished: false, visibility: "active")
         game.refresh_completion!
+        true
       end
-      true
     end
 
     # Conjures a model onto the board mid-game — a summon/raise granted by some model's special rule.
@@ -125,6 +128,36 @@ module Encounter
 
       list_entry.destroy!
       true
+    end
+
+    # Snapshots `list` as this player's frozen gang for the game, replacing any previous pick.
+    # Locked on the game row and re-checked against the reloaded status so it can't act on a stale
+    # "gang_selection": a select racing the opponent's phase-advancing select would otherwise
+    # spawn a second orphaned snapshot (B-P2-4), and the sibling deselect could destroy a list the
+    # game has already started depending on (B-P2-2). Destroying the old snapshot first avoids both
+    # an orphan and the `owner_id NOT NULL` constraint a bare has_one reassignment would trip.
+    # Returns false if gangs are already frozen.
+    def select_gang!(list)
+      game.with_lock do
+        next false unless game.gang_selection?
+
+        self.list&.destroy!
+        association(:list).reset
+        self.list = list.snapshot_for(self)
+        true
+      end
+    end
+
+    # Clears this player's gang pick, leaving the has_one genuinely empty. Same lock and status
+    # re-check as select_gang! (B-P2-2), so it can't destroy a snapshot after the game has advanced.
+    def deselect_gang!
+      game.with_lock do
+        next false unless game.gang_selection?
+
+        self.list&.destroy!
+        association(:list).reset
+        true
+      end
     end
 
     # Actively taking actions (scoring, drawing, moving the turn cursor): the game is live and this

@@ -15,16 +15,57 @@ module Encounter
     before_validation :generate_join_code, on: :create
     before_validation :default_name_to_scenario, on: :create
 
+    # Adds `user` as the second player, or reactivates their soft-deleted/archived membership.
+    # Locked on the game row so two people racing the same join code can't both pass the
+    # "full" check and create a third player (B-P2): the reload under the lock sees the other
+    # request's committed player. Returns the resulting Player, or nil when the game is already
+    # full for a newcomer. A freshly created player reports `previously_new_record?` so the caller
+    # knows whether the game actually advanced (and needs broadcasting).
+    def join!(user)
+      with_lock do
+        existing = game_players.find_by(user: user)
+        if existing
+          existing.update!(visibility: "active") unless existing.active?
+          existing
+        elsif game_players.count >= 2
+          nil
+        else
+          player = game_players.create!(user: user, host: false)
+          assign_roll_winners!
+          update!(status: "gang_selection")
+          player
+        end
+      end
+    end
+
     # Picks the roll-off winners as soon as both players are in the game, so nothing depends on
     # a client action: deployment_roll_winner is always assigned (shown for reference; the
     # deployment zone itself is chosen at the table, not in-app), role_roll_winner only for
-    # asymmetric scenarios (where it matters).
+    # asymmetric scenarios (where it matters). Idempotent — skips a roll whose winner is already
+    # set — so a retried/raced join can call it again without reassigning or hitting the partial
+    # unique indexes on the winner flags.
     def assign_roll_winners!
       players = game_players.reload.to_a
       return unless players.size == 2
 
-      players.sample.update!(won_role_roll: true) if scenario.asymmetric?
-      players.sample.update!(won_deployment_roll: true)
+      players.sample.update!(won_role_roll: true) if scenario.asymmetric? && players.none?(&:won_role_roll?)
+      players.sample.update!(won_deployment_roll: true) if players.none?(&:won_deployment_roll?)
+    end
+
+    # Deals both opening agenda hands the instant gang selection completes, and only then. Locked
+    # and re-checked against the reloaded status so a second select_gang racing the first can't
+    # re-run the deal on a stale "gang_selection" (which double-dealt every hand — C-3);
+    # draw_initial is itself idempotent as a second line of defence.
+    def advance_to_agenda_draw_if_ready!
+      with_lock do
+        next unless gang_selection?
+
+        players = game_players.reload
+        next unless players.size == 2 && players.all? { |p| p.list.present? }
+
+        update!(status: "agenda_draw")
+        players.each { |p| agenda_deck.draw_initial(p) }
+      end
     end
 
     def role_roll_winner
@@ -60,18 +101,20 @@ module Encounter
     end
 
     # Called once both players have confirmed their opening Agenda hand — flips the game live and
-    # snapshots each model's HP/WP/CP into an Encounter::EntryState. Guarded by the status check so a
-    # repeated confirm call (e.g. a duplicate request) doesn't recreate entry states. Deployment
-    # zones are agreed at the table, so there's no separate in-app deployment step.
+    # snapshots each model's HP/WP/CP into an Encounter::EntryState. Locked and re-checked against
+    # the reloaded status so two players confirming at once can't both pass the guard and have the
+    # loser 500 on duplicate entry states (B-P2-6): the second call reloads, sees in_progress, and
+    # returns false. Also makes a repeated confirm a harmless no-op. Deployment zones are agreed at
+    # the table, so there's no separate in-app deployment step.
     def start!
-      return false if in_progress? || completed?
-      return false unless game_players.reload.all?(&:agendas_confirmed?)
+      with_lock do
+        next false if in_progress? || completed?
+        next false unless game_players.reload.all?(&:agendas_confirmed?)
 
-      transaction do
         update!(status: "in_progress")
         create_entry_states!
+        true
       end
-      true
     end
 
     # Completion is derived from the players' per-player `finished` flags rather than driven by the
