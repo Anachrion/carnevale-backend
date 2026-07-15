@@ -18,6 +18,20 @@ RSpec.describe Encounter::AgendaDeck, type: :model do
       expect(game_player.agenda_events.pluck(:origin).uniq).to eq([ "initial" ])
     end
 
+    # C-3: even if the locked phase transition were somehow re-entered, dealing a second opening
+    # hand must not stack on the first — draw_initial is idempotent per player.
+    it "is idempotent — a second call deals no extra opening hand" do
+      %w[1-3 4-6 7-9 10].each { |bucket| create_list(:agenda, 3, first_roll: bucket) }
+      scenario = create(:scenario, agenda_count: 3)
+      game = create(:game, scenario: scenario)
+      game_player = create(:game_player, game: game)
+
+      deck_for(game).draw_initial(game_player)
+      expect { deck_for(game).draw_initial(game_player) }
+        .not_to change { game_player.agenda_events.where(origin: "initial").count }
+      expect(game_player.agenda_events.where(origin: "initial").count).to eq(3)
+    end
+
     # B-P2-9: the draw used to loop forever if the weighted buckets it sampled were all exhausted.
     # With the whole pool confined to one bucket, the sampler keeps missing the others and must
     # fall back to the remaining agendas rather than spinning — so this both terminates and draws.

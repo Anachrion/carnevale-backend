@@ -12,8 +12,12 @@ module Encounter
       @game = game
     end
 
-    # The initial hand each player draws at the start of the agenda-draw phase.
+    # The initial hand each player draws at the start of the agenda-draw phase. Idempotent: skips a
+    # player who already holds an "initial" draw, so a repeated/raced advance-to-agenda-draw can't
+    # deal a second opening hand (the phase transition is also locked — see Game, C-3/B-P2).
     def draw_initial(game_player)
+      return if game_player.agenda_events.exists?(origin: "initial")
+
       count = @game.scenario.agenda_count
       drawn = []
       drawn << draw_one(drawn) while drawn.size < count
