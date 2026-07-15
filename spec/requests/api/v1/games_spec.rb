@@ -653,6 +653,18 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
 
+    # B-17: an omitted `counters` object makes params.require raise ParameterMissing. It used to
+    # return Rails' default `{status,error}` 400; the base controller now renders a 400 in the
+    # API's `{ errors: {...} }` shape so the client parses it like any other error.
+    it "returns a 400 in the API error shape when counters is missing" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: {}.to_json, headers: h
+      expect(host.response).to have_http_status(:bad_request)
+      expect(json(host)).to have_key("errors")
+    end
+
     # The PATCH response only carries the state it just wrote, so a turn change (which doesn't touch
     # the entry state at all) has to be observed from a fresh read of the owner's gang.
     def entry_state_for(session, headers, game_id, username)
