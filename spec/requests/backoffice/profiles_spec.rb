@@ -483,6 +483,11 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     before do
       sign_in admin
       stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+      # The catalog faces are converted to WebP before they hit disk. libvips can't convert the
+      # stand-in strings these Grover stubs return, so stub the conversion with a deterministic
+      # tag — enough to prove each Grover face is run through it and lands in the right file.
+      # (png_to_webp's real libvips conversion is unit-tested in the model spec.)
+      allow(Catalog::CardReference).to receive(:png_to_webp) { |png| "webp:#{png}" }
     end
 
     after { FileUtils.remove_entry(images_dir) }
@@ -498,8 +503,8 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
       post render_to_catalog_backoffice_profile_path(profile)
 
-      expect(File.binread(images_dir.join("guild-capodecina-front.png"))).to eq("FRONT-1")
-      expect(File.binread(images_dir.join("guild-capodecina-back.png"))).to eq("BACK-1")
+      expect(File.binread(images_dir.join("guild-capodecina-front.webp"))).to eq("webp:FRONT-1")
+      expect(File.binread(images_dir.join("guild-capodecina-back.webp"))).to eq("webp:BACK-1")
       expect(reference.reload.internal_version).to eq(1)
       expect(reference.content_digest).to be_present
       expect(response).to redirect_to(card_backoffice_profile_path(profile))
@@ -558,15 +563,15 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
       post render_to_catalog_backoffice_profile_path(profile)
 
-      expect(File.binread(images_dir.join("guild-capodecina-front.png"))).to eq("FRONT-A")
-      expect(File.binread(images_dir.join("guild-capodecina-b-front.png"))).to eq("FRONT-B")
+      expect(File.binread(images_dir.join("guild-capodecina-front.webp"))).to eq("webp:FRONT-A")
+      expect(File.binread(images_dir.join("guild-capodecina-b-front.webp"))).to eq("webp:FRONT-B")
 
       # Each reference owns both faces: the backs hold identical bytes but are its own files.
-      expect(File.binread(images_dir.join("guild-capodecina-back.png"))).to eq("BACK")
-      expect(File.binread(images_dir.join("guild-capodecina-b-back.png"))).to eq("BACK")
+      expect(File.binread(images_dir.join("guild-capodecina-back.webp"))).to eq("webp:BACK")
+      expect(File.binread(images_dir.join("guild-capodecina-b-back.webp"))).to eq("webp:BACK")
       expect(Dir.children(images_dir)).to contain_exactly(
-        "guild-capodecina-front.png", "guild-capodecina-back.png",
-        "guild-capodecina-b-front.png", "guild-capodecina-b-back.png"
+        "guild-capodecina-front.webp", "guild-capodecina-back.webp",
+        "guild-capodecina-b-front.webp", "guild-capodecina-b-back.webp"
       )
 
       # Each front is fetched with the illustration its reference points at.

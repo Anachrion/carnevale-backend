@@ -36,8 +36,8 @@ RSpec.describe "Api::V1::Cards", type: :request do
         "identifier" => "guild-baroni",
         "faction" => "guild",
         "internal_version" => 1,
-        "front_url" => "/cards/guild-baroni-front.png?v=1",
-        "back_url" => "/cards/guild-baroni-back.png?v=1",
+        "front_url" => "/cards/guild-baroni-front.webp?v=1",
+        "back_url" => "/cards/guild-baroni-back.webp?v=1",
         "front_bytes" => 3,
         "back_bytes" => 4
       )

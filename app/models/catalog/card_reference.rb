@@ -22,15 +22,20 @@ module Catalog
     # named after the identifier — the stable slug the app already keys cards by — rather than the
     # profile's name, which is display text and can be re-worded.
     #
+    # Served as WebP: same pixels as the PNG Grover screenshots, transparent corners intact, but
+    # ~7× smaller, so a full catalog sync is ~125 MB instead of ~750 MB. The .webp extension is new,
+    # so every client re-downloads its catalog once. (The print/PDF path keeps PNG — see the
+    # backoffice controller.)
+    #
     # Only the front carries the illustration, so the two backs of an A/B pair hold identical
     # bytes. That duplication is deliberate: a card's faces belong to the card, not to whichever
     # of them happens to differ.
     def card_front
-      "#{identifier}-front.png"
+      "#{identifier}-front.webp"
     end
 
     def card_back
-      "#{identifier}-back.png"
+      "#{identifier}-back.webp"
     end
 
     # The authored illustration this card renders with (see Backoffice::ProfilesController).
@@ -45,6 +50,19 @@ module Catalog
     def illustration_path
       illus = illustration
       ILLUSTRATIONS_DIR.join(profile.faction, illus.path) if illus && illus.path.present?
+    end
+
+    # Quality for the WebP the app downloads. High enough that the card art is visually lossless at
+    # 795×1362, low enough to hit the ~170 KB/face the WebP migration is for.
+    WEBP_QUALITY = 82
+
+    # Convert the PNG Grover emits into the WebP written to public/cards. libvips does it (it ships
+    # in the production image next to Chromium); the alpha channel — the transparent rounded corners
+    # — is carried through, and the pixels are otherwise untouched. Shared by the backoffice
+    # render-to-catalog action and the cards:render task so both write byte-identical files.
+    def self.png_to_webp(png_bytes)
+      require "vips"
+      Vips::Image.new_from_buffer(png_bytes, "").webpsave_buffer(Q: WEBP_QUALITY)
     end
 
     def front_path

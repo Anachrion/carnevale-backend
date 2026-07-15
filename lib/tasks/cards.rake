@@ -37,13 +37,16 @@ namespace :cards do
       )
     end
 
+    # Grover only emits PNG; the catalog is served as WebP (same pixels, ~7× smaller), so each face
+    # is converted before it lands in public/cards. The back is converted once per profile.
     fronts = backs = 0
     scope.find_each do |profile|
-      back_png = Grover.new(url_for.(profile, "back", nil), **options).to_png
+      back_webp = Catalog::CardReference.png_to_webp(Grover.new(url_for.(profile, "back", nil), **options).to_png)
 
       profile.card_references.each do |cr|
-        File.binwrite(cr.front_path, Grover.new(url_for.(profile, "front", cr.illustration_number), **options).to_png)
-        File.binwrite(cr.back_path, back_png)
+        front_png = Grover.new(url_for.(profile, "front", cr.illustration_number), **options).to_png
+        File.binwrite(cr.front_path, Catalog::CardReference.png_to_webp(front_png))
+        File.binwrite(cr.back_path, back_webp)
         cr.stamp_source!
         fronts += 1
         backs += 1
@@ -57,7 +60,8 @@ namespace :cards do
   end
 
   # Delete images in public/cards that no card reference points at any more — e.g. the shared front
-  # a profile's A/B references used before each gained its own.
+  # a profile's A/B references used before each gained its own, or the .png faces left behind by the
+  # move to WebP.
   desc "Remove card images no card reference points at"
   task prune: :environment do
     require "set"
@@ -65,7 +69,9 @@ namespace :cards do
     dest = Catalog::CardReference::IMAGES_DIR
     in_use = Catalog::CardReference.includes(:profile)
       .flat_map { |cr| [ cr.card_front, cr.card_back ] }.to_set
-    orphans = Dir.children(dest).select { |f| f.end_with?(".png") && !in_use.include?(f) }
+    orphans = Dir.children(dest).select do |f|
+      (f.end_with?(".webp") || f.end_with?(".png")) && !in_use.include?(f)
+    end
 
     orphans.each { |f| File.delete(dest.join(f)) }
     puts "cards:prune — deleted #{orphans.size} orphaned image(s); #{in_use.size} still in use"

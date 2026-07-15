@@ -158,8 +158,10 @@ module Backoffice
 
       ref = @profile.card_references.find_by(illustration_number: number || 1) ||
             @profile.card_references.first
+      # A PNG download for print/inspection — the catalog itself is WebP (see render_to_catalog), so
+      # this names the file after the identifier with a .png extension rather than reusing card_front.
       send_data png,
-        filename: side == "front" ? ref.card_front : ref.card_back,
+        filename: "#{ref.identifier}-#{side}.png",
         type: "image/png",
         disposition: "attachment"
     end
@@ -187,13 +189,14 @@ module Backoffice
     def export_png
       require "zip"
 
-      # Mirrors the catalog layout: both faces of every card reference.
+      # Mirrors the catalog layout: both faces of every card reference, as the WebP the app
+      # downloads (the entry names are card_front/card_back, which are .webp).
       zip_data = Zip::OutputStream.write_buffer do |zip|
         export_scope.includes(:card_references).each do |profile|
-          back = render_catalog_png(profile, "back")
+          back = render_catalog_webp(profile, "back")
           profile.card_references.each do |cr|
             zip.put_next_entry(cr.card_front)
-            zip.write(render_catalog_png(profile, "front", illustration: cr.illustration_number))
+            zip.write(render_catalog_webp(profile, "front", illustration: cr.illustration_number))
             zip.put_next_entry(cr.card_back)
             zip.write(back)
           end
@@ -231,11 +234,11 @@ module Backoffice
 
       FileUtils.mkdir_p(Catalog::CardReference::IMAGES_DIR)
       refs.each do |cr|
-        File.binwrite(cr.front_path, render_catalog_png(@profile, "front", illustration: cr.illustration_number))
+        File.binwrite(cr.front_path, render_catalog_webp(@profile, "front", illustration: cr.illustration_number))
       end
 
-      back_png = render_catalog_png(@profile, "back")
-      refs.each { |cr| File.binwrite(cr.back_path, back_png) }
+      back_webp = render_catalog_webp(@profile, "back")
+      refs.each { |cr| File.binwrite(cr.back_path, back_webp) }
 
       # Same version-bump rule as `rake cards:reversion`, applied to just this profile's refs so
       # the manifest advertises a new internal_version only when the rendered bytes actually change.
@@ -441,6 +444,12 @@ module Backoffice
     # Transparent rounded corners — for the images the app downloads.
     def render_catalog_png(profile, side, illustration: nil)
       Grover.new(card_url_for(profile, side, illustration: illustration), **grover_png_options).to_png
+    end
+
+    # The catalog face the app actually downloads: the transparent PNG Grover screenshots, converted
+    # to WebP. Same pixels, ~7× smaller. (The PDF/print path stays on render_card_png, which is PNG.)
+    def render_catalog_webp(profile, side, illustration: nil)
+      Catalog::CardReference.png_to_webp(render_catalog_png(profile, side, illustration: illustration))
     end
 
     # Opaque background — an intermediate step towards a printable PDF.
