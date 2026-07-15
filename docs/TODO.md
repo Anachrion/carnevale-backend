@@ -47,7 +47,7 @@ and which of these gaps actually loses information. To make it production-ready
 
 ## Cards
 
-- **P2: Serve the card images as WebP instead of PNG.** Each card face is a ~1.1 MB PNG,
+- **P2: Serve the card images as WebP instead of PNG. (DONE)** Each card face is a ~1.1 MB PNG,
   so a full catalog sync makes the app download ~750 MB. The same image as WebP (same
   795×1362 pixels, transparent corners preserved) is ~170 KB — about 7× smaller, for no
   loss of resolution. Grover only emits PNG/JPEG, so this means converting the PNG to
