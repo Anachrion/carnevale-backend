@@ -330,12 +330,18 @@ Devise.setup do |config|
       else
         Rails.application.credentials.devise_jwt_secret_key!
       end
+    # A fresh JWT is dispatched both on login and on refresh: /token signs the user back in off a
+    # valid refresh token, and warden-jwt only attaches the header when the request path is listed
+    # here.
     jwt.dispatch_requests = [
-      [ "POST", %r{^/api/v1/login$} ]
+      [ "POST", %r{^/api/v1/login$} ],
+      [ "POST", %r{^/api/v1/token$} ]
     ]
     jwt.revocation_requests = [
       [ "DELETE", %r{^/api/v1/logout$} ]
     ]
-    jwt.expiration_time = 1.day.to_i
+    # Short-lived on purpose: the client renews it silently via a refresh token (RefreshToken), so
+    # a leaked JWT is only useful for an hour rather than a full day.
+    jwt.expiration_time = 1.hour.to_i
   end
 end
