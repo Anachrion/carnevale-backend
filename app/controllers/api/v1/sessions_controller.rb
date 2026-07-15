@@ -1,6 +1,8 @@
 module Api
   module V1
     class SessionsController < Devise::SessionsController
+      include AuthenticatesClient
+
       skip_before_action :verify_authenticity_token, raise: false
       # Devise guards #destroy with verify_signed_out_user, which looks for a user in the Devise
       # *session*. This API is token-only (store: false), so there never is one, and the guard
