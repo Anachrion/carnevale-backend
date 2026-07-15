@@ -14,6 +14,18 @@ RSpec.describe Gang::Entry, type: :model do
       expect(entry).to be_valid
     end
 
+    it "is valid with an Equipment entry" do
+      entry = list.list_entries.build(entry: create(:equipment), position: 1)
+      expect(entry).to be_valid
+    end
+
+    it "rejects an entry_type outside the catalog, so a client can't point a list at an arbitrary record" do
+      entry = list.list_entries.build(entry_type: "User", entry_id: create(:user).id, position: 1)
+
+      expect(entry).not_to be_valid
+      expect(entry.errors[:entry_type]).to be_present
+    end
+
     it "still saves when the card pushes the list over budget, but marks the list's selection invalid" do
       entry = create(:list_entry, list: list, entry: guild_ref(cost: 101), position: 1)
 

@@ -14,6 +14,9 @@ module Gang
 
     validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
     validates :position, uniqueness: { scope: :list_id }
+    # entry_type is client-supplied on create (POST /list_entries); without this, any AR class name
+    # constantizes and saves, then blows up every later read that calls .cost/.name on it.
+    validates :entry_type, inclusion: { in: %w[Catalog::CardReference Catalog::Equipment] }
 
     # The Catalog::Profile behind this entry, or nil for non-model entries (e.g. Equipment).
     def profile
