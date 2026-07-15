@@ -181,6 +181,18 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       patch_spells(entry, discipline: "blood_rites", spell_ids: [])
       expect(response).to have_http_status(:not_found)
     end
+
+    # B-17: a spell_id that doesn't exist makes entry_spells.create! raise RecordInvalid (spell is a
+    # required belongs_to). It used to escape as a 500; the base controller now renders it as a 422
+    # in the API's `{ errors: {...} }` shape.
+    it "returns a 422 in the API error shape for an unknown spell id" do
+      entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: [999_999])
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)).to have_key("errors")
+    end
   end
 
   describe "PATCH /api/v1/list_entries/:id/illustration" do
