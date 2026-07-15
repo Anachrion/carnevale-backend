@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Build the Flutter web app and stage it for deployment at /app.
+#
+# The frontend lives in a separate repo (../carnevale by default). This script compiles its web
+# build with the production API host baked in, then drops the output into public/app so the next
+# `kamal deploy` ships it inside the image. public/app is gitignored: it is a build artifact, always
+# regenerated here, never committed. Pass --deploy to run `kamal deploy` immediately afterwards.
+set -euo pipefail
+
+BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+FRONTEND_DIR="${CARNEVALE_FRONTEND_DIR:-$BACKEND_DIR/../carnevale}"
+
+# Must match the production host in config/deploy.yml (proxy.host).
+API_HOST="62.238.30.155.sslip.io"
+
+if [[ ! -d "$FRONTEND_DIR" ]]; then
+  echo "error: frontend repo not found at $FRONTEND_DIR" >&2
+  echo "       set CARNEVALE_FRONTEND_DIR to override." >&2
+  exit 1
+fi
+
+echo "==> Building Flutter web (API_HOST=$API_HOST, base-href=/app/)"
+(
+  cd "$FRONTEND_DIR"
+  flutter build web \
+    --dart-define=API_HOST="$API_HOST" \
+    --dart-define=API_USE_TLS=true \
+    --base-href=/app/
+)
+
+echo "==> Staging build into public/app"
+rm -rf "$BACKEND_DIR/public/app"
+cp -r "$FRONTEND_DIR/build/web" "$BACKEND_DIR/public/app"
+
+echo "==> Done. public/app is ready (served at https://$API_HOST/app/)."
+
+if [[ "${1:-}" == "--deploy" ]]; then
+  echo "==> Deploying with Kamal"
+  cd "$BACKEND_DIR"
+  # shellcheck disable=SC1091
+  source .kamal/deploy.env
+  kamal deploy
+else
+  echo "    Run 'source .kamal/deploy.env && kamal deploy' to ship it, or re-run with --deploy."
+fi
