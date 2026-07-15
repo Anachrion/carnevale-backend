@@ -32,6 +32,32 @@ RSpec.describe Catalog::CardReference do
     ref.stamp_source!
   end
 
+  describe ".png_to_webp" do
+    # An RGBA image standing in for a rendered card face: a colour gradient with a fully
+    # transparent left strip, so the conversion has an alpha channel to carry through.
+    let(:png) do
+      require "vips"
+      xy = Vips::Image.xyz(64, 64)
+      r = xy.extract_band(0)
+      g = xy.extract_band(1)
+      b = (r + g).cast("uchar")
+      alpha = (r < 32).ifthenelse(0, 255)
+      r.bandjoin([ g, b, alpha ]).cast("uchar").copy(interpretation: "srgb").pngsave_buffer
+    end
+
+    it "produces a valid WebP that keeps the pixels and the transparent corners" do
+      webp = described_class.png_to_webp(png)
+
+      # RIFF/WEBP container magic, and it decodes back to the same size with its alpha intact.
+      expect(webp.byteslice(0, 4)).to eq("RIFF")
+      expect(webp.byteslice(8, 4)).to eq("WEBP")
+
+      decoded = Vips::Image.new_from_buffer(webp, "")
+      expect([ decoded.width, decoded.height ]).to eq([ 64, 64 ])
+      expect(decoded.has_alpha?).to be(true)
+    end
+  end
+
   describe "#stale?" do
     it "is stale when the images were never rendered" do
       expect(reference).to be_stale
