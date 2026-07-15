@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       devise_scope :user do
         post "login", to: "sessions#create"
         delete "logout", to: "sessions#destroy"
+        post "token", to: "tokens#create"
         post "signup", to: "registrations#create"
         post "password", to: "passwords#create"
         patch "password", to: "passwords#update"

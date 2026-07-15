@@ -8,6 +8,7 @@ class User < ApplicationRecord
   has_many :lists, as: :owner, class_name: "Gang::List", dependent: :destroy
   has_many :game_players, class_name: "Encounter::Player", dependent: :destroy
   has_many :games, through: :game_players
+  has_many :refresh_tokens, dependent: :delete_all
 
   validates :username, presence: true, uniqueness: { case_sensitive: false }
 end

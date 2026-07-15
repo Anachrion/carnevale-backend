@@ -45,7 +45,10 @@ paths:
     post:
       operationId: login
       summary: Log in and receive a JWT
-      description: On success, the JWT is returned in the `Authorization` response header as `Bearer <token>`. Send it back on subsequent requests to authenticate.
+      description: >
+        On success, a short-lived JWT is returned in the `Authorization` response header as
+        `Bearer <token>` (send it back on subsequent requests to authenticate), and a long-lived
+        `refresh_token` is returned in the body for renewing the JWT via POST /token once it expires.
       tags: [Session]
       requestBody:
         required: true
@@ -71,7 +74,8 @@ paths:
   /logout:
     delete:
       operationId: logout
-      summary: Revoke the current JWT
+      summary: Revoke the current JWT and all refresh tokens
+      description: Denylists the current JWT and revokes every refresh token the user holds (signs out everywhere).
       tags: [Session]
       security:
         - ApiKeyAuth: []
@@ -79,8 +83,37 @@ paths:
       responses:
         "204":
           description: No content
+
+  /token:
+    post:
+      operationId: refreshToken
+      summary: Exchange a refresh token for a fresh JWT
+      description: >
+        Trades a valid refresh token for a new short-lived JWT (returned in the `Authorization`
+        response header) and a rotated `refresh_token` (returned in the body). Does NOT require a
+        live JWT — this is how a client renews once its JWT has expired. The presented refresh token
+        is invalidated; use the one returned here for the next refresh.
+      tags: [Session]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshInput"
+      responses:
+        "200":
+          description: OK
+          headers:
+            Authorization:
+              schema:
+                type: string
+              description: "Bearer JWT, e.g. `Bearer eyJhbGciOi...`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
         "401":
-          description: Not authenticated
+          description: Refresh token missing, unknown, expired, or already used
 
   /password:
     post:
@@ -1507,6 +1540,13 @@ components:
             password:
               type: string
 
+    RefreshInput:
+      type: object
+      required: [refresh_token]
+      properties:
+        refresh_token:
+          type: string
+
     RegistrationInput:
       type: object
       required: [user]
@@ -1755,7 +1795,7 @@ components:
 
     Session:
       type: object
-      required: [user]
+      required: [user, refresh_token]
       properties:
         user:
           type: object
@@ -1767,6 +1807,12 @@ components:
               type: string
             username:
               type: string
+        refresh_token:
+          type: string
+          description: >
+            Long-lived, single-use credential used to obtain a fresh JWT once the short-lived one
+            expires (see POST /token). Store it securely; it is only ever returned here and on
+            refresh, and is rotated on every use.
 
     List:
       type: object
