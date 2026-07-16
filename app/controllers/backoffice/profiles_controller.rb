@@ -105,6 +105,9 @@ module Backoffice
       end
 
       if saved
+        # A stat/keyword change can flip the validity of gangs that hired this model; recompute
+        # their cached validity now rather than leaving it stale until the owner edits the list (B-24).
+        @profile.refresh_dependent_list_validity!
         redirect_to edit_backoffice_profile_path(@profile),
           notice: "Saved #{@profile.name}. Its card is now out of date — render it to publish the change."
       else

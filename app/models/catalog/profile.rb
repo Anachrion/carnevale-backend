@@ -13,6 +13,18 @@ module Catalog
     has_many :profile_special_rules, -> { order(:position) }, class_name: "Catalog::ProfileSpecialRule"
     has_many :special_rules, through: :profile_special_rules
 
+    # Recompute the cached selection validity of every gang that hired this profile. Its ducats,
+    # keywords and spell-affecting abilities feed ListValidationService, but a backoffice edit here
+    # touches none of those gangs' own rows — so without this their cached selection_valid /
+    # selection_errors stay stale (a gang that just went over budget still reads as valid) until the
+    # owner next touches the list. Called after a backoffice profile save and a catalog import (B-24).
+    def refresh_dependent_list_validity!
+      entries = Gang::Entry.where(entry_type: "Catalog::CardReference", entry_id: card_references.select(:id))
+      # `WHERE id IN (...)` already returns each list once (id is the PK); no DISTINCT needed — and
+      # DISTINCT would fail anyway, since lists carry a json column Postgres can't dedupe on.
+      Gang::List.where(id: entries.select(:list_id)).find_each(&:refresh_selection_validity)
+    end
+
     # The stats printed on the card. Everything here is a small non-negative integer, and the
     # backoffice editor is now a way to get bad values into the catalog, so they are checked.
     STATS = %i[
