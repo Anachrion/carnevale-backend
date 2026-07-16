@@ -7,6 +7,11 @@ module Catalog
     # their art. An upload wins over the committed file when both are present.
     has_one_attached :image
 
+    # The upload form's `accept=` is client-side only; enforce the real thing so a non-image or an
+    # oversized file can't be stored and then drawn onto (and published as) a card (B-22).
+    validates :image, content_type: %w[image/png image/jpeg image/webp],
+                      size: { less_than: 10.megabytes }
+
     # One or the other must identify the art: a committed asset name, or an uploaded image. (The
     # path column is NOT NULL, so an upload-only illustration stores "" — see the upload action.)
     validates :path, presence: true, unless: -> { image.attached? }
