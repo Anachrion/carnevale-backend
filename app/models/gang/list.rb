@@ -27,7 +27,10 @@ module Gang
       return if Thread.current[:carnevale_defer_list_validation]
 
       result = ListValidationService.call(self)
-      update_columns(selection_valid: result[:success], selection_errors: result[:errors])
+      # Bump updated_at too: validity can change without any other column moving (e.g. a catalog
+      # rebalance via refresh_dependent_list_validity!), so a future `fresh_when @list` would
+      # otherwise serve a stale selection_valid/selection_errors (B-29).
+      update_columns(selection_valid: result[:success], selection_errors: result[:errors], updated_at: Time.current)
     end
 
     # Total ducat cost of the list — profile ducats for model entries, the equipment's own cost for

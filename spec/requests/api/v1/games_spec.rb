@@ -667,6 +667,21 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
 
+    # B-9: the pre-game mulligan closes once a player confirms their hand — start(false) leaves the
+    # host confirmed but the game still in agenda_draw (guest hasn't confirmed), so the host's
+    # attempt to swap an agenda must be rejected.
+    it "rejects a mulligan from a player who already confirmed their hand" do
+      host, _guest, h, _g, game_id, = start_game_with_models(start: false)
+
+      host.get "/api/v1/games/#{game_id}", headers: h
+      agenda_id = json(host)["players"]
+        .find { |p| p["username"] == host_user.username }["agendas"].first["id"]
+
+      host.post "/api/v1/games/#{game_id}/agendas/#{agenda_id}/discard",
+                params: { origin: "unachievable" }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
     # B-17: an omitted `counters` object makes params.require raise ParameterMissing. It used to
     # return Rails' default `{status,error}` 400; the base controller now renders a 400 in the
     # API's `{ errors: {...} }` shape so the client parses it like any other error.

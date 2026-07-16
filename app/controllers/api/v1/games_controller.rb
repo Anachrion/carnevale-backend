@@ -159,7 +159,12 @@ module Api
       def discard_agenda
         origin = params[:origin]
         recycle =
-          if origin == MULLIGAN_ORIGIN && (@game.mulligan_window? || @game_player.playing?)
+          # The pre-game mulligan closes once this player confirms their hand — otherwise a
+          # confirmed player could keep swapping agendas via the API until the opponent confirms
+          # (the UI already hides the button, but the server didn't enforce it — B-9). The in-play
+          # `unachievable` discard (playing?) is unaffected.
+          if origin == MULLIGAN_ORIGIN &&
+              ((@game.mulligan_window? && !@game_player.agendas_confirmed?) || @game_player.playing?)
             true
           elsif @game_player.playing? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
             recycle_param

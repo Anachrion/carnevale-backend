@@ -52,6 +52,17 @@ RSpec.describe Gang::List, type: :model do
     end
   end
 
+  describe "#refresh_selection_validity" do
+    # B-29: validity can change with no other column moving (e.g. a catalog rebalance), so the
+    # refresh must bump updated_at, or a future `fresh_when @list` would serve stale validity.
+    it "bumps updated_at" do
+      list = create(:list, faction: :guild, points: 100)
+      list.update_columns(updated_at: 1.day.ago)
+
+      expect { list.refresh_selection_validity }.to(change { list.reload.updated_at })
+    end
+  end
+
   describe "#snapshot_for" do
     it "deep-copies the list and its entries under the new owner" do
       list = create(:list, faction: :guild, points: 100)
