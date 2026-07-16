@@ -68,7 +68,10 @@ class ListValidationService
 
   def check_unique_constraint
     unique_refs = projected_card_references.select { |cr| cr.profile&.keywords&.include?("Unique") }
-    unique_refs.group_by(&:id).each do |_, refs|
+    # Group by profile, not card-reference id: a Unique model fielded via two *different* references
+    # of the same profile (an A/B pair, or a repointed illustration) is still the same character
+    # hired twice, and must be flagged (B-25).
+    unique_refs.group_by(&:profile_id).each do |_, refs|
       @errors << "#{refs.first.name} is Unique and can only be hired once" if refs.size > 1
     end
   end
