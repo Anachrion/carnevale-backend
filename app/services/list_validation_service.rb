@@ -40,7 +40,11 @@ class ListValidationService
   # conjured onto the board mid-battle by a special rule, so summoned entries are excluded outright:
   # otherwise a legal summon would push the gang over its limit and flip it to invalid.
   def projected_items
-    @projected_items ||= @list.list_entries.where(summoned: false).includes(:entry).map(&:entry)
+    # `.compact`: the entry association is polymorphic, so it has no FK and a catalog row deleted
+    # from under it leaves `entry` nil. Dropping those here keeps every check below (and the
+    # after_commit revalidation they run in) from raising on `nil.cost`/`nil.name` and bricking all
+    # edits to the list (B-26). An orphaned entry is broken data; ignoring it is safe and non-fatal.
+    @projected_items ||= @list.list_entries.where(summoned: false).includes(:entry).map(&:entry).compact
   end
 
   def projected_card_references
@@ -96,6 +100,7 @@ class ListValidationService
   # keyword), and the number of non-Cantrip spells cannot exceed Mage (X) + Expert Sorcerer (X).
   def check_spell_selections
     @list.list_entries.includes(entry_spells: :spell).each do |list_entry|
+      next if list_entry.entry.nil? # orphaned entry (see projected_items) — skip, don't raise
       spells = list_entry.entry_spells.map(&:spell)
       discipline = list_entry.spell_discipline
       next if spells.empty? && discipline.blank?
