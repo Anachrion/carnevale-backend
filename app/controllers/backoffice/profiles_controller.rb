@@ -17,7 +17,7 @@ module Backoffice
       # card_references eager-loaded for the internal_version column.
       @profiles = Catalog::Profile.includes(:card_references)
       @profiles = @profiles.where(faction: filter["faction"]) if filter["faction"].present?
-      @profiles = @profiles.where("name ILIKE ?", "%#{filter["search"]}%") if filter["search"].present?
+      @profiles = @profiles.where("name ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(filter["search"])}%") if filter["search"].present?
 
       sort_col = %w[name ducats].include?(filter["sort"]) ? filter["sort"] : "name"
       sort_dir = filter["dir"] == "desc" ? "desc" : "asc"
@@ -113,6 +113,11 @@ module Backoffice
       else
         render :edit, status: :unprocessable_entity
       end
+    rescue ActiveRecord::RecordInvalid => e
+      # A stale weapon/rule id (deleted in another tab between load and save) makes replace_*!
+      # raise; surface it on the form like #create does, rather than 500ing (B-33).
+      e.record.errors.full_messages.each { |m| @profile.errors.add(:base, m) } unless e.record == @profile
+      render :edit, status: :unprocessable_entity
     end
 
     # GET /backoffice/profiles/:id/card
@@ -125,7 +130,7 @@ module Backoffice
 
       scope = Catalog::Profile.all
       scope = scope.where(faction: filter["faction"]) if filter["faction"].present?
-      scope = scope.where("name ILIKE ?", "%#{filter["search"]}%") if filter["search"].present?
+      scope = scope.where("name ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(filter["search"])}%") if filter["search"].present?
       sort_col = %w[name ducats].include?(filter["sort"]) ? filter["sort"] : "name"
       sort_dir = filter["dir"] == "desc" ? "desc" : "asc"
       scope = scope.order("#{sort_col} #{sort_dir}")
@@ -312,8 +317,13 @@ module Backoffice
     # PATCH /backoffice/profiles/:id/illustration_position
     def illustration_position
       number = params[:number]&.to_i || 1
-      illustration = @profile.illustrations.find_by(number: number) ||
-                     @profile.illustrations.build(path: "", number: number)
+      # Repositioning only makes sense for art that exists. Building a path-less placeholder here
+      # (as before) failed the illustration's own validation on update! and 500'd (B-33).
+      illustration = @profile.illustrations.find_by(number: number)
+      unless illustration
+        return redirect_to card_backoffice_profile_path(@profile),
+          alert: "There's no illustration in slot #{number} to reposition."
+      end
       illustration.update!(
         offset_x: params[:offset_x].to_i.clamp(-2000, 2000),
         offset_y: params[:offset_y].to_i.clamp(-2000, 2000),
