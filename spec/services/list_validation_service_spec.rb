@@ -110,6 +110,20 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be false
         expect(result[:errors].first).to match(/Unique and can only be hired once/)
       end
+
+      # B-25: the same Unique character fielded via two *different* card references of one profile
+      # (an A/B pair) must still be caught — the check groups by profile, not card reference.
+      it "fails for two different references of the same Unique profile" do
+        profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader", "Unique"])
+        ref_a = create(:card_reference, profile: profile, identifier: "guild-unique-a")
+        ref_b = create(:card_reference, profile: profile, identifier: "guild-unique-b")
+        add_entry(list, ref_a, position: 1)
+        add_entry(list, ref_b, position: 2)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors].first).to match(/Unique and can only be hired once/)
+      end
     end
 
     context "leader requirement" do
