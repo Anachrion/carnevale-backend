@@ -41,8 +41,14 @@ module Catalog
     # The authored illustration this card renders with (see Backoffice::ProfilesController).
     # Picked from the loaded association so a staleness sweep over the whole catalog doesn't
     # issue a query per reference.
+    #
+    # Falls back to the first illustration exactly as the `card` render action does when the
+    # reference's own slot has no art — so the staleness fingerprint reflects what is *actually*
+    # drawn. Without the matching fallback, a reference with an empty slot rendered with the first
+    # illustration but fingerprinted as having none, so repositioning that art never marked the
+    # card stale and it kept serving the old framing forever (B-31).
     def illustration
-      profile.illustrations.detect { |i| i.number == illustration_number }
+      profile.illustrations.detect { |i| i.number == illustration_number } || profile.illustrations.first
     end
 
     # The committed illustration file on disk, or nil when this reference has no illustration or
