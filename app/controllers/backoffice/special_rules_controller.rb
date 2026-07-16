@@ -9,7 +9,7 @@ module Backoffice
     def index
       @special_rules = Catalog::SpecialRule.order(:name)
       if params[:search].present?
-        @special_rules = @special_rules.where("name ILIKE :q OR spell_name ILIKE :q", q: "%#{params[:search]}%")
+        @special_rules = @special_rules.where("name ILIKE :q OR spell_name ILIKE :q", q: "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%")
       end
       @carried_by = Catalog::ProfileSpecialRule.group(:special_rule_id).count
     end
@@ -62,9 +62,13 @@ module Backoffice
         redirect_to backoffice_special_rules_path,
           alert: "#{display_name(@special_rule)} is still carried by #{@special_rule.profiles.count} profile(s) and cannot be deleted."
       else
-        @special_rule.destroy
+        @special_rule.destroy!
         redirect_to backoffice_special_rules_path, notice: "Deleted #{display_name(@special_rule)}."
       end
+    rescue ActiveRecord::InvalidForeignKey
+      # Attached between the exists? check and the delete; the FK held. Same alert, not a 500 (B-33).
+      redirect_to backoffice_special_rules_path,
+        alert: "#{display_name(@special_rule)} is still carried by a profile and cannot be deleted."
     end
 
     private
