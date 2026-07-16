@@ -82,7 +82,7 @@ paths:
           bearerAuth: []
       responses:
         "204":
-          description: No content
+          description: No content (idempotent — returns 204 even if the token was already absent or invalid)
 
   /token:
     post:
@@ -501,7 +501,6 @@ paths:
       tags: [Spells]
       security:
         - ApiKeyAuth: []
-          bearerAuth: []
       parameters:
         - name: discipline
           in: query
@@ -518,8 +517,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Spell"
-        "401":
-          description: Not authenticated
 
   /abilities:
     get:
@@ -765,7 +762,7 @@ paths:
     get:
       operationId: getGame
       summary: Get a game's full current state
-      description: Returns 404 if the game doesn't exist or the current user isn't a participant. Agendas are only ever populated for the requesting player's own game_player entry.
+      description: Returns 404 if the game doesn't exist or the current user isn't a participant. The opponent's agendas are populated too, except under the scenario's `secret` agenda rule, where the opponent's hand is hidden (see the GamePlayer.agendas description).
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1222,7 +1219,7 @@ paths:
         - ApiKeyAuth: []
           bearerAuth: []
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
@@ -1607,11 +1604,10 @@ components:
       properties:
         list:
           type: object
-          required: [faction]
+          required: [name, faction]
           properties:
             name:
               type: string
-              nullable: true
             faction:
               type: string
             points:
@@ -1721,6 +1717,7 @@ components:
 
     DrawAgendaInput:
       type: object
+      required: [origin]
       description: Required — `origin` identifies what granted the in-play draw.
       properties:
         origin:
@@ -2348,7 +2345,7 @@ components:
 
     GamePlayer:
       type: object
-      required: [id, user_id, username, host, list, role, ready, agendas_confirmed, won_role_roll, won_deployment_roll, score, current_turn, finished, agendas, agenda_history]
+      required: [id, user_id, username, host, list, role, agendas_confirmed, won_role_roll, won_deployment_roll, score, current_turn, finished, agendas, agenda_history]
       properties:
         id:
           type: integer
