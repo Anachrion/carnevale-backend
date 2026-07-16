@@ -26,6 +26,17 @@ RSpec.describe ListValidationService, type: :service do
       expect(result).to eq(success: true, errors: [])
     end
 
+    # B-26: the entry association is polymorphic (no FK), so a catalog row can be deleted out from
+    # under an entry, leaving it orphaned. Validation runs inside an after_commit, so a nil-deref
+    # here would raise on every later edit to the list. It must skip the orphan, not blow up.
+    it "doesn't raise when an entry's catalog record has been deleted" do
+      ref = guild_ref(cost: 10, keywords: ["Leader"])
+      add_entry(list, ref)
+      ref.delete # orphan the entry: entry_id now points at a row that's gone
+
+      expect { described_class.call(list.reload) }.not_to raise_error
+    end
+
     context "points limit" do
       it "succeeds when total cost equals the points limit" do
         ref = guild_ref(cost: 100, keywords: ["Leader"])
@@ -94,6 +105,20 @@ RSpec.describe ListValidationService, type: :service do
         ref = guild_ref(cost: 10, keywords: ["Leader", "Unique"])
         add_entry(list, ref, position: 1)
         add_entry(list, ref, position: 2)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors].first).to match(/Unique and can only be hired once/)
+      end
+
+      # B-25: the same Unique character fielded via two *different* card references of one profile
+      # (an A/B pair) must still be caught — the check groups by profile, not card reference.
+      it "fails for two different references of the same Unique profile" do
+        profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader", "Unique"])
+        ref_a = create(:card_reference, profile: profile, identifier: "guild-unique-a")
+        ref_b = create(:card_reference, profile: profile, identifier: "guild-unique-b")
+        add_entry(list, ref_a, position: 1)
+        add_entry(list, ref_b, position: 2)
 
         result = described_class.call(list)
         expect(result[:success]).to be false

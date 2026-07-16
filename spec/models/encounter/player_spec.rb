@@ -57,6 +57,41 @@ RSpec.describe Encounter::Player, type: :model do
     end
   end
 
+  describe "selecting a gang" do
+    it "snapshots the chosen list as a frozen gang for this player" do
+      game = create(:game, status: "gang_selection")
+      player = create(:game_player, game: game)
+      source = create(:list, owner: player.user, faction: "guild")
+
+      expect(player.select_gang!(source)).to be true
+      expect(player.list).to be_present
+      expect(player.list.source_list_id).to eq(source.id)
+    end
+
+    it "deselecting clears the snapshot" do
+      game = create(:game, status: "gang_selection")
+      player = create(:game_player, game: game)
+      player.select_gang!(create(:list, owner: player.user, faction: "guild"))
+
+      expect(player.deselect_gang!).to be true
+      expect(player.reload.list).to be_nil
+    end
+
+    # B-2: select/deselect re-check the reloaded status under the lock, so a call racing the
+    # opponent's phase-advancing select can't act on a stale gang_selection — which would have let
+    # a deselect destroy a snapshot the now-started game depends on.
+    it "refuses to select or deselect once the reloaded game has left gang selection" do
+      game = create(:game, status: "gang_selection")
+      player = create(:game_player, game: game)
+      source = create(:list, owner: player.user, faction: "guild")
+
+      Encounter::Game.find(game.id).update!(status: "agenda_draw") # the game advanced under us
+
+      expect(player.select_gang!(source)).to be false
+      expect(player.deselect_gang!).to be false
+    end
+  end
+
   describe "game completion derived from both players" do
     it "completes only when both finish, and reverts when either undoes" do
       game = in_progress_game(turns: 1)

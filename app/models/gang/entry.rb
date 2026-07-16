@@ -14,6 +14,13 @@ module Gang
 
     validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
     validates :position, uniqueness: { scope: :list_id }
+    # entry_type is client-supplied on create (POST /list_entries); without this, any AR class name
+    # constantizes and saves, then blows up every later read that calls .cost/.name on it.
+    validates :entry_type, inclusion: { in: %w[Catalog::CardReference Catalog::Equipment] }
+    # A committed Discipline must be a real one (nil until a mage picks spells). Without this a
+    # mis-cased or bogus value ("Blood Rites" instead of "blood_rites") saved silently and only
+    # surfaced later as a confusing "cannot use the Blood rites Discipline" error (B-28).
+    validates :spell_discipline, inclusion: { in: Catalog::Spell::DISCIPLINES }, allow_nil: true
 
     # The Catalog::Profile behind this entry, or nil for non-model entries (e.g. Equipment).
     def profile

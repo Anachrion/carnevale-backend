@@ -59,6 +59,10 @@ class CatalogSnapshot
       end
     end
 
+    # An import can rewrite any profile's ducats/keywords, which feed gang validity — recompute the
+    # cached selection_valid/selection_errors for every existing gang so they don't read stale (B-24).
+    Gang::List.find_each(&:refresh_selection_validity)
+
     tally
   end
 

@@ -137,6 +137,20 @@ RSpec.describe Catalog::CardReference do
 
       expect(reference.reload).not_to be_stale
     end
+
+    # B-31: a reference whose own slot has no art renders with the first illustration (the `card`
+    # action's fallback). Its fingerprint must reflect that same art, or repositioning the art it
+    # was actually drawn with would never mark it stale.
+    it "marks a fallback-rendered card stale when the art it borrowed is repositioned" do
+      ref_b = create(:card_reference, profile: profile, identifier: "guild-thief-b", illustration_number: 2)
+      expect(ref_b.illustration).to eq(illustration) # slot 2 has no art -> falls back to slot 1
+
+      render!(ref_b)
+      expect(ref_b.reload).not_to be_stale
+
+      illustration.update!(zoom: 150, offset_x: 20)
+      expect(ref_b.reload).to be_stale
+    end
   end
 
   describe "#source_fingerprint" do

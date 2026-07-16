@@ -234,6 +234,21 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  describe "PATCH illustration_position" do
+    before { sign_in admin }
+
+    # B-33: repositioning a slot that has no art used to build a path-less illustration and 500 on
+    # its own validation; it should redirect back with an alert instead.
+    it "redirects with an alert when the slot has no illustration" do
+      patch illustration_position_backoffice_profile_path(profile),
+        params: { number: 2, offset_x: 0, offset_y: 0, zoom: 100 }
+
+      expect(response).to have_http_status(:redirect)
+      expect(flash[:alert]).to include("no illustration")
+      expect(profile.illustrations).to be_empty
+    end
+  end
+
   describe "PATCH update (the profile editor)" do
     let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina") }
 
@@ -345,6 +360,15 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
         expect(profile.reload.weapons.map(&:name)).to eq([ "Pistol", "Stiletto" ])
         expect(profile.profile_weapons.map(&:position)).to eq([ 1, 2 ])
+      end
+
+      # B-33: a stale weapon id (deleted in another tab between load and save) makes replace_weapons!
+      # raise; the editor should re-render with the error, not 500.
+      it "re-renders the form when a submitted weapon id no longer exists" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { weapon_ids: [ "", 999_999 ] })
+
+        expect(response).to have_http_status(:unprocessable_entity)
       end
 
       it "reorders them" do
@@ -472,6 +496,21 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       post render_to_catalog_backoffice_profile_path(profile), params: {
         render_token: Backoffice::BaseController.render_token
       }
+      expect(response).to redirect_to(new_user_session_path)
+    end
+
+    it "ignores the render token on other GET actions (index, edit, export)" do
+      # The token exists only for Grover's internal fetch of the `card` action; it must not
+      # also unlock the rest of the backoffice's read surface (regression for B-18).
+      token = Backoffice::BaseController.render_token
+
+      get backoffice_profiles_path(render_token: token)
+      expect(response).to redirect_to(new_user_session_path)
+
+      get edit_backoffice_profile_path(profile, render_token: token)
+      expect(response).to redirect_to(new_user_session_path)
+
+      get export_pdf_backoffice_profiles_path(render_token: token)
       expect(response).to redirect_to(new_user_session_path)
     end
   end

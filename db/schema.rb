@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -74,6 +74,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
     t.integer "second_roll", null: false
     t.datetime "updated_at", null: false
     t.index ["first_roll", "second_roll"], name: "index_agendas_on_first_roll_and_second_roll", unique: true
+    t.index ["name"], name: "index_agendas_on_name", unique: true
   end
 
   create_table "cable_tickets", force: :cascade do |t|
@@ -126,10 +127,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
   end
 
   create_table "equipment", force: :cascade do |t|
-    t.integer "cost"
+    t.integer "cost", null: false
     t.datetime "created_at", null: false
-    t.text "description"
-    t.string "name"
+    t.text "description", default: "", null: false
+    t.string "name", null: false
     t.datetime "updated_at", null: false
   end
 
@@ -285,6 +286,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
     t.json "special_rules", default: [], null: false
     t.integer "turns", default: 0, null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_scenarios_on_name", unique: true
   end
 
   create_table "special_rules", force: :cascade do |t|
@@ -307,6 +309,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
     t.string "discipline", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["name", "discipline"], name: "index_spells_on_name_and_discipline", unique: true
   end
 
   create_table "users", force: :cascade do |t|
@@ -350,6 +353,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_15_190000) do
   add_foreign_key "games", "scenarios"
   add_foreign_key "illustrations", "profiles"
   add_foreign_key "list_entries", "lists"
+  add_foreign_key "lists", "lists", column: "source_list_id", on_delete: :nullify
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"
   add_foreign_key "profile_weapons", "profiles"
