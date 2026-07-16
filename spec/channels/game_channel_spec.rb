@@ -21,4 +21,14 @@ RSpec.describe GameChannel, type: :channel do
 
     expect(subscription).to be_rejected
   end
+
+  # B-10: a player who soft-deleted the game shouldn't keep receiving its broadcasts — matching the
+  # REST authorization boundary, which also excludes deleted memberships.
+  it "rejects a participant who has soft-deleted the game" do
+    game_player.update!(visibility: "deleted")
+    stub_connection current_user: user
+    subscribe(game_id: game.id)
+
+    expect(subscription).to be_rejected
+  end
 end
