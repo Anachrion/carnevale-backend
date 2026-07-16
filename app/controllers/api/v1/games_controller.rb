@@ -20,7 +20,7 @@ module Api
         # doesn't N+1 over lists, scores, and drawn/held agendas per player (B-P2-4).
         game_players = current_user.game_players
                                    .where(visibility: visibility)
-                                   .includes(game: [ :scenario, { game_players: [ :user, :list, :agenda_events ] } ])
+                                   .includes(game: [ :scenario, { game_players: [ :user, :list, { agenda_events: :agenda } ] } ])
         render json: game_players.map { |gp| GameSerializer.new(gp.game, viewer: gp).as_json }
       end
 

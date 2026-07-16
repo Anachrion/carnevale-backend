@@ -38,17 +38,31 @@ module Gang
     # Summoned models are excluded: they were conjured mid-battle by a special rule, not bought, so
     # charging the gang for them would show it over a limit it never actually exceeded.
     def total_cost
-      hired = list_entries.where(summoned: false)
-      model_cost = hired
+      self.class.total_costs_for([ id ])[id] || 0
+    end
+
+    # Total ducat cost for many lists in two grouped queries, keyed by list id — so serializing a
+    # batch of lists (e.g. every player's gang across the games index) doesn't run two aggregate
+    # queries per list (B-34). Summoned models are free and excluded, matching #total_cost.
+    def self.total_costs_for(list_ids)
+      ids = Array(list_ids).uniq
+      return {} if ids.empty?
+
+      hired = Gang::Entry.where(list_id: ids, summoned: false)
+      model = hired
         .where(entry_type: "Catalog::CardReference")
         .joins("INNER JOIN card_references ON card_references.id = list_entries.entry_id")
         .joins("INNER JOIN profiles ON profiles.id = card_references.profile_id")
-        .sum("profiles.ducats")
-      equipment_cost = hired
+        .group(:list_id).sum("profiles.ducats")
+      equipment = hired
         .where(entry_type: "Catalog::Equipment")
         .joins("INNER JOIN equipment ON equipment.id = list_entries.entry_id")
-        .sum("equipment.cost")
-      model_cost + equipment_cost
+        .group(:list_id).sum("equipment.cost")
+
+      costs = Hash.new(0)
+      model.each { |list_id, sum| costs[list_id] += sum }
+      equipment.each { |list_id, sum| costs[list_id] += sum }
+      costs
     end
 
     # Deep-copies this list (and its entries) into a new list owned by `owner`, so the copy stays
