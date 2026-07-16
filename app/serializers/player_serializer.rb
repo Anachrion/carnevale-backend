@@ -1,10 +1,11 @@
 class PlayerSerializer
   # `secret` reflects the scenario's Secret agenda rule (passed down by GameSerializer). It only
   # affects how much of an *opponent's* agendas a viewer sees — a player always sees all of their own.
-  def initialize(player, viewer:, secret: false)
+  def initialize(player, viewer:, secret: false, list_total_cost: nil)
     @player = player
     @viewer = viewer
     @secret = secret
+    @list_total_cost = list_total_cost
   end
 
   def as_json
@@ -15,7 +16,7 @@ class PlayerSerializer
       user_id: player.user_id,
       username: player.user.username,
       host: player.host,
-      list: player.list && ListSummarySerializer.new(player.list).as_json,
+      list: player.list && ListSummarySerializer.new(player.list, total_cost: @list_total_cost).as_json,
       role: player.role,
       agendas_confirmed: player.agendas_confirmed,
       won_role_roll: player.won_role_roll,
@@ -54,12 +55,14 @@ class PlayerSerializer
   # in place and drops the redraw at the bottom.
   def hand_agendas
     ids = @player.hand_agenda_ids
-    by_id = Catalog::Agenda.where(id: ids).index_by(&:id)
+    # Resolve from the agendas already preloaded on this player's events, rather than a fresh
+    # `Catalog::Agenda.where` per player (B-34).
+    by_id = sorted_events.map(&:agenda).uniq.index_by(&:id)
     ids.filter_map { |id| by_id[id] }.map { |a| { id: a.id, name: a.name, description: a.description } }
   end
 
   def agenda_history
-    @player.agenda_events.includes(:agenda).order(:turn, :id).map do |event|
+    sorted_events.map do |event|
       {
         turn: event.turn,
         action: event.action,
@@ -68,5 +71,11 @@ class PlayerSerializer
         agenda: { id: event.agenda.id, name: event.agenda.name }
       }
     end
+  end
+
+  # Sort the preloaded agenda_events in Ruby (by draw order) instead of an `.order` on the
+  # association, which would re-query and discard the preload (B-34). Memoized per serializer.
+  def sorted_events
+    @sorted_events ||= @player.agenda_events.sort_by { |e| [ e.turn, e.id ] }
   end
 end

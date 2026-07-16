@@ -9,7 +9,7 @@ module Backoffice
     # GET /backoffice/weapons
     def index
       @weapons = Catalog::Weapon.order(:name)
-      @weapons = @weapons.where("name ILIKE ?", "%#{params[:search]}%") if params[:search].present?
+      @weapons = @weapons.where("name ILIKE ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:search])}%") if params[:search].present?
       @carried_by = Catalog::ProfileWeapon.group(:weapon_id).count
     end
 
@@ -65,9 +65,14 @@ module Backoffice
         redirect_to backoffice_weapons_path,
           alert: "#{@weapon.name} is still carried by #{@weapon.profiles.count} profile(s) and cannot be deleted."
       else
-        @weapon.destroy
+        @weapon.destroy!
         redirect_to backoffice_weapons_path, notice: "Deleted #{@weapon.name}."
       end
+    rescue ActiveRecord::InvalidForeignKey
+      # A profile attached this weapon between the exists? check and the delete — the FK saved the
+      # integrity; show the same friendly alert instead of a 500 (B-33 TOCTOU).
+      redirect_to backoffice_weapons_path,
+        alert: "#{@weapon.name} is still carried by a profile and cannot be deleted."
     end
 
     private

@@ -37,9 +37,12 @@ module Backoffice
     end
 
     # A render-token request is only ever the internal Grover fetch of a card page, so it is
-    # limited to safe GETs — it can never reach the editing/export/render-to-catalog actions.
+    # limited to that one action — otherwise the token (a permanent, unrotatable secret derived
+    # from secret_key_base) would also open every other backoffice GET, including full-catalog
+    # PDF/PNG export.
     def valid_render_token?
-      request.get? &&
+      action_name == "card" &&
+        request.get? &&
         params[:render_token].present? &&
         ActiveSupport::SecurityUtils.secure_compare(params[:render_token], self.class.render_token)
     end

@@ -20,7 +20,7 @@ module Api
         # doesn't N+1 over lists, scores, and drawn/held agendas per player (B-P2-4).
         game_players = current_user.game_players
                                    .where(visibility: visibility)
-                                   .includes(game: [ :scenario, { game_players: [ :user, :list, :agenda_events ] } ])
+                                   .includes(game: [ :scenario, { game_players: [ :user, :list, { agenda_events: :agenda } ] } ])
         render json: game_players.map { |gp| GameSerializer.new(gp.game, viewer: gp).as_json }
       end
 
@@ -32,12 +32,17 @@ module Api
           ducat_limit: params[:ducat_limit].presence || scenario.ducats,
           board_size: params[:board_size]
         )
-        if game.save
+        return render_error(game.errors) unless game.valid?
+
+        # One transaction so a failed host-player insert doesn't leave an orphaned, playerless game
+        # (with its join code reserved) behind (B-13). A create! failure rolls back and surfaces as
+        # a 422 via the base controller's RecordInvalid handler.
+        game_player = nil
+        ActiveRecord::Base.transaction do
+          game.save!
           game_player = game.game_players.create!(user: current_user, host: true)
-          render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
-        else
-          render_error(game.errors)
         end
+        render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
       end
 
       def show
@@ -46,20 +51,12 @@ module Api
 
       def join
         game = Encounter::Game.find_by!(join_code: params[:join_code].to_s.upcase)
-        game_player = game.game_players.find_by(user: current_user)
+        game_player = game.join!(current_user)
+        return render_error("Game is full") unless game_player
 
-        if game_player
-          game_player.update!(visibility: "active") unless game_player.active?
-          render json: GameSerializer.new(game, viewer: game_player).as_json
-          return
-        end
-
-        return render_error("Game is full") if game.game_players.count >= 2
-
-        game_player = game.game_players.create!(user: current_user, host: false)
-        game.assign_roll_winners!
-        game.update!(status: "gang_selection")
-        broadcast_state!(game)
+        # Only a genuinely new membership advances the game (and needs the opponent notified); a
+        # re-join by an existing player just re-serves the current state.
+        broadcast_state!(game) if game_player.previously_new_record?
         render json: GameSerializer.new(game, viewer: game_player).as_json
       end
 
@@ -87,39 +84,28 @@ module Api
       end
 
       def select_gang
-        # Only selectable while the game is still in gang selection; once both players have locked
-        # in the game advances past this status and gangs are frozen for the rest of the match.
+        # Fast pre-check on the in-memory status to reject the common already-advanced case without
+        # taking a lock; select_gang! re-checks authoritatively against the reloaded, locked row.
         return render_error("Gangs can no longer be changed") unless @game.gang_selection?
 
         list = current_user.lists.find(params[:list_id])
-        return render_error("List exceeds this game's ducat limit") if list.points > @game.ducat_limit
+        # `points` is only the builder's declared target — guard on what the gang actually costs, so
+        # an over-budget gang (e.g. 300 ducats of models in a 150-ducat game) can't freeze into the
+        # game (B-12). Roster legality (Leader, ratios, …) is intentionally not enforced here: a
+        # player may take a work-in-progress gang into a casual game.
+        return render_error("This gang costs more than the game's ducat limit") if list.total_cost > @game.ducat_limit
 
-        # Re-selecting is allowed during gang selection (a player can change their mind before the
-        # game advances). Destroy any previous snapshot first, in a transaction, so we neither leave
-        # an orphaned snapshot nor hit the `owner_id NOT NULL` constraint that a bare has_one
-        # reassignment would trigger.
-        Gang::List.transaction do
-          @game_player.list&.destroy!
-          @game_player.association(:list).reset
-          @game_player.list = list.snapshot_for(@game_player)
-        end
+        return render_error("Gangs can no longer be changed") unless @game_player.select_gang!(list)
 
-        maybe_advance_to_agenda_draw!
+        @game.advance_to_agenda_draw_if_ready!
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
 
       def deselect_gang
-        # Clearing a pick is only meaningful while still choosing — once both players have locked in,
-        # the game has advanced past gang_selection and gangs are frozen.
+        # Fast pre-check (see select_gang); deselect_gang! is the authoritative locked guard.
         return render_error("Gangs can no longer be changed") unless @game.gang_selection?
-
-        # Mirror select_gang's snapshot teardown: destroy the frozen copy and reset the association so
-        # the has_one is genuinely empty (not just detached), leaving the player with no gang again.
-        Gang::List.transaction do
-          @game_player.list&.destroy!
-          @game_player.association(:list).reset
-        end
+        return render_error("Gangs can no longer be changed") unless @game_player.deselect_gang!
 
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
@@ -149,7 +135,8 @@ module Api
         return render_error("Wrong game status for confirming agendas") unless @game.agenda_draw?
 
         @game_player.update!(agendas_confirmed: true)
-        maybe_start_game!
+        # No-op unless both players have now confirmed; locked and idempotent (see Game#start!).
+        @game.start!
         broadcast_state!(@game)
         render json: GameSerializer.new(@game, viewer: @game_player).as_json
       end
@@ -172,7 +159,12 @@ module Api
       def discard_agenda
         origin = params[:origin]
         recycle =
-          if origin == MULLIGAN_ORIGIN && (@game.mulligan_window? || @game_player.playing?)
+          # The pre-game mulligan closes once this player confirms their hand — otherwise a
+          # confirmed player could keep swapping agendas via the API until the opponent confirms
+          # (the UI already hides the button, but the server didn't enforce it — B-9). The in-play
+          # `unachievable` discard (playing?) is unaffected.
+          if origin == MULLIGAN_ORIGIN &&
+              ((@game.mulligan_window? && !@game_player.agendas_confirmed?) || @game_player.playing?)
             true
           elsif @game_player.playing? && IN_PLAY_DISCARD_ORIGINS.include?(origin)
             recycle_param
@@ -328,28 +320,6 @@ module Api
         render_error("Role roll-off not resolved yet")
       end
 
-      def maybe_advance_to_agenda_draw!
-        return unless @game.status == "gang_selection"
-        players = @game.game_players.reload
-        return unless players.size == 2 && players.all? { |p| p.list.present? }
-
-        # Deal both opening hands the instant the phase begins. The draw carries no player choice
-        # (the weighted buckets decide), so there's nothing to click — players land in agenda_draw
-        # with their hands already under "Your Agenda", then review/mulligan and confirm. Fires
-        # exactly once: the status guard above blocks re-entry once we've flipped to agenda_draw.
-        @game.transaction do
-          @game.update!(status: "agenda_draw")
-          players.each { |p| @game.agenda_deck.draw_initial(p) }
-        end
-      end
-
-      def maybe_start_game!
-        return unless @game.status == "agenda_draw"
-
-        # start! re-checks both players confirmed under the status guard and creates entry states.
-        @game.start!
-      end
-
       def recycle_param
         ActiveModel::Type::Boolean.new.cast(params[:recycle])
       end
@@ -358,13 +328,21 @@ module Api
       # current player's own models (the opponent's entries 404, since the list is scoped to the
       # requesting player), apply the caller's mutation, then persist and broadcast.
       def update_entry_state!
-        return render_error("Wrong game status for updating a model") unless @game.status == "in_progress"
+        # `playing?` (in_progress AND not finished), so a player who has ended the game can't keep
+        # editing their models (B-8) — the draw/score/turn endpoints already block this.
+        return render_error("Wrong game status for updating a model") unless @game_player.playing?
 
         state = @game_player.list.list_entries.find(params[:list_entry_id]).entry_state
         return render_error("This entry has no state to update") unless state
 
-        yield state
-        if state.save
+        # Lock the row across the read-modify-write: counters are merged onto the current value, so
+        # the same user on two devices would otherwise clobber each other's toggle (B-8).
+        saved = false
+        state.with_lock do
+          yield state
+          saved = state.save
+        end
+        if saved
           broadcast_state!(@game)
           # Returns just the mutated entry state, not the whole game: the full state reaches both
           # players via broadcast_state!, and the client applies this slim payload as an optimistic
