@@ -26,6 +26,17 @@ RSpec.describe ListValidationService, type: :service do
       expect(result).to eq(success: true, errors: [])
     end
 
+    # B-26: the entry association is polymorphic (no FK), so a catalog row can be deleted out from
+    # under an entry, leaving it orphaned. Validation runs inside an after_commit, so a nil-deref
+    # here would raise on every later edit to the list. It must skip the orphan, not blow up.
+    it "doesn't raise when an entry's catalog record has been deleted" do
+      ref = guild_ref(cost: 10, keywords: ["Leader"])
+      add_entry(list, ref)
+      ref.delete # orphan the entry: entry_id now points at a row that's gone
+
+      expect { described_class.call(list.reload) }.not_to raise_error
+    end
+
     context "points limit" do
       it "succeeds when total cost equals the points limit" do
         ref = guild_ref(cost: 100, keywords: ["Leader"])
