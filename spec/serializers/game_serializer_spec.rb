@@ -13,7 +13,7 @@ RSpec.describe GameSerializer do
   end
 
   def preloaded(game)
-    Encounter::Game.includes(:scenario, game_players: [ :user, :list, :agenda_events ]).find(game.id)
+    Encounter::Game.includes(:scenario, game_players: [ :user, :list, { agenda_events: :agenda } ]).find(game.id)
   end
 
   # B-P2-4: serializing a game read per-player list, score, and drawn/held agendas with a query
