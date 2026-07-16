@@ -653,6 +653,20 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
 
+    # B-8: once a player has ended the game from their side they can't keep editing their models —
+    # only in-progress, not-yet-finished players can.
+    it "rejects entry-state edits from a player who has finished the game" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      4.times { host.post "/api/v1/games/#{game_id}/turns/advance", headers: h } # to the last turn (5)
+      host.post "/api/v1/games/#{game_id}/finish", headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/counters",
+                 params: { counters: { stunned: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
     # B-17: an omitted `counters` object makes params.require raise ParameterMissing. It used to
     # return Rails' default `{status,error}` 400; the base controller now renders a 400 in the
     # API's `{ errors: {...} }` shape so the client parses it like any other error.
@@ -1078,7 +1092,7 @@ RSpec.describe "Api::V1::Games", type: :request do
   end
 
   describe "guard rails" do
-    it "rejects selecting a gang that exceeds the ducat limit" do
+    it "rejects selecting a gang whose total cost exceeds the ducat limit" do
       host = open_session
       guest = open_session
       h = headers_for(host, host_user)
@@ -1088,7 +1102,12 @@ RSpec.describe "Api::V1::Games", type: :request do
       game_id = json(host)["id"]
       guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
 
-      too_big = create(:list, owner: host_user, points: 100)
+      # 100 ducats of models in a 50-ducat game — the guard is on real cost, not the list's
+      # declared points target (B-12).
+      too_big = create(:list, owner: host_user, faction: "guild", points: 50)
+      create(:list_entry, list: too_big,
+             entry: create(:reference, profile: create(:profile, faction: "guild", ducats: 100)))
+
       host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: too_big.id }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end

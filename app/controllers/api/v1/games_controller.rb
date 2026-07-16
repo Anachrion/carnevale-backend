@@ -32,12 +32,17 @@ module Api
           ducat_limit: params[:ducat_limit].presence || scenario.ducats,
           board_size: params[:board_size]
         )
-        if game.save
+        return render_error(game.errors) unless game.valid?
+
+        # One transaction so a failed host-player insert doesn't leave an orphaned, playerless game
+        # (with its join code reserved) behind (B-13). A create! failure rolls back and surfaces as
+        # a 422 via the base controller's RecordInvalid handler.
+        game_player = nil
+        ActiveRecord::Base.transaction do
+          game.save!
           game_player = game.game_players.create!(user: current_user, host: true)
-          render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
-        else
-          render_error(game.errors)
         end
+        render json: GameSerializer.new(game, viewer: game_player).as_json, status: :created
       end
 
       def show
@@ -84,7 +89,11 @@ module Api
         return render_error("Gangs can no longer be changed") unless @game.gang_selection?
 
         list = current_user.lists.find(params[:list_id])
-        return render_error("List exceeds this game's ducat limit") if list.points > @game.ducat_limit
+        # `points` is only the builder's declared target — guard on what the gang actually costs, so
+        # an over-budget gang (e.g. 300 ducats of models in a 150-ducat game) can't freeze into the
+        # game (B-12). Roster legality (Leader, ratios, …) is intentionally not enforced here: a
+        # player may take a work-in-progress gang into a casual game.
+        return render_error("This gang costs more than the game's ducat limit") if list.total_cost > @game.ducat_limit
 
         return render_error("Gangs can no longer be changed") unless @game_player.select_gang!(list)
 
@@ -314,13 +323,21 @@ module Api
       # current player's own models (the opponent's entries 404, since the list is scoped to the
       # requesting player), apply the caller's mutation, then persist and broadcast.
       def update_entry_state!
-        return render_error("Wrong game status for updating a model") unless @game.status == "in_progress"
+        # `playing?` (in_progress AND not finished), so a player who has ended the game can't keep
+        # editing their models (B-8) — the draw/score/turn endpoints already block this.
+        return render_error("Wrong game status for updating a model") unless @game_player.playing?
 
         state = @game_player.list.list_entries.find(params[:list_entry_id]).entry_state
         return render_error("This entry has no state to update") unless state
 
-        yield state
-        if state.save
+        # Lock the row across the read-modify-write: counters are merged onto the current value, so
+        # the same user on two devices would otherwise clobber each other's toggle (B-8).
+        saved = false
+        state.with_lock do
+          yield state
+          saved = state.save
+        end
+        if saved
           broadcast_state!(@game)
           # Returns just the mutated entry state, not the whole game: the full state reaches both
           # players via broadcast_state!, and the client applies this slim payload as an optimistic
