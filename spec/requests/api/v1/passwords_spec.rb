@@ -14,11 +14,14 @@ RSpec.describe "Api::V1::Passwords", type: :request do
       expect(user.reload.reset_password_token).to be_present
     end
 
-    it "returns 422 for an unknown email" do
-      post "/api/v1/password", params: { user: { email: "nobody@example.com" } }.to_json, headers: headers
+    # B-20: with Devise paranoid mode, an unknown email must be indistinguishable from a known one —
+    # same 200, no mail — so the endpoint can't be used to enumerate which addresses have accounts.
+    it "does not reveal whether an unknown email has an account" do
+      expect {
+        post "/api/v1/password", params: { user: { email: "nobody@example.com" } }.to_json, headers: headers
+      }.not_to change { ActionMailer::Base.deliveries.size }
 
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(JSON.parse(response.body)["errors"]).to have_key("email")
+      expect(response).to have_http_status(:ok)
     end
   end
 
