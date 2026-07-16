@@ -42,16 +42,24 @@ module Encounter
     def score(game_player, agenda_id)
       return false unless game_player.hand_agenda_ids.include?(agenda_id)
 
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: game_player.current_turn)
-      draw(game_player, origin: "recycle", caused_by_event: event) if @game.scenario.cycle_agendas?
+      # The scored event and its Cycle-rule replacement draw are one unit: if the replacement raises
+      # (e.g. deck exhausted), roll the score back too, rather than leave a scored-but-not-broadcast
+      # event that a retry then rejects as "not in hand" (B-7).
+      ActiveRecord::Base.transaction do
+        event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "scored", turn: game_player.current_turn)
+        draw(game_player, origin: "recycle", caused_by_event: event) if @game.scenario.cycle_agendas?
+      end
       true
     end
 
     def discard(game_player, agenda_id, origin:, recycle: false)
       return false unless game_player.hand_agenda_ids.include?(agenda_id)
 
-      event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: game_player.current_turn)
-      draw(game_player, origin: "recycle", caused_by_event: event) if recycle
+      # Discard + optional replacement draw are atomic, for the same reason as #score (B-7).
+      ActiveRecord::Base.transaction do
+        event = game_player.agenda_events.create!(agenda_id: agenda_id, action: "discarded", origin: origin, turn: game_player.current_turn)
+        draw(game_player, origin: "recycle", caused_by_event: event) if recycle
+      end
       true
     end
 
