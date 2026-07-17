@@ -160,6 +160,18 @@
             </div>
           </td>
         </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;">Spell pools</th>
+          <td>
+            <%= render "spell_pools_editor", profile: profile, all_special_rules: @all_special_rules %>
+          </td>
+        </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;">Granted spells</th>
+          <td>
+            <%= render "granted_spells_editor", profile: profile, all_spells: @all_spells, all_special_rules: @all_special_rules %>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -318,6 +330,30 @@
       scheduleRefresh();
     });
   });
+
+  // ── Spell pools / granted spells editors ────────────────────────────────────────
+  // Same ordered-rows-cloned-from-a-<template> shape as the weapon/rule pickers above, but each
+  // row here is a whole fieldset of heterogeneous inputs rather than one <select>, so add/remove
+  // is generic (by row container class) instead of reusing .js-picker's single-select logic.
+  // Pools/grants don't print on the card face, so they don't call scheduleRefresh().
+  function wireRowEditor(editorSelector, rowsSelector, rowSelector, templateSelector, addButtonSelector) {
+    document.querySelectorAll(editorSelector).forEach(function (editor) {
+      const rows = editor.querySelector(rowsSelector);
+      const template = editor.querySelector(templateSelector);
+
+      editor.querySelector(addButtonSelector).addEventListener('click', function () {
+        rows.appendChild(template.content.cloneNode(true));
+      });
+
+      editor.addEventListener('click', function (event) {
+        if (!event.target.classList.contains('js-remove-row')) return;
+        event.target.closest(rowSelector).remove();
+      });
+    });
+  }
+
+  wireRowEditor('.js-pools-editor', '.js-pool-rows', '.js-pool-row', '.js-pool-template', '.js-pool-add');
+  wireRowEditor('.js-grants-editor', '.js-grant-rows', '.js-grant-row', '.js-grant-template', '.js-grant-add');
 
   // ── The card identifier (new profiles only) ────────────────────────────────────
   // Suggested from the faction and name, and left alone the moment it is typed into by hand:

@@ -426,12 +426,16 @@ paths:
 
     patch:
       operationId: setListEntrySpells
-      summary: Set the spells (and Discipline) a Mage model knows
+      summary: Set the spells (and Discipline(s)) a Mage model knows, per pool
       description: >
-        Replaces the model's committed Discipline and full set of known spells (rulebook p24).
-        Only Mage models may know spells; the selection still saves if it breaks the rules, but
-        the returned list will report selection_valid: false with the reason. Returns 404 if the
-        entry's list doesn't belong to the current user.
+        Replaces the model's committed Discipline(s) and known spells, one pool at a time
+        (rulebook p24, generalized for CARNEVALEB-47's exceptions — most models have exactly one
+        pool). Only Mage models may know spells; an illegal selection still saves, but the
+        returned list will report selection_valid: false with the reason. Also reachable for a
+        model in an active game's roster (not just the reusable gang list) up until that game's
+        owning player has confirmed their Agendas, at which point it 422s — spells lock in
+        together with Agendas at the start of the game. Returns 404 if the entry's list doesn't
+        belong to the current user.
       tags: [ListEntries]
       security:
         - ApiKeyAuth: []
@@ -453,6 +457,14 @@ paths:
           description: Not authenticated
         "404":
           description: Not found
+        "422":
+          description: >
+            Unprocessable — an unknown spell/pool id, or spells are locked in for this game
+            (see description above)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
 
   /list_entries/{id}/illustration:
     parameters:
@@ -1198,6 +1210,56 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/entries/{list_entry_id}/spell_casts:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    patch:
+      operationId: updateSpellCast
+      summary: Mark (or unmark) one known/granted spell as cast, on one of the current player's own models
+      description: |
+        Only available while the game is in_progress, and only for entries in the requesting
+        player's own gang — the opponent's models 404. `cast` is the desired state rather than a
+        blind toggle, so a retried request from a flaky connection can't accidentally flip it back.
+        Stamped against the requesting player's own turn cursor: for a pool/grant with
+        resets_each_round true (almost every one), the mark clears automatically once that player
+        advances to a new turn; for the rare resets_each_round: false case (Adventuring Noble's
+        Arcane Totem pool), it persists for the rest of the game but stays manually toggleable, so a
+        misclick is always correctable. The change is broadcast to both players as a `game_state`
+        event (re-fetch the player list to see each spell's updated `cast` flag).
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpellCastInput"
+      responses:
+        "200":
+          description: The model's full updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryState"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status or an entry with no state (equipment)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/agendas/draw:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -1664,16 +1726,42 @@ components:
         entry:
           type: object
           properties:
-            discipline:
-              type: string
+            mentored_by_entry_id:
+              type: integer
               nullable: true
-              description: The Discipline the model commits to; all known spells must belong to it. Null clears the selection.
-              enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
-            spell_ids:
+              description: >
+                Apprentice Doctor's Apprenticeship only: id of another ListEntry in the same list to
+                copy Mage disciplines/slot_count from (see ListEntry.mentored_by_entry_id), or null to
+                clear it. Omit entirely to leave the current mentor untouched — unlike pool_selections,
+                this field is not wholesale-replaced on every call.
+            pool_selections:
               type: array
+              description: >
+                One entry per pool (almost always one pool; a two-pool model like Seamstress or
+                Doctor of the Firmament needs one entry per pool). Replaces this model's *entire*
+                spell selection wholesale across every pool — a pool omitted here loses its
+                selection, it isn't left untouched — so always submit every pool the model has,
+                not just the one that changed.
               items:
-                type: integer
-              description: The exact set of known spell ids. Replaces any previous selection.
+                type: object
+                required: [pool_id]
+                properties:
+                  pool_id:
+                    type: integer
+                    description: Id of one of this model's pools (see ListEntry.pools[].id).
+                  disciplines:
+                    type: array
+                    items:
+                      type: string
+                      enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+                    description: >
+                      The discipline(s) committed for this pool — usually one, up to the pool's
+                      `of` count for a multi-discipline pool (Doctor of the Firmament).
+                  spell_ids:
+                    type: array
+                    items:
+                      type: integer
+                    description: The exact set of known (non-Cantrip) spell ids for this pool.
 
     CreateGameInput:
       type: object
@@ -1788,6 +1876,24 @@ components:
               type: integer
               minimum: 0
 
+    UpdateSpellCastInput:
+      type: object
+      required: [spell_cast]
+      properties:
+        spell_cast:
+          type: object
+          required: [key, cast]
+          properties:
+            key:
+              type: string
+              description: >
+                Identifies the spell within this model — copy it verbatim from the `key` field of the
+                PoolSpell/GrantedSpell being marked (see ListEntry.pools[].spells[]/cantrips[] and
+                ListEntry.granted_spells[]). Opaque; don't try to construct it client-side.
+            cast:
+              type: boolean
+              description: The desired state (true = mark cast, false = clear it) rather than a toggle.
+
     # ── Responses ───────────────────────────────────────────────────────────────
 
     Session:
@@ -1844,7 +1950,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, cost, summoned, mage, spell_slots, disciplines, spells]
+      required: [id, position, entry_type, entry_id, name, keywords, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
       properties:
         id:
           type: integer
@@ -1864,6 +1970,14 @@ components:
             The underlying profile's name without the card-reference letter suffix (e.g. "Beggar"
             rather than "Beggar (A)"). Use this to label a hired model and number duplicates
             client-side. Null for Equipment entries.
+        keywords:
+          type: array
+          items:
+            type: string
+          description: >
+            The underlying profile's printed keywords (e.g. ["Hero", "Doctor"]) — used client-side
+            to filter Apprentice Doctor's Apprenticeship mentor candidates ("a character with both
+            the Doctor and Hero keywords"). Empty for Equipment.
         identifier:
           type: string
           nullable: true
@@ -1897,29 +2011,211 @@ components:
           description: Present once the game has started (both players confirming their Agenda hand flips it to in_progress); null beforehand and for Catalog::Equipment entries, which have no HP/WP/CP to track.
         mage:
           type: boolean
-          description: Whether this model is a Mage and can therefore be given spells. Always false for Equipment.
-        spell_slots:
+          description: Whether this model is a Mage and can therefore be given spells. Always false for Equipment; non-Mage models carry empty pools/granted_spells.
+        mentored_by_entry_id:
           type: integer
-          description: Maximum number of non-Cantrip spells the model may know (Mage X + Expert Sorcerer X). 0 for non-Mages.
-        disciplines:
+          nullable: true
+          description: >
+            Apprentice Doctor's Apprenticeship: the id of another ListEntry in the same list whose
+            resolved Mage pool this model's mentor_derived pool borrows its disciplines/slot_count
+            from. Null for every other profile, and null until a mentor is chosen. Set it via
+            PATCH /list_entries/{id}/spells (SetEntrySpellsInput.entry.mentored_by_entry_id).
+        distinct_discipline_per_copy:
+          type: boolean
+          description: >
+            Romani's Tarot: when true, every other ListEntry of the same profile in this list must
+            commit its first pool to a different Discipline from this one's — enforced server-side
+            (ListValidationService), exposed here only so the picker can grey out a sibling's
+            already-chosen Discipline with an inline reason. False for every other profile.
+        pools:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpellPool"
+          description: >
+            This model's spell-selection pools (rulebook p24), in profile order. Empty for non-Mage
+            models. Most profiles have exactly one; a few (Seamstress, Tarot Reader) have two, and
+            one (Doctor of the Firmament) spans multiple Disciplines at once via a single pool's `of`.
+        granted_spells:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrantedSpell"
+          description: >
+            Spells this model always knows regardless of pool picks (e.g. Galilean Priest's Waves of
+            Force, Blood Crone's five Cantrips) — read-only, never edited through the spells endpoint,
+            and don't count against any pool's slot_count.
+
+    SpellPool:
+      type: object
+      required:
+        - id
+        - of
+        - slot_count
+        - mage_slot_count
+        - unlimited
+        - grants_cantrip
+        - mentor_derived
+        - distinct_from_other_pools
+        - resets_each_round
+        - rule
+        - eligible_disciplines
+        - chosen_disciplines
+        - cantrips
+        - spells
+      properties:
+        id:
+          type: integer
+        of:
+          type: integer
+          description: How many Disciplines this pool's chosen_disciplines may span at once (1 for almost every profile; 2 for Doctor of the Firmament).
+        slot_count:
+          type: integer
+          description: Non-Cantrip spells this pool grants, shared across every chosen Discipline when of > 1. Irrelevant when unlimited.
+        mage_slot_count:
+          type: integer
+          description: >
+            The Mage(X)-only portion of slot_count, excluding any Expert Sorcerer(Y) bonus rolled
+            into the same pool — equal to slot_count when there's no separate Expert Sorcerer
+            ability. Relevant only when reading a *mentor candidate's* own pool: Apprentice
+            Doctor's Apprenticeship copies the Mage ability alone, so her mentor_derived pool's
+            resolved slot_count above already reflects the mentor's mage_slot_count, not their
+            full slot_count — this field is what lets the picker preview that before saving, from
+            the mentor's ListEntry in the same gang.
+        unlimited:
+          type: boolean
+          description: When true, this model automatically knows every spell of its chosen Discipline(s) — spells/cantrips are pre-filled and there is nothing to pick.
+        grants_cantrip:
+          type: boolean
+          description: Whether committing a Discipline in this pool grants that Discipline's free Cantrip (not counted against slot_count).
+        mentor_derived:
+          type: boolean
+          description: >
+            Apprentice Doctor's Apprenticeship: when true, eligible_disciplines/of/slot_count are
+            resolved from the mentor entry named by the parent ListEntry's mentored_by_entry_id
+            (null/empty until a mentor is chosen), not static per-profile data. chosen_disciplines and
+            spells are still this model's own picks.
+        distinct_from_other_pools:
+          type: boolean
+          description: >
+            Tarot Reader's Minor Arcana: when true, this pool's chosen_disciplines must not overlap
+            with any other pool's on the same model ("1 additional Cantrip... from a different
+            available Discipline") — enforced server-side, exposed here so the picker can grey out
+            a Discipline already committed by another of this model's pools.
+        resets_each_round:
+          type: boolean
+          description: >
+            Whether a spell cast through this pool becomes available again on the next round (true,
+            the default — "each character may only attempt to cast each spell once per round") or
+            stays cast for the rest of the game once marked (false — Adventuring Noble's Arcane
+            Totem pool only, "once per game"). Applies to every PoolSpell in cantrips/spells.
+        rule:
+          allOf:
+            - $ref: "#/components/schemas/SpellRuleRef"
+          nullable: true
+          description: The card's special rule that explains this pool's shape (e.g. Aetheric Gaze, Entwined Magics, Apprenticeship, Arcane Totem), or null for the standard Mage(X) case.
+        eligible_disciplines:
           type: array
           items:
             type: string
-          description: Discipline slugs the model may pick spells from, e.g. ["blood_rites", "divinity"].
-        spell_discipline:
-          type: string
-          nullable: true
-          description: The Discipline this model has committed to, or null if none picked yet.
-        cantrip:
-          allOf:
-            - $ref: "#/components/schemas/Spell"
-          nullable: true
-          description: The free Cantrip the model always knows for its committed Discipline; null when no Discipline is picked. Not counted against spell_slots.
+          description: Discipline slugs this pool may pick from, e.g. ["blood_rites", "divinity"].
+        chosen_disciplines:
+          type: array
+          items:
+            type: string
+          description: The subset of eligible_disciplines this model has actually committed to (size ≤ of).
+        cantrips:
+          type: array
+          items:
+            $ref: "#/components/schemas/PoolSpell"
+          description: The free Cantrip(s) for each committed Discipline (only present once grants_cantrip and a Discipline is chosen). Not counted against slot_count.
         spells:
           type: array
           items:
-            $ref: "#/components/schemas/Spell"
-          description: The non-free spells this model currently knows.
+            $ref: "#/components/schemas/PoolSpell"
+          description: The non-free spells this model currently knows through this pool.
+
+    GrantedSpell:
+      type: object
+      required: [key, id, discipline, name, cost, difficulty, description, cantrip, consumes_slot, resets_each_round, rule, cast]
+      properties:
+        key:
+          type: string
+          description: Identifies this spell for PATCH .../spell_casts (UpdateSpellCastInput.spell_cast.key) — pass it back verbatim, don't try to construct it from `id`.
+        id:
+          type: integer
+          nullable: true
+          description: The underlying Catalog::Spell id when this grant references a real catalog spell (e.g. Galilean Priest's Waves of Force); null for a character-unique spell that has no catalog row (e.g. The Drowned Nun's Dagonite Baptism).
+        discipline:
+          type: string
+          enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+          nullable: true
+          description: Null for a character-unique, discipline-less spell.
+        name:
+          type: string
+        cost:
+          type: integer
+          nullable: true
+          description: Will Points spent to attempt the spell. Null only if the unique spell's data is incomplete.
+        difficulty:
+          type: integer
+          nullable: true
+          description: Magic Roll result needed to score an Ace. Null only if the unique spell's data is incomplete.
+        description:
+          type: string
+          nullable: true
+        cantrip:
+          type: boolean
+        consumes_slot:
+          type: boolean
+          description: Whether this grant counts against a pool's slot_count. Every grant today is additive (false).
+        resets_each_round:
+          type: boolean
+          description: Same meaning as SpellPool.resets_each_round, for this grant's own cast tracking.
+        rule:
+          allOf:
+            - $ref: "#/components/schemas/SpellRuleRef"
+          nullable: true
+          description: The card's special rule that explains this grant (e.g. Water Affinity, Major Arcana, Dagonite Baptism, Creative Creation).
+        cast:
+          type: boolean
+          description: Whether this spell has been marked cast this round (see PATCH .../spell_casts). Always false outside a live game.
+
+    SpellRuleRef:
+      type: object
+      required: [name, description]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    PoolSpell:
+      type: object
+      required: [key, id, name, discipline, cost, difficulty, cantrip, description, cast]
+      properties:
+        key:
+          type: string
+          description: Identifies this spell for PATCH .../spell_casts (UpdateSpellCastInput.spell_cast.key) — pass it back verbatim, don't try to construct it from `id`.
+        id:
+          type: integer
+        name:
+          type: string
+        discipline:
+          type: string
+          enum: [blood_rites, divinity, fateweaving, runes_of_sovereignty, wild_magic]
+        cost:
+          type: integer
+          description: Will Points spent to attempt the spell.
+        difficulty:
+          type: integer
+          description: Magic Roll result needed to score an Ace.
+        cantrip:
+          type: boolean
+          description: Whether this is the Discipline's free Cantrip (always known, not counted against the pool's slot_count).
+        description:
+          type: string
+        cast:
+          type: boolean
+          description: Whether this spell has been marked cast this round (see PATCH .../spell_casts). Always false outside a live game.
 
     Spell:
       type: object
@@ -2055,15 +2351,22 @@ components:
           type: string
         mage:
           type: boolean
-          description: Whether the profile has the Mage ability and can be given spells (rulebook p24).
+          description: Whether the profile has at least one spell pool and can be given spells (rulebook p24).
         spell_slots:
           type: integer
-          description: Maximum number of non-Cantrip spells the model may know (Mage X + Expert Sorcerer X). 0 for non-Mages.
+          description: >
+            Summary total of non-Cantrip spells across every spell pool — informational only (the
+            catalog browse view). 0 for non-Mages and for a profile whose only pool is `unlimited`.
+            Real per-pool limits are enforced when hiring; see ListEntry.pools for the detail a gang
+            builder needs.
         disciplines:
           type: array
           items:
             type: string
-          description: Discipline slugs the model may pick spells from, e.g. ["blood_rites", "divinity"].
+          description: >
+            Union of every pool's eligible Discipline slugs, e.g. ["blood_rites", "divinity"] —
+            informational only, same caveat as spell_slots. Empty for a mentor_derived pool
+            (Apprentice Doctor), which has no static Discipline list of its own.
         weapons:
           type: array
           items:

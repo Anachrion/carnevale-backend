@@ -49,6 +49,8 @@ module Backoffice
         build_card_references!
         @profile.replace_weapons!(submitted_ids(:weapon_ids))
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
+        @profile.replace_spell_pools!(pools_params)
+        @profile.replace_granted_spells!(granted_spells_params)
       end
 
       redirect_to edit_backoffice_profile_path(@profile),
@@ -102,6 +104,8 @@ module Backoffice
 
         @profile.replace_weapons!(submitted_ids(:weapon_ids))
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
+        @profile.replace_spell_pools!(pools_params)
+        @profile.replace_granted_spells!(granted_spells_params)
       end
 
       if saved
@@ -363,11 +367,13 @@ module Backoffice
         .find(params.expect(:id))
     end
 
-    # Everything the editor's weapon and special-rule pickers can choose from. They are shared
-    # records, so the whole catalog of them is on offer, not just this faction's.
+    # Everything the editor's weapon, special-rule, spell-pool and granted-spell pickers can choose
+    # from. They are shared records, so the whole catalog of them is on offer, not just this
+    # faction's.
     def set_pickable_records
       @all_weapons = Catalog::Weapon.order(:name)
       @all_special_rules = Catalog::SpecialRule.order(:name)
+      @all_spells = Catalog::Spell.order(:discipline, :name)
     end
 
     # Render the card template for a profile carrying the form's current (unsaved) values. Shared
@@ -423,6 +429,48 @@ module Backoffice
       return nil if list.nil?
 
       Array(list).compact_blank.map(&:to_i)
+    end
+
+    # Unlike weapons/rules, pools and granted spells are only ever touched by #create/#update (never
+    # the live card preview, since they print nothing on the card face) — so there's no "the form
+    # said nothing about it" case to preserve, and this always returns a real array (possibly empty,
+    # meaning "no pools"), shaped for Catalog::Profile#replace_spell_pools!.
+    def pools_params
+      permitted = params.permit(profile: { pools: [ :of, :slot_count, :unlimited, :grants_cantrip,
+        :resets_each_round, :mentor_derived, :special_rule_id, disciplines: [] ] })
+      Array(permitted.dig(:profile, :pools)).map do |row|
+        {
+          of: row[:of].presence || 1,
+          slot_count: row[:slot_count].presence || 0,
+          unlimited: row[:unlimited].present?,
+          grants_cantrip: row[:grants_cantrip].present?,
+          resets_each_round: row[:resets_each_round].present?,
+          mentor_derived: row[:mentor_derived].present?,
+          special_rule_id: row[:special_rule_id].presence,
+          disciplines: Array(row[:disciplines]).compact_blank
+        }
+      end
+    end
+
+    # Shaped for Catalog::Profile#replace_granted_spells!. See pools_params for why this never
+    # returns nil.
+    def granted_spells_params
+      permitted = params.permit(profile: { granted_spells: [ :spell_id, :unique_spell_name,
+        :unique_spell_cost, :unique_spell_difficulty, :unique_spell_description, :grant_kind,
+        :consumes_slot, :resets_each_round, :special_rule_id ] })
+      Array(permitted.dig(:profile, :granted_spells)).map do |row|
+        {
+          spell_id: row[:spell_id].presence,
+          unique_spell_name: row[:unique_spell_name].presence,
+          unique_spell_cost: row[:unique_spell_cost].presence,
+          unique_spell_difficulty: row[:unique_spell_difficulty].presence,
+          unique_spell_description: row[:unique_spell_description].presence,
+          grant_kind: row[:grant_kind].presence || "named_spell",
+          consumes_slot: row[:consumes_slot].present?,
+          resets_each_round: row[:resets_each_round].present?,
+          special_rule_id: row[:special_rule_id].presence
+        }
+      end
     end
 
     def export_scope

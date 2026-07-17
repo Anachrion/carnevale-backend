@@ -289,11 +289,53 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(profile.attack).to eq(3)
 
       # The one-per-line textareas become json arrays of strings, which is what every reader of
-      # these columns (the card view, mage_level, disciplines) assumes.
+      # these columns (the card view, the printed keywords) assumes. Spell pools/granted spells are
+      # a separate, explicit concept edited through their own backoffice section (CARNEVALEB-47),
+      # not derived from this text — see spec/requests/backoffice/profiles_spec.rb's pools coverage.
       expect(profile.keywords).to eq([ "Leader", "Discipline (Blood Rites)" ])
       expect(profile.abilities).to eq([ "Mage (2)", "Expert Sorcerer (1)" ])
-      expect(profile.mage_level).to eq(2)
-      expect(profile.disciplines).to eq([ "blood_rites" ])
+    end
+
+    it "creates a spell pool and a granted spell (CARNEVALEB-47)" do
+      rule = Catalog::SpecialRule.create!(name: "Aetheric Gaze", description: "…")
+      spell = create(:spell, name: "Waves of Force", discipline: :runes_of_sovereignty)
+
+      # Real unchecked checkboxes submit no key at all (the form has no hidden false-fallback), so
+      # "unlimited"/"mentor_derived"/"consumes_slot" are simply omitted here rather than set to "0".
+      patch backoffice_profile_path(profile), params: valid_params(
+        pools: [ {
+          of: "2", slot_count: "4", grants_cantrip: "1", resets_each_round: "1",
+          special_rule_id: rule.id.to_s,
+          disciplines: [ "blood_rites", "fateweaving", "wild_magic" ]
+        } ],
+        granted_spells: [ {
+          grant_kind: "named_spell", spell_id: spell.id.to_s, resets_each_round: "1"
+        } ]
+      )
+
+      expect(response).to redirect_to(edit_backoffice_profile_path(profile))
+      profile.reload
+      pool = profile.profile_spell_pools.sole
+      expect(pool.of).to eq(2)
+      expect(pool.slot_count).to eq(4)
+      expect(pool.grants_cantrip).to be true
+      expect(pool.special_rule).to eq(rule)
+      expect(pool.disciplines).to match_array(%w[blood_rites fateweaving wild_magic])
+
+      grant = profile.profile_granted_spells.sole
+      expect(grant.spell).to eq(spell)
+      expect(grant.consumes_slot?).to be false
+    end
+
+    it "clears spell pools and granted spells when the form submits none" do
+      profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: [ "blood_rites" ] } ])
+      profile.replace_granted_spells!([ { grant_kind: "all_cantrips" } ])
+
+      patch backoffice_profile_path(profile), params: valid_params
+
+      profile.reload
+      expect(profile.profile_spell_pools).to be_empty
+      expect(profile.profile_granted_spells).to be_empty
     end
 
     it "leaves the card out of date rather than re-rendering it" do

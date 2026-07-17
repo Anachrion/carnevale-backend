@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_130800) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -102,13 +102,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.index ["profile_id"], name: "index_card_references_on_profile_id"
   end
 
+  create_table "entry_pool_disciplines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "discipline", null: false
+    t.bigint "list_entry_id", null: false
+    t.bigint "pool_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["list_entry_id", "pool_id", "discipline"], name: "index_entry_pool_disciplines_uniqueness", unique: true
+    t.index ["list_entry_id"], name: "index_entry_pool_disciplines_on_list_entry_id"
+    t.index ["pool_id"], name: "index_entry_pool_disciplines_on_pool_id"
+  end
+
   create_table "entry_spells", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "list_entry_id", null: false
+    t.bigint "pool_id"
     t.bigint "spell_id", null: false
     t.datetime "updated_at", null: false
     t.index ["list_entry_id", "spell_id"], name: "index_entry_spells_on_list_entry_id_and_spell_id", unique: true
     t.index ["list_entry_id"], name: "index_entry_spells_on_list_entry_id"
+    t.index ["pool_id"], name: "index_entry_spells_on_pool_id"
     t.index ["spell_id"], name: "index_entry_spells_on_spell_id"
   end
 
@@ -119,6 +132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.integer "current_life_points", null: false
     t.integer "current_will_points", null: false
     t.bigint "list_entry_id", null: false
+    t.json "spell_casts", default: {}, null: false
     t.integer "starting_command_points", null: false
     t.integer "starting_life_points", null: false
     t.integer "starting_will_points", null: false
@@ -194,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.bigint "entry_id", null: false
     t.string "entry_type", null: false
     t.bigint "list_id", null: false
+    t.bigint "mentored_by_entry_id"
     t.integer "position", null: false
     t.string "spell_discipline"
     t.boolean "summoned", default: false, null: false
@@ -201,6 +216,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.index ["entry_type", "entry_id"], name: "index_list_entries_on_entry_type_and_entry_id"
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
     t.index ["list_id"], name: "index_list_entries_on_list_id"
+    t.index ["mentored_by_entry_id"], name: "index_list_entries_on_mentored_by_entry_id"
   end
 
   create_table "lists", force: :cascade do |t|
@@ -218,6 +234,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.index ["source_list_id"], name: "index_lists_on_source_list_id"
   end
 
+  create_table "profile_granted_spells", force: :cascade do |t|
+    t.boolean "consumes_slot", default: false, null: false
+    t.datetime "created_at", null: false
+    t.string "grant_kind", default: "named_spell", null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "profile_id", null: false
+    t.boolean "resets_each_round", default: true, null: false
+    t.bigint "special_rule_id"
+    t.bigint "spell_id"
+    t.integer "unique_spell_cost"
+    t.text "unique_spell_description"
+    t.integer "unique_spell_difficulty"
+    t.string "unique_spell_name"
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_profile_granted_spells_on_profile_id"
+    t.index ["special_rule_id"], name: "index_profile_granted_spells_on_special_rule_id"
+    t.index ["spell_id"], name: "index_profile_granted_spells_on_spell_id"
+    t.check_constraint "grant_kind::text = ANY (ARRAY['named_spell'::character varying, 'all_cantrips'::character varying]::text[])", name: "profile_granted_spells_grant_kind_check"
+  end
+
   create_table "profile_special_rules", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "position", default: 0, null: false
@@ -226,6 +262,33 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.datetime "updated_at", null: false
     t.index ["profile_id"], name: "index_profile_special_rules_on_profile_id"
     t.index ["special_rule_id"], name: "index_profile_special_rules_on_special_rule_id"
+  end
+
+  create_table "profile_spell_pool_disciplines", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "discipline", null: false
+    t.bigint "pool_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["pool_id", "discipline"], name: "index_pool_disciplines_on_pool_and_discipline", unique: true
+    t.index ["pool_id"], name: "index_profile_spell_pool_disciplines_on_pool_id"
+  end
+
+  create_table "profile_spell_pools", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "distinct_from_other_pools", default: false, null: false
+    t.boolean "grants_cantrip", default: true, null: false
+    t.integer "mage_slot_count", default: 0, null: false
+    t.boolean "mentor_derived", default: false, null: false
+    t.integer "of", default: 1, null: false
+    t.integer "position", default: 0, null: false
+    t.bigint "profile_id", null: false
+    t.boolean "resets_each_round", default: true, null: false
+    t.integer "slot_count", default: 0, null: false
+    t.bigint "special_rule_id"
+    t.boolean "unlimited", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["profile_id"], name: "index_profile_spell_pools_on_profile_id"
+    t.index ["special_rule_id"], name: "index_profile_spell_pools_on_special_rule_id"
   end
 
   create_table "profile_weapons", force: :cascade do |t|
@@ -245,6 +308,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
     t.integer "command_points", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "dexterity", default: 0, null: false
+    t.boolean "distinct_discipline_per_copy", default: false, null: false
     t.integer "ducats", default: 0, null: false
     t.string "faction", default: "", null: false
     t.json "keywords", default: [], null: false
@@ -345,17 +409,27 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_120100) do
   add_foreign_key "agenda_events", "game_players"
   add_foreign_key "cable_tickets", "users"
   add_foreign_key "card_references", "profiles"
+  add_foreign_key "entry_pool_disciplines", "list_entries"
+  add_foreign_key "entry_pool_disciplines", "profile_spell_pools", column: "pool_id", on_delete: :cascade
   add_foreign_key "entry_spells", "list_entries"
+  add_foreign_key "entry_spells", "profile_spell_pools", column: "pool_id", on_delete: :cascade
   add_foreign_key "entry_spells", "spells"
   add_foreign_key "entry_states", "list_entries"
   add_foreign_key "game_players", "games"
   add_foreign_key "game_players", "users"
   add_foreign_key "games", "scenarios"
   add_foreign_key "illustrations", "profiles"
+  add_foreign_key "list_entries", "list_entries", column: "mentored_by_entry_id", on_delete: :nullify
   add_foreign_key "list_entries", "lists"
   add_foreign_key "lists", "lists", column: "source_list_id", on_delete: :nullify
+  add_foreign_key "profile_granted_spells", "profiles"
+  add_foreign_key "profile_granted_spells", "special_rules", on_delete: :nullify
+  add_foreign_key "profile_granted_spells", "spells"
   add_foreign_key "profile_special_rules", "profiles"
   add_foreign_key "profile_special_rules", "special_rules"
+  add_foreign_key "profile_spell_pool_disciplines", "profile_spell_pools", column: "pool_id"
+  add_foreign_key "profile_spell_pools", "profiles"
+  add_foreign_key "profile_spell_pools", "special_rules", on_delete: :nullify
   add_foreign_key "profile_weapons", "profiles"
   add_foreign_key "profile_weapons", "weapons"
   add_foreign_key "refresh_tokens", "users"

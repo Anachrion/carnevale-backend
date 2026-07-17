@@ -12,7 +12,8 @@ RSpec.describe Gang::EntrySpell, type: :model do
                      abilities: [ "Mage (2)" ], keywords: [ "Discipline (Blood Rites)" ])
     ref = create(:card_reference, profile: profile)
     entry = create(:list_entry, list: list, entry: ref, position: 1)
-    entry_spell = entry.entry_spells.create!(spell: create(:spell, discipline: :blood_rites))
+    pool = profile.profile_spell_pools.first
+    entry_spell = entry.entry_spells.create!(spell: create(:spell, discipline: :blood_rites), pool: pool)
 
     # Mimic the mid-cascade state: the entry_spell and its parent entry rows are both gone (as the
     # list teardown removes them), and the belongs_to reloads to nil on the destroyed instance.
@@ -32,16 +33,19 @@ end
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #  list_entry_id :bigint           not null
+#  pool_id       :bigint
 #  spell_id      :bigint           not null
 #
 # Indexes
 #
 #  index_entry_spells_on_list_entry_id               (list_entry_id)
 #  index_entry_spells_on_list_entry_id_and_spell_id  (list_entry_id,spell_id) UNIQUE
+#  index_entry_spells_on_pool_id                     (pool_id)
 #  index_entry_spells_on_spell_id                    (spell_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (list_entry_id => list_entries.id)
+#  fk_rails_...  (pool_id => profile_spell_pools.id) ON DELETE => cascade
 #  fk_rails_...  (spell_id => spells.id)
 #

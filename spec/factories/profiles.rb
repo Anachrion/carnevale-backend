@@ -14,6 +14,11 @@ FactoryBot.define do
         Catalog::Ability.find_or_create_by!(category: "character", name: Catalog::Ability.base_name(entry))
       end
     end
+
+    # A profile with "Mage (X)" ability text gets a real spell pool wired up automatically, exactly
+    # as production data does via the one-time backfill (CARNEVALEB-47) — so a spec that builds a
+    # Mage via ability/keyword text doesn't also have to hand-roll a Catalog::ProfileSpellPool.
+    after(:create) { |profile| SpellPoolBackfill.call_for(profile) }
   end
 end
 
@@ -21,23 +26,24 @@ end
 #
 # Table name: profiles
 #
-#  id             :bigint           not null, primary key
-#  abilities      :json             not null
-#  action_points  :integer          default(0), not null
-#  attack         :integer          default(0), not null
-#  command_points :integer          default(0), not null
-#  dexterity      :integer          default(0), not null
-#  ducats         :integer          default(0), not null
-#  faction        :string           default(NULL), not null
-#  keywords       :json             not null
-#  life_points    :integer          default(0), not null
-#  mind           :integer          default(0), not null
-#  movement       :integer          default(0), not null
-#  name           :string           default(""), not null
-#  protection     :integer          default(0), not null
-#  size           :integer          default(0), not null
-#  version        :string           default("2.2.0"), not null
-#  will_points    :integer          default(0), not null
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
+#  id                           :bigint           not null, primary key
+#  abilities                    :json             not null
+#  action_points                :integer          default(0), not null
+#  attack                       :integer          default(0), not null
+#  command_points               :integer          default(0), not null
+#  dexterity                    :integer          default(0), not null
+#  distinct_discipline_per_copy :boolean          default(FALSE), not null
+#  ducats                       :integer          default(0), not null
+#  faction                      :string           default(NULL), not null
+#  keywords                     :json             not null
+#  life_points                  :integer          default(0), not null
+#  mind                         :integer          default(0), not null
+#  movement                     :integer          default(0), not null
+#  name                         :string           default(""), not null
+#  protection                   :integer          default(0), not null
+#  size                         :integer          default(0), not null
+#  version                      :string           default("2.2.0"), not null
+#  will_points                  :integer          default(0), not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
 #

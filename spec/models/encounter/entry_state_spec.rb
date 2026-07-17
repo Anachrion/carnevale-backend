@@ -49,6 +49,19 @@ RSpec.describe Encounter::EntryState, type: :model do
       legacy = base_counters.except("activated_on_turn")
       expect(build(:entry_state, counters: legacy)).to be_valid
     end
+
+    it "rejects a spell_casts key not shaped like spell:<id> or granted:<id>" do
+      expect(build(:entry_state, spell_casts: { "spell:abc" => 1 })).not_to be_valid
+      expect(build(:entry_state, spell_casts: { "cantrip:1" => 1 })).not_to be_valid
+      expect(build(:entry_state, spell_casts: { "spell:1" => 1 })).to be_valid
+      expect(build(:entry_state, spell_casts: { "granted:7" => 1 })).to be_valid
+    end
+
+    it "rejects a non-positive-integer spell_casts turn" do
+      expect(build(:entry_state, spell_casts: { "spell:1" => 0 })).not_to be_valid
+      expect(build(:entry_state, spell_casts: { "spell:1" => true })).not_to be_valid
+      expect(build(:entry_state, spell_casts: { "spell:1" => nil })).not_to be_valid
+    end
   end
 
   describe "#activated?" do
@@ -109,6 +122,62 @@ RSpec.describe Encounter::EntryState, type: :model do
     end
   end
 
+  describe "#spell_cast?" do
+    it "is true only on the turn it was cast, for a resets_each_round pool/grant" do
+      entry_state = build(:entry_state, spell_casts: { "spell:1" => 3 })
+
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: true, current_turn: 3)).to be true
+      # The reset is implicit, same as activated_on_turn: a new turn matches nothing.
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: true, current_turn: 4)).to be false
+      # ...and rewinding back to turn 3 restores it.
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: true, current_turn: 3)).to be true
+    end
+
+    it "stays cast on any later turn once stored, for a resets_each_round: false pool (Adventuring Noble)" do
+      entry_state = build(:entry_state, spell_casts: { "spell:1" => 2 })
+
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: false, current_turn: 2)).to be true
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: false, current_turn: 3)).to be true
+    end
+
+    it "is false when never cast" do
+      entry_state = build(:entry_state)
+
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: true, current_turn: 1)).to be false
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: false, current_turn: 1)).to be false
+    end
+  end
+
+  describe "#set_spell_cast" do
+    it "stamps the given turn, and clears it back out" do
+      entry_state = build(:entry_state)
+
+      entry_state.set_spell_cast("spell:1", cast: true, turn: 2)
+      expect(entry_state.spell_casts["spell:1"]).to eq(2)
+
+      entry_state.set_spell_cast("spell:1", cast: false, turn: 2)
+      expect(entry_state.spell_casts).not_to have_key("spell:1")
+    end
+
+    it "clears a resets_each_round: false spell manually too, so a misclick is always correctable" do
+      entry_state = build(:entry_state, spell_casts: { "spell:1" => 2 })
+
+      entry_state.set_spell_cast("spell:1", cast: false, turn: 5)
+
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: false, current_turn: 5)).to be false
+    end
+
+    it "leaves other spells' cast state untouched" do
+      entry_state = build(:entry_state, spell_casts: { "granted:7" => 1 })
+
+      entry_state.set_spell_cast("spell:1", cast: true, turn: 1)
+
+      expect(entry_state).to be_valid
+      expect(entry_state.spell_casts["granted:7"]).to eq(1)
+      expect(entry_state.spell_casts["spell:1"]).to eq(1)
+    end
+  end
+
   describe ".create_for!" do
     it "snapshots the entry's profile stats as both current and starting values" do
       profile = create(:profile, life_points: 12, will_points: 4, command_points: 2)
@@ -135,6 +204,7 @@ RSpec.describe Encounter::EntryState, type: :model do
       expect(entry_state.carrying_objective?).to be false
       expect(entry_state.underwater_counters).to eq(0)
       expect(entry_state.activated?(1)).to be false
+      expect(entry_state.spell_cast?("spell:1", resets_each_round: true, current_turn: 1)).to be false
     end
   end
 end
@@ -148,6 +218,7 @@ end
 #  current_command_points  :integer          not null
 #  current_life_points     :integer          not null
 #  current_will_points     :integer          not null
+#  spell_casts             :json             not null
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null

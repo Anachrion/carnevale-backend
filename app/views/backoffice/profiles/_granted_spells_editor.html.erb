@@ -1,0 +1,27 @@
+<%#
+  Ordered editor for a profile's granted spells (CARNEVALEB-47) — spells known automatically,
+  outside the normal pool pick (The Drowned Nun's Dagonite Baptism, Blood Crone's Major Arcana, …).
+  Rewritten wholesale on save via Catalog::Profile#replace_granted_spells! — see
+  Backoffice::ProfilesController#granted_spells_params.
+
+  Locals: profile, all_spells, all_special_rules.
+%>
+<div class="js-grants-editor">
+  <div class="js-grant-rows">
+    <% profile.profile_granted_spells.each do |grant| %>
+      <%= render "granted_spell_row", grant: grant, all_spells: all_spells, all_special_rules: all_special_rules %>
+    <% end %>
+  </div>
+
+  <template class="js-grant-template">
+    <%= render "granted_spell_row", grant: nil, all_spells: all_spells, all_special_rules: all_special_rules %>
+  </template>
+
+  <button type="button" class="btn js-grant-add">+ Add granted spell</button>
+  <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+    Almost no profile needs one of these — they're for a spell known automatically on top of (or
+    instead of) the normal pool pick. Most current cases are additive and free (don't consume a
+    slot); check "Consumes a slot" only if you've confirmed the rule actually spends one of the
+    model's Mage(X) slots.
+  </div>
+</div>

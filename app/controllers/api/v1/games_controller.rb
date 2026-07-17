@@ -235,6 +235,18 @@ module Api
         end
       end
 
+      # Marks (or unmarks) one known/granted spell as cast, on one of the current player's own
+      # models. `key` identifies the spell ("spell:<id>" or "granted:<id>", see EntrySerializer);
+      # `cast` is the desired state rather than a blind toggle, so a retried request from a flaky
+      # connection can't accidentally flip it back. Stamped against this player's own turn cursor —
+      # see Encounter::EntryState#spell_cast?/#set_spell_cast for how that resets each round, except
+      # for a pool/grant that doesn't (Adventuring Noble's Arcane Totem).
+      def update_spell_cast
+        update_entry_state! do |state|
+          state.set_spell_cast(spell_cast_params[:key], cast: spell_cast_params[:cast], turn: @game_player.current_turn)
+        end
+      end
+
       # The turn counter is per-player: advance/rewind move only the requesting player's cursor
       # (clamped to [1, scenario.turns]) so one player can correct a past-turn score without moving
       # the other's view. See Encounter::Player#advance_turn!/#rewind_turn!.
@@ -362,6 +374,10 @@ module Api
 
       def stats_params
         params.require(:stats).permit(:life_points, :will_points, :command_points).to_h
+      end
+
+      def spell_cast_params
+        params.require(:spell_cast).permit(:key, :cast)
       end
     end
   end

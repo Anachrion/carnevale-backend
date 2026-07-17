@@ -22,4 +22,5 @@ end
 # Indexes
 #
 #  index_agendas_on_first_roll_and_second_roll  (first_roll,second_roll) UNIQUE
+#  index_agendas_on_name                        (name) UNIQUE
 #

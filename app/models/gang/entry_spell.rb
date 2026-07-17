@@ -6,8 +6,13 @@ module Gang
 
     belongs_to :list_entry, class_name: "Gang::Entry"
     belongs_to :spell, class_name: "Catalog::Spell"
+    belongs_to :pool, class_name: "Catalog::ProfileSpellPool", optional: true
 
     validates :spell_id, uniqueness: { scope: :list_entry_id }
+    # Enforced here rather than a DB NOT NULL: the column has to stay nullable so a profile's pool
+    # structure can be reconfigured (replace_spell_pools! destroys old pools, cascading these rows
+    # away) without a window where an in-flight write could violate a stricter constraint.
+    validates :pool_id, presence: true
 
     private
 
@@ -29,16 +34,19 @@ end
 #  created_at    :datetime         not null
 #  updated_at    :datetime         not null
 #  list_entry_id :bigint           not null
+#  pool_id       :bigint
 #  spell_id      :bigint           not null
 #
 # Indexes
 #
 #  index_entry_spells_on_list_entry_id               (list_entry_id)
 #  index_entry_spells_on_list_entry_id_and_spell_id  (list_entry_id,spell_id) UNIQUE
+#  index_entry_spells_on_pool_id                     (pool_id)
 #  index_entry_spells_on_spell_id                    (spell_id)
 #
 # Foreign Keys
 #
 #  fk_rails_...  (list_entry_id => list_entries.id)
+#  fk_rails_...  (pool_id => profile_spell_pools.id) ON DELETE => cascade
 #  fk_rails_...  (spell_id => spells.id)
 #

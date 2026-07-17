@@ -28,6 +28,8 @@ class ListValidationService
     check_leader_count
     check_hero_henchman_ratio
     check_spell_selections
+    check_distinct_discipline_per_copy
+    check_mentor_eligibility
     @errors.empty?
   end
 
@@ -98,15 +100,18 @@ class ListValidationService
     @errors << "the gang cannot have more Heroes (#{hero_count}) than Henchmen (#{henchman_count})"
   end
 
-  # Enforces the spell-selection rules (rulebook p24): only Mages may know spells, every known
-  # spell must come from the model's committed Discipline (one of those listed in its Discipline
-  # keyword), and the number of non-Cantrip spells cannot exceed Mage (X) + Expert Sorcerer (X).
+  # Enforces the spell-selection rules per pool (rulebook p24, generalized for CARNEVALEB-47's
+  # exceptions): only Mages may know spells, each pool's committed discipline(s) must be a subset of
+  # that pool's eligible set and respect its `of` count, every spell known through a pool must share
+  # one of that pool's committed disciplines, and the non-Cantrip spell count can't exceed the
+  # pool's slot_count (an `unlimited` pool has nothing to check — it auto-knows everything).
   def check_spell_selections
-    @list.list_entries.includes(entry_spells: :spell).each do |list_entry|
+    @list.list_entries.includes(:entry_pool_disciplines, entry_spells: :spell).each do |list_entry|
       next if list_entry.entry.nil? # orphaned entry (see projected_items) — skip, don't raise
-      spells = list_entry.entry_spells.map(&:spell)
-      discipline = list_entry.spell_discipline
-      next if spells.empty? && discipline.blank?
+      # Checked on the entry's own raw associations, not #resolved_pools: a non-Mage profile has no
+      # pools at all, so resolved_pools is always [] for it — relying on that here would silently
+      # skip a non-Mage entry with spell data wrongly attached instead of catching it below.
+      next if list_entry.entry_pool_disciplines.empty? && list_entry.entry_spells.empty?
 
       name = list_entry.entry.name
       profile = list_entry.profile
@@ -116,19 +121,93 @@ class ListValidationService
         next
       end
 
-      if discipline.present? && !profile.disciplines.include?(discipline)
-        @errors << "#{name} cannot use the #{discipline.humanize} Discipline"
-      end
+      resolved_pools = list_entry.resolved_pools
+      resolved_pools.each { |r| check_pool_selection(name, r) }
+      check_distinct_from_other_pools(name, resolved_pools)
+    end
+  end
 
-      off_discipline = spells.reject { |spell| spell.discipline == discipline }
-      if discipline.present? && off_discipline.any?
-        @errors << "#{name} can only know #{discipline.humanize} spells; all spells must share one Discipline"
-      end
+  # Tarot Reader's Minor Arcana ("1 additional Cantrip... from a different available Discipline"):
+  # any pool flagged distinct_from_other_pools must not share a chosen Discipline with any other
+  # pool on the same entry — generalized rather than hardcoded to a specific pool pairing, so it
+  # covers any future profile with the same "bonus pool, different Discipline" shape.
+  def check_distinct_from_other_pools(name, resolved_pools)
+    resolved_pools.each do |resolved|
+      next unless resolved[:pool].distinct_from_other_pools?
 
-      known = spells.count { |spell| !spell.cantrip }
-      if known > profile.spell_slots
-        @errors << "#{name} knows too many spells (#{known}/#{profile.spell_slots})"
-      end
+      others = resolved_pools.reject { |r| r[:pool].id == resolved[:pool].id }.flat_map { |r| r[:chosen_disciplines] }
+      overlap = resolved[:chosen_disciplines] & others
+      next if overlap.empty?
+
+      @errors << "#{name} must pick a different Discipline for this pool (#{overlap.map(&:humanize).join(', ')} already used)"
+    end
+  end
+
+  def check_pool_selection(name, resolved)
+    pool = resolved[:pool]
+    return if pool.unlimited? # nothing to pick — every spell of the discipline is known already
+
+    chosen = resolved[:chosen_disciplines]
+    eligible = resolved[:eligible_disciplines]
+
+    off_eligible = chosen - eligible
+    if off_eligible.any?
+      @errors << "#{name} cannot use the #{off_eligible.map(&:humanize).join(', ')} Discipline(s)"
+    end
+
+    if chosen.size > resolved[:of]
+      @errors << "#{name} can only pick #{resolved[:of]} Discipline(s) for this pool (chose #{chosen.size})"
+    end
+
+    known_spells = resolved[:spells]
+    off_discipline = known_spells.reject { |spell| chosen.include?(spell.discipline) }
+    if off_discipline.any?
+      @errors << "#{name} can only know spells from its committed Discipline(s) for this pool"
+    end
+
+    known_count = known_spells.count { |spell| !spell.cantrip }
+    if known_count > resolved[:slot_count]
+      @errors << "#{name} knows too many spells (#{known_count}/#{resolved[:slot_count]})"
+    end
+  end
+
+  # Romani's Tarot: multiple copies of a `distinct_discipline_per_copy` profile in the same gang
+  # must each commit to a different Discipline from every other copy (their first pool only — no
+  # profile with this flag has more than one).
+  def check_distinct_discipline_per_copy
+    entries = @list.list_entries.includes(:entry_pool_disciplines).select { |e| e.profile&.distinct_discipline_per_copy? }
+    entries.group_by { |e| e.profile.id }.each_value do |copies|
+      next if copies.size <= 1
+
+      chosen = copies.filter_map { |entry| entry.resolved_pools.first&.dig(:chosen_disciplines)&.first }
+      duplicates = chosen.tally.select { |_, count| count > 1 }.keys
+      next if duplicates.empty?
+
+      @errors << "#{copies.first.entry.name}: only one copy may pick each Discipline (#{duplicates.map(&:humanize).join(', ')} repeated)"
+    end
+  end
+
+  # Apprentice Doctor's Apprenticeship: the mentor must carry both the Hero and Doctor keywords,
+  # and a given mentor can only ever mentor one Apprentice Doctor ("A character can only be a
+  # mentor to one Apprentice Doctor").
+  def check_mentor_eligibility
+    entries_with_mentor = @list.list_entries.includes(:entry, mentored_by_entry: :entry).select(&:mentored_by_entry)
+
+    entries_with_mentor.each do |list_entry|
+      next if list_entry.entry.nil?
+
+      keywords = list_entry.mentored_by_entry.profile&.keywords || []
+      next if keywords.include?("Hero") && keywords.include?("Doctor")
+
+      @errors << "#{list_entry.entry.name}'s mentor must have both the Hero and Doctor keywords"
+    end
+
+    entries_with_mentor.group_by(&:mentored_by_entry_id).each_value do |apprentices|
+      next if apprentices.size <= 1
+
+      mentor_name = apprentices.first.mentored_by_entry.entry&.name
+      names = apprentices.filter_map { |e| e.entry&.name }.join(", ")
+      @errors << "#{mentor_name} can only mentor one Apprentice Doctor (currently mentoring #{names})"
     end
   end
 end

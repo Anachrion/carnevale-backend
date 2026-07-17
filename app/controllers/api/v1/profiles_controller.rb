@@ -7,12 +7,12 @@ module Api
         return unless stale?(etag: catalog_etag(scope), public: true)
 
         expires_in 1.hour, public: true
-        profiles = scope.includes(:weapons, :special_rules, :card_references)
+        profiles = scope.includes(:weapons, :special_rules, :card_references, profile_spell_pools: :profile_spell_pool_disciplines)
         render json: profiles.map { |p| profile_json(p) }
       end
 
       def show
-        profile = Catalog::Profile.includes(:weapons, :special_rules, :card_references).find(params[:id])
+        profile = Catalog::Profile.includes(:weapons, :special_rules, :card_references, profile_spell_pools: :profile_spell_pool_disciplines).find(params[:id])
         return unless stale?(etag: catalog_etag(profile), public: true)
 
         expires_in 1.hour, public: true
@@ -35,7 +35,9 @@ module Api
           profile_or_scope.cache_key_with_version,
           Catalog::Weapon.all.cache_key_with_version,
           Catalog::SpecialRule.all.cache_key_with_version,
-          Catalog::CardReference.all.cache_key_with_version
+          Catalog::CardReference.all.cache_key_with_version,
+          Catalog::ProfileSpellPool.all.cache_key_with_version,
+          Catalog::ProfileGrantedSpell.all.cache_key_with_version
         ]
       end
 

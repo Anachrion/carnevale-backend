@@ -820,6 +820,123 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "PATCH /api/v1/games/:id/entries/:list_entry_id/spell_casts" do
+    # Mirrors start_game_with_models, but the host's model is a Mage with one already-picked spell
+    # (the spell_casts endpoint has nothing to mark cast on a model with no known spells), plus a
+    # second pool shaped like Adventuring Noble's Arcane Totem (unlimited, resets_each_round: false)
+    # so the "persists across a turn" behavior has something real to exercise.
+    def start_game_with_mage_model(start: true)
+      host = open_session
+      guest = open_session
+      h = headers_for(host, host_user)
+      g = headers_for(guest, guest_user)
+
+      profile = create(:profile, life_points: 10, will_points: 3, command_points: 1,
+                       abilities: ["Mage (2)"], keywords: ["Discipline (Wild Magic)"])
+      pool = profile.profile_spell_pools.first
+      totem_spell = create(:spell, discipline: :divinity)
+      profile.replace_spell_pools!([
+        { of: pool.of, slot_count: pool.slot_count, grants_cantrip: pool.grants_cantrip?, disciplines: pool.disciplines },
+        { of: 1, slot_count: 0, unlimited: true, grants_cantrip: false, resets_each_round: false, disciplines: %w[divinity] }
+      ])
+      spell = create(:spell, discipline: :wild_magic)
+      wild_magic_pool = profile.profile_spell_pools.first
+      host_ref = create(:reference, profile: profile)
+      host_list = create(:list, owner: host_user, faction: "guild", points: 100)
+      host_entry = create(:list_entry, list: host_list, entry: host_ref)
+      host_entry.entry_pool_disciplines.create!(pool: wild_magic_pool, discipline: "wild_magic")
+      host_entry.entry_spells.create!(pool: wild_magic_pool, spell: spell)
+
+      guest_list = create(:list, owner: guest_user, faction: "doctors", points: 100)
+      create(:list_entry, list: guest_list)
+
+      host.post "/api/v1/games", params: { scenario_id: scenario.id }.to_json, headers: h
+      game_id = json(host)["id"]
+      guest.post "/api/v1/games/join", params: { join_code: json(host)["join_code"] }.to_json, headers: g
+
+      host.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: host_list.id }.to_json, headers: h
+      guest.patch "/api/v1/games/#{game_id}/select_gang", params: { list_id: guest_list.id }.to_json, headers: g
+      host.post "/api/v1/games/#{game_id}/agendas/confirm", headers: h
+      guest.post "/api/v1/games/#{game_id}/agendas/confirm", headers: g if start
+
+      guest.get "/api/v1/games/#{game_id}", headers: g
+      host_player_id = json(guest)["players"].find { |p| p["username"] == host_user.username }["id"]
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      host_entry_id = json(host)["entries"].first["id"]
+
+      [ host, guest, h, g, game_id, host_player_id, host_entry_id, spell, totem_spell ]
+    end
+
+    it "marks a known spell cast, then clears it once the player advances a turn" do
+      host, _guest, h, _g, game_id, host_player_id, host_entry_id, spell, = start_game_with_mage_model
+      key = "spell:#{spell.id}"
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: key, cast: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      spell_json = json(host)["entries"].first["pools"].flat_map { |p| p["spells"] }.find { |s| s["key"] == key }
+      expect(spell_json["cast"]).to be true
+
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      spell_json = json(host)["entries"].first["pools"].flat_map { |p| p["spells"] }.find { |s| s["key"] == key }
+      expect(spell_json["cast"]).to be false
+    end
+
+    it "clears a mark back with cast: false, without needing a new turn" do
+      host, _guest, h, _g, game_id, host_player_id, host_entry_id, spell, = start_game_with_mage_model
+      key = "spell:#{spell.id}"
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: key, cast: true } }.to_json, headers: h
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: key, cast: false } }.to_json, headers: h
+
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      spell_json = json(host)["entries"].first["pools"].flat_map { |p| p["spells"] }.find { |s| s["key"] == key }
+      expect(spell_json["cast"]).to be false
+    end
+
+    it "keeps a resets_each_round: false spell marked cast across a turn advance, but still lets it be cleared by hand" do
+      host, _guest, h, _g, game_id, host_player_id, host_entry_id, _spell, totem_spell = start_game_with_mage_model
+      key = "spell:#{totem_spell.id}"
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: key, cast: true } }.to_json, headers: h
+      host.post "/api/v1/games/#{game_id}/turns/advance", headers: h
+
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      spell_json = json(host)["entries"].first["pools"].flat_map { |p| p["spells"] }.find { |s| s["key"] == key }
+      expect(spell_json["cast"]).to be true
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: key, cast: false } }.to_json, headers: h
+
+      host.get "/api/v1/games/#{game_id}/players/#{host_player_id}/list", headers: h
+      spell_json = json(host)["entries"].first["pools"].flat_map { |p| p["spells"] }.find { |s| s["key"] == key }
+      expect(spell_json["cast"]).to be false
+    end
+
+    it "returns 404 for the opponent's models" do
+      _host, guest, _h, g, game_id, _host_player_id, host_entry_id, spell, = start_game_with_mage_model
+
+      guest.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                  params: { spell_cast: { key: "spell:#{spell.id}", cast: true } }.to_json, headers: g
+      expect(guest.response).to have_http_status(:not_found)
+    end
+
+    it "rejects updates while the game isn't in progress" do
+      host, _guest, h, _g, game_id, _host_player_id, host_entry_id, spell, = start_game_with_mage_model(start: false)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/spell_casts",
+                 params: { spell_cast: { key: "spell:#{spell.id}", cast: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe "asymmetric scenarios" do
     let!(:street_fight) { create(:scenario, name: "Street Fight", ducats: 100, asymmetric: true) }
 

@@ -38,3 +38,29 @@ RSpec.describe Catalog::Profile, type: :model do
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: profiles
+#
+#  id                           :bigint           not null, primary key
+#  abilities                    :json             not null
+#  action_points                :integer          default(0), not null
+#  attack                       :integer          default(0), not null
+#  command_points               :integer          default(0), not null
+#  dexterity                    :integer          default(0), not null
+#  distinct_discipline_per_copy :boolean          default(FALSE), not null
+#  ducats                       :integer          default(0), not null
+#  faction                      :string           default(NULL), not null
+#  keywords                     :json             not null
+#  life_points                  :integer          default(0), not null
+#  mind                         :integer          default(0), not null
+#  movement                     :integer          default(0), not null
+#  name                         :string           default(""), not null
+#  protection                   :integer          default(0), not null
+#  size                         :integer          default(0), not null
+#  version                      :string           default("2.2.0"), not null
+#  will_points                  :integer          default(0), not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
+#

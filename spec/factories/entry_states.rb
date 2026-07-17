@@ -22,6 +22,7 @@ end
 #  current_command_points  :integer          not null
 #  current_life_points     :integer          not null
 #  current_will_points     :integer          not null
+#  spell_casts             :json             not null
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null
