@@ -233,9 +233,16 @@ RSpec.describe ListValidationService, type: :service do
         create(:card_reference, profile: profile)
       end
 
+      # save!(validate: false): a non-Mage profile has no pool at all (pool_id stays nil, which the
+      # DB allows on entry_spells specifically), so this simulates spells attached despite that
+      # (stale client, direct DB edit) — exercising ListValidationService's own "not a Mage" check
+      # independent of the model-level validations that would normally prevent it through the app.
+      # entry_pool_disciplines.pool_id has no such escape hatch (NOT NULL in the DB), so it's only
+      # created when there's a real pool to attach it to.
       def cast(entry, discipline:, spells:)
-        entry.update_column(:spell_discipline, discipline)
-        spells.each { |spell| Gang::EntrySpell.create!(list_entry: entry, spell: spell) }
+        pool = entry.profile&.profile_spell_pools&.first
+        entry.entry_pool_disciplines.create!(pool: pool, discipline: discipline) if pool
+        spells.each { |spell| Gang::EntrySpell.new(list_entry: entry, spell: spell, pool: pool).save!(validate: false) }
       end
 
       it "accepts spells from an allowed Discipline within the slot limit" do
@@ -281,7 +288,7 @@ RSpec.describe ListValidationService, type: :service do
 
         result = described_class.call(list)
         expect(result[:success]).to be false
-        expect(result[:errors]).to include(match(/all spells must share one Discipline/))
+        expect(result[:errors]).to include(match(/can only know spells from its committed Discipline/))
       end
 
       it "rejects knowing more spells than the model's slots allow" do
@@ -291,6 +298,81 @@ RSpec.describe ListValidationService, type: :service do
         result = described_class.call(list)
         expect(result[:success]).to be false
         expect(result[:errors]).to include(match(%r{knows too many spells \(4/3\)}))
+      end
+
+      context "a pool flagged distinct_from_other_pools (Tarot Reader's Minor Arcana)" do
+        def two_pool_ref
+          profile = create(:profile, faction: :guild, ducats: 20, keywords: ["Leader"])
+          profile.replace_spell_pools!([
+            { of: 1, slot_count: 2, mage_slot_count: 2, grants_cantrip: true, disciplines: %w[blood_rites divinity] },
+            { of: 1, slot_count: 0, grants_cantrip: true, distinct_from_other_pools: true, disciplines: %w[blood_rites divinity] }
+          ])
+          create(:card_reference, profile: profile)
+        end
+
+        it "accepts a different Discipline for the flagged pool" do
+          entry = add_entry(list, two_pool_ref)
+          pools = entry.profile.profile_spell_pools.order(:position)
+          entry.entry_pool_disciplines.create!(pool: pools.first, discipline: "blood_rites")
+          entry.entry_pool_disciplines.create!(pool: pools.second, discipline: "divinity")
+
+          result = described_class.call(list)
+          expect(result[:success]).to be true
+        end
+
+        it "rejects the same Discipline as another pool on the same model" do
+          entry = add_entry(list, two_pool_ref)
+          pools = entry.profile.profile_spell_pools.order(:position)
+          entry.entry_pool_disciplines.create!(pool: pools.first, discipline: "blood_rites")
+          entry.entry_pool_disciplines.create!(pool: pools.second, discipline: "blood_rites")
+
+          result = described_class.call(list)
+          expect(result[:success]).to be false
+          expect(result[:errors]).to include(match(/must pick a different Discipline for this pool/))
+        end
+      end
+    end
+
+    context "Apprentice Doctor's Apprenticeship mentor" do
+      # "Leader" here is just to satisfy the outer list's own Leader-count rule — unrelated to the
+      # Apprenticeship keyword check under test, which cares only about Hero + Doctor.
+      def doctor_hero_ref(name: "Mentor Doctor")
+        profile = create(:profile, name: name, faction: :guild, ducats: 20, keywords: ["Hero", "Doctor", "Leader"],
+                          abilities: ["Mage (2)"])
+        create(:card_reference, profile: profile)
+      end
+
+      def apprentice_ref(name: "Apprentice")
+        profile = create(:profile, name: name, faction: :guild, ducats: 10, keywords: ["Henchman", "Doctor"])
+        profile.replace_spell_pools!([ { of: 1, slot_count: 0, mentor_derived: true, grants_cantrip: true, disciplines: [] } ])
+        create(:card_reference, profile: profile)
+      end
+
+      it "accepts a mentor with both the Hero and Doctor keywords" do
+        mentor = add_entry(list, doctor_hero_ref)
+        add_entry(list, apprentice_ref).update!(mentored_by_entry: mentor)
+
+        expect(described_class.call(list)[:success]).to be true
+      end
+
+      it "rejects a mentor missing the Hero or Doctor keyword" do
+        non_hero = create(:profile, faction: :guild, ducats: 20, keywords: ["Doctor"], abilities: ["Mage (2)"])
+        mentor = add_entry(list, create(:card_reference, profile: non_hero))
+        add_entry(list, apprentice_ref).update!(mentored_by_entry: mentor)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/mentor must have both the Hero and Doctor keywords/))
+      end
+
+      it "rejects a mentor already mentoring another Apprentice Doctor" do
+        mentor = add_entry(list, doctor_hero_ref)
+        add_entry(list, apprentice_ref(name: "Apprentice A")).update!(mentored_by_entry: mentor)
+        add_entry(list, apprentice_ref(name: "Apprentice B")).update!(mentored_by_entry: mentor)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/can only mentor one Apprentice Doctor/))
       end
     end
 

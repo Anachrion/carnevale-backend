@@ -69,6 +69,7 @@ Rails.application.routes.draw do
           delete "summons/:list_entry_id", action: :dismiss_summon
           patch "entries/:list_entry_id/counters", action: :update_counters
           patch "entries/:list_entry_id/stats", action: :update_stats
+          patch "entries/:list_entry_id/spell_casts", action: :update_spell_cast
           patch :archive
           patch :unarchive
         end

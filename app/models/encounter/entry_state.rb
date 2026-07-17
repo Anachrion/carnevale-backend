@@ -23,6 +23,7 @@ module Encounter
               :current_command_points, :starting_command_points,
               presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
     validate :counters_shape
+    validate :spell_casts_shape
 
     # Snapshots the entry's profile stats as both current and starting values, and resets every
     # counter to its default — called once per model when a game starts (Encounter::Game#start!).
@@ -67,6 +68,27 @@ module Encounter
       current_life_points.zero?
     end
 
+    # Whether a known/granted spell (identified by `key`, e.g. "spell:42" or "granted:7") reads as
+    # already cast. For a `resets_each_round: true` pool/grant (the default — "each character may
+    # only attempt to cast each spell once per round") it's cast only if the stored turn matches the
+    # current one, mirroring `activated?` above: a fresh round makes it read as available again with
+    # no bulk-reset write, and rewinding a round restores exactly that round's state. For
+    # `resets_each_round: false` (Adventuring Noble's pool: "once per game") any stored value at all
+    # means permanently exhausted, regardless of which turn it was cast on.
+    def spell_cast?(key, resets_each_round:, current_turn:)
+      stored = spell_casts[key]
+      return false if stored.nil?
+
+      resets_each_round ? stored == current_turn : true
+    end
+
+    # Marks (or unmarks) a spell cast for the given turn. Unmarking works the same for a
+    # `resets_each_round: false` spell as for any other — Adventuring Noble's spells don't reset on
+    # their own each round, but the player can always correct a misclick by hand.
+    def set_spell_cast(key, cast:, turn:)
+      self.spell_casts = cast ? spell_casts.merge(key => turn) : spell_casts.except(key)
+    end
+
     private
 
     def counters_shape
@@ -86,6 +108,19 @@ module Encounter
         errors.add(:counters, "activated_on_turn must be a positive integer or null")
       end
     end
+
+    # Keys are "spell:<id>"/"granted:<id>" identities, values are the turn (a positive integer) the
+    # spell was cast on — see #spell_cast?.
+    def spell_casts_shape
+      return errors.add(:spell_casts, "must be an object") unless spell_casts.is_a?(Hash)
+
+      spell_casts.each do |key, turn|
+        unless key.is_a?(String) && key.match?(/\A(spell|granted):\d+\z/)
+          errors.add(:spell_casts, "key #{key.inspect} must be shaped like \"spell:<id>\" or \"granted:<id>\"")
+        end
+        errors.add(:spell_casts, "turn for #{key.inspect} must be a positive integer") unless turn.is_a?(Integer) && turn.positive?
+      end
+    end
   end
 end
 
@@ -98,6 +133,7 @@ end
 #  current_command_points  :integer          not null
 #  current_life_points     :integer          not null
 #  current_will_points     :integer          not null
+#  spell_casts             :json             not null
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null

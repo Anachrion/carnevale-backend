@@ -78,22 +78,43 @@ RSpec.describe Gang::List, type: :model do
       expect(snapshot.list_entries.first.entry).to eq(list.list_entries.first.entry)
     end
 
-    it "copies each Mage's committed Discipline and known spells" do
+    it "copies each Mage's committed Discipline(s) and known spells, per pool" do
       list = create(:list, faction: :guild, points: 100)
       profile = create(:profile, faction: :guild, ducats: 20,
                        abilities: ["Mage (2)"], keywords: ["Discipline (Blood Rites)"])
       ref = create(:card_reference, profile: profile)
       entry = create(:list_entry, list: list, entry: ref, position: 1)
-      entry.update!(spell_discipline: "blood_rites")
+      pool = profile.profile_spell_pools.first
+      entry.entry_pool_disciplines.create!(pool: pool, discipline: "blood_rites")
       spells = create_list(:spell, 2, discipline: :blood_rites)
-      spells.each { |s| entry.entry_spells.create!(spell: s) }
+      spells.each { |s| entry.entry_spells.create!(spell: s, pool: pool) }
       game_player = create(:game_player)
 
       snapshot = list.snapshot_for(game_player)
 
       copied = snapshot.list_entries.first
-      expect(copied.spell_discipline).to eq("blood_rites")
+      expect(copied.entry_pool_disciplines.map(&:discipline)).to eq(["blood_rites"])
+      expect(copied.entry_pool_disciplines.first.pool_id).to eq(pool.id)
       expect(copied.spells.map(&:id)).to match_array(spells.map(&:id))
+      expect(copied.entry_spells.map(&:pool_id)).to all(eq(pool.id))
+    end
+
+    it "remaps a mentor link (Apprentice Doctor's Apprenticeship) to the copied entries, not the originals" do
+      list = create(:list, faction: :doctors, points: 100)
+      mentor_ref = create(:card_reference, profile: create(:profile, faction: :doctors, ducats: 30,
+                          abilities: ["Mage (2)"], keywords: ["Discipline (Blood Rites)"]))
+      apprentice_ref = create(:card_reference, profile: create(:profile, faction: :doctors, ducats: 15))
+      mentor_entry = create(:list_entry, list: list, entry: mentor_ref, position: 1)
+      apprentice_entry = create(:list_entry, list: list, entry: apprentice_ref, position: 2,
+                                mentored_by_entry: mentor_entry)
+      game_player = create(:game_player)
+
+      snapshot = list.snapshot_for(game_player)
+
+      copied_mentor = snapshot.list_entries.find_by(entry: mentor_ref)
+      copied_apprentice = snapshot.list_entries.find_by(entry: apprentice_ref)
+      expect(copied_apprentice.mentored_by_entry_id).to eq(copied_mentor.id)
+      expect(copied_apprentice.mentored_by_entry_id).not_to eq(mentor_entry.id)
     end
 
     it "stays unaffected by later edits to the original list" do

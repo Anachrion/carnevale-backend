@@ -1,0 +1,50 @@
+<%#
+  One spell pool row — either an existing Catalog::ProfileSpellPool, or nil for a blank new row
+  (used both inline and inside the <template> the JS clones). `disciplines` is the pool's currently
+  eligible discipline slugs, passed separately since a blank row has none.
+
+  Locals: pool (nilable), disciplines (array of slugs), all_special_rules.
+%>
+<div class="js-pool-row" style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">
+    <div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Disciplines</div>
+      <% Catalog::Spell::DISCIPLINES.each do |d| %>
+        <label style="font-size:12px;display:inline-flex;align-items:center;gap:3px;margin-right:8px;">
+          <input type="checkbox" name="profile[pools][][disciplines][]" value="<%= d %>"
+                 <%= "checked" if disciplines.include?(d) %>>
+          <%= d.humanize %>
+        </label>
+      <% end %>
+    </div>
+    <label style="font-size:12px;color:#6b7280;">Of (simultaneous)<br>
+      <input type="number" name="profile[pools][][of]" value="<%= pool&.of || 1 %>" min="1" style="width:60px;padding:6px;">
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Slots<br>
+      <input type="number" name="profile[pools][][slot_count]" value="<%= pool&.slot_count || 0 %>" min="0" style="width:60px;padding:6px;">
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[pools][][unlimited]" value="1" <%= "checked" if pool&.unlimited? %>>
+      Unlimited
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[pools][][grants_cantrip]" value="1"
+             <%= "checked" if pool.nil? || pool.grants_cantrip? %>>
+      Grants Cantrip
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[pools][][resets_each_round]" value="1"
+             <%= "checked" if pool.nil? || pool.resets_each_round? %>>
+      Resets each round
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[pools][][mentor_derived]" value="1" <%= "checked" if pool&.mentor_derived? %>>
+      Mentor-derived
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Explained by<br>
+      <%= select_tag nil, options_from_collection_for_select(all_special_rules, :id, :name, pool&.special_rule_id),
+            name: "profile[pools][][special_rule_id]", include_blank: "—", style: "padding:6px;max-width:220px;" %>
+    </label>
+    <button type="button" class="btn js-remove-row" style="align-self:center;">✕</button>
+  </div>
+</div>

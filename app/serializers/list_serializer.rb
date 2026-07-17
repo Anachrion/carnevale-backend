@@ -37,18 +37,31 @@ class ListSerializer
     @cantrips ||= Catalog::Spell.cantrips.index_by(&:discipline)
   end
 
-  # Loads the entries with everything EntrySerializer needs preloaded: the polymorphic `entry`, its
-  # `entry_state` and `entry_spells`, and — since `entry` is polymorphic and only card references
-  # carry a profile — the `profile` behind each card reference, preloaded in one query. Without that
-  # last step EntrySerializer would hit CardReference#profile once per entry (the B-P2-1 N+1).
+  # Loads the entries with everything EntrySerializer/Gang::Entry#resolved_pools needs preloaded:
+  # the polymorphic `entry`, its `entry_state`, `entry_spells`, `entry_pool_disciplines`, and
+  # `mentored_by_entry` (Apprentice Doctor's mentor link) — and, since `entry` is polymorphic and
+  # only card references carry a profile, the `profile` behind each card reference (including its
+  # own and its mentor's spell pools/granted spells), preloaded in one pass. Without that last step
+  # EntrySerializer would hit CardReference#profile, and then profile.profile_spell_pools, once per
+  # entry (the B-P2-1 N+1, now extended to the new pool/grant associations).
   def list_entries_for_render
     entries = @list.list_entries
-                   .includes(:entry, :entry_state, entry_spells: :spell)
+                   .includes(:entry, :entry_state, :entry_pool_disciplines, entry_spells: :spell,
+                             mentored_by_entry: :entry)
                    .order(:position)
                    .to_a
-    card_references = entries.map(&:entry).grep(Catalog::CardReference)
+    card_references = (entries.map(&:entry) + entries.filter_map { |e| e.mentored_by_entry&.entry })
+      .grep(Catalog::CardReference)
     if card_references.any?
-      ActiveRecord::Associations::Preloader.new(records: card_references, associations: :profile).call
+      ActiveRecord::Associations::Preloader.new(
+        records: card_references,
+        associations: {
+          profile: [
+            { profile_spell_pools: [ :profile_spell_pool_disciplines, :special_rule ] },
+            { profile_granted_spells: [ :spell, :special_rule ] }
+          ]
+        }
+      ).call
     end
     entries
   end

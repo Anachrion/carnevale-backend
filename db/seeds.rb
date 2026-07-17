@@ -23,6 +23,21 @@ CatalogSnapshot.import
 
 puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile.count} profiles, #{Catalog::Weapon.count} weapons, #{Catalog::SpecialRule.count} special rules"
 
+# ── Spell pools ────────────────────────────────────────────────────────────────
+# The one-time backfill migration only sees profiles that already existed when it ran — a fresh
+# install has none yet, since the catalog is imported above, *after* migrations run. Call it again
+# here; it's idempotent (skips any profile that already has a pool), so this is a no-op on a
+# database where the migration already did the work against real data.
+require Rails.root.join("lib/spell_pool_backfill")
+puts "Backfilled #{SpellPoolBackfill.call} standard spell pools."
+
+# The ~10 profiles whose spell pools/grants aren't the standard shape (Doctor of the Firmament,
+# Seamstress, Apprentice Doctor, …) — see lib/tasks/spell_pool_exceptions.rake. Idempotent, same
+# reasoning as the backfill above: always safe to (re-)run against a fresh install.
+if defined?(Rake) && Rake::Task.task_defined?("spell_pools:configure_exceptions")
+  Rake::Task["spell_pools:configure_exceptions"].invoke
+end
+
 # ── Version card images ────────────────────────────────────────────────────────
 # Bump internal_version for any card whose images changed (no-op when public/cards is empty),
 # so the app knows which cards to re-download. See lib/tasks/cards.rake.

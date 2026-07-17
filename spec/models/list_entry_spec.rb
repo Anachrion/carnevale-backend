@@ -26,20 +26,6 @@ RSpec.describe Gang::Entry, type: :model do
       expect(entry.errors[:entry_type]).to be_present
     end
 
-    it "accepts a real Discipline, nil, but not a bogus one (B-28)" do
-      entry = list.list_entries.build(entry: guild_ref, position: 1)
-
-      entry.spell_discipline = "blood_rites"
-      expect(entry).to be_valid
-
-      entry.spell_discipline = nil
-      expect(entry).to be_valid
-
-      entry.spell_discipline = "Blood Rites" # wrong case / not a wire value
-      expect(entry).not_to be_valid
-      expect(entry.errors[:spell_discipline]).to be_present
-    end
-
     it "still saves when the card pushes the list over budget, but marks the list's selection invalid" do
       entry = create(:list_entry, list: list, entry: guild_ref(cost: 101), position: 1)
 

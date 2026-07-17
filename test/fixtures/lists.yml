@@ -32,3 +32,7 @@ two:
 #  index_lists_on_owner           (owner_type,owner_id)
 #  index_lists_on_source_list_id  (source_list_id)
 #
+# Foreign Keys
+#
+#  fk_rails_...  (source_list_id => lists.id) ON DELETE => nullify
+#

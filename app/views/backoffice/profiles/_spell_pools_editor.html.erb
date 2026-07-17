@@ -1,0 +1,26 @@
+<%#
+  Ordered editor for a profile's spell pools (CARNEVALEB-47). Almost every Mage has exactly one;
+  Doctor of the Firmament and Seamstress are the two-pool exceptions. Rewritten wholesale on save
+  via Catalog::Profile#replace_spell_pools! — see Backoffice::ProfilesController#pools_params.
+
+  Locals: profile, all_special_rules.
+%>
+<div class="js-pools-editor">
+  <div class="js-pool-rows">
+    <% profile.profile_spell_pools.each do |pool| %>
+      <%= render "spell_pool_row", pool: pool, disciplines: pool.disciplines, all_special_rules: all_special_rules %>
+    <% end %>
+  </div>
+
+  <template class="js-pool-template">
+    <%= render "spell_pool_row", pool: nil, disciplines: [], all_special_rules: all_special_rules %>
+  </template>
+
+  <button type="button" class="btn js-pool-add">+ Add pool</button>
+  <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+    Almost every Mage needs exactly one pool. Add a second only for a model that draws spells from
+    more than one independent source at once (Doctor of the Firmament's single pool spanning two
+    Disciplines still only needs one row with "Of" set to 2 — a second *row* is for a model like
+    Seamstress, whose Expert Sorcerer bonus is a genuinely separate pick).
+  </div>
+</div>

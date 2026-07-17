@@ -1,0 +1,46 @@
+<%#
+  One granted-spell row — either an existing Catalog::ProfileGrantedSpell, or nil for a blank new
+  row. A named_spell grant needs either a real catalog Spell picked below, or the four unique_*
+  fields filled in (never both) — see Catalog::ProfileGrantedSpell#named_spell_has_a_source.
+  all_cantrips needs neither.
+
+  Locals: grant (nilable), all_spells, all_special_rules.
+%>
+<div class="js-grant-row" style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;">
+  <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">
+    <label style="font-size:12px;color:#6b7280;">Kind<br>
+      <%= select_tag nil, options_for_select([ ["Named spell", "named_spell"], ["All Cantrips", "all_cantrips"] ], grant&.grant_kind || "named_spell"),
+            name: "profile[granted_spells][][grant_kind]", style: "padding:6px;" %>
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Catalog spell (if it's a real one)<br>
+      <%= select_tag nil, options_from_collection_for_select(all_spells, :id, :name, grant&.spell_id),
+            name: "profile[granted_spells][][spell_id]", include_blank: "—", style: "padding:6px;max-width:220px;" %>
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Unique spell name<br>
+      <input type="text" name="profile[granted_spells][][unique_spell_name]" value="<%= grant&.unique_spell_name %>" style="padding:6px;width:180px;">
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Cost<br>
+      <input type="number" name="profile[granted_spells][][unique_spell_cost]" value="<%= grant&.unique_spell_cost %>" min="0" style="width:60px;padding:6px;">
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Difficulty<br>
+      <input type="number" name="profile[granted_spells][][unique_spell_difficulty]" value="<%= grant&.unique_spell_difficulty %>" min="0" style="width:70px;padding:6px;">
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Unique spell description<br>
+      <textarea name="profile[granted_spells][][unique_spell_description]" rows="2" style="padding:6px;width:220px;"><%= grant&.unique_spell_description %></textarea>
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[granted_spells][][consumes_slot]" value="1" <%= "checked" if grant&.consumes_slot? %>>
+      Consumes a slot
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
+      <input type="checkbox" name="profile[granted_spells][][resets_each_round]" value="1"
+             <%= "checked" if grant.nil? || grant.resets_each_round? %>>
+      Resets each round
+    </label>
+    <label style="font-size:12px;color:#6b7280;">Explained by<br>
+      <%= select_tag nil, options_from_collection_for_select(all_special_rules, :id, :name, grant&.special_rule_id),
+            name: "profile[granted_spells][][special_rule_id]", include_blank: "—", style: "padding:6px;max-width:220px;" %>
+    </label>
+    <button type="button" class="btn js-remove-row" style="align-self:center;">✕</button>
+  </div>
+</div>

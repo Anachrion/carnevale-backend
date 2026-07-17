@@ -129,13 +129,18 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       create(:card_reference, profile: profile)
     end
 
-    def patch_spells(entry, discipline:, spell_ids:)
+    def pool_id_for(entry)
+      entry.profile.profile_spell_pools.first.id
+    end
+
+    def patch_spells(entry, discipline:, spell_ids:, pool_id: pool_id_for(entry.entry))
       patch "/api/v1/list_entries/#{entry.id}/spells",
-            params: { entry: { discipline: discipline, spell_ids: spell_ids } }.to_json,
+            params: { entry: { pool_selections: [ { pool_id: pool_id, disciplines: [ discipline ], spell_ids: spell_ids } ] } }.to_json,
             headers: headers
     end
 
-    it "sets the discipline and known spells, exposing them on the entry" do
+    it "sets the discipline and known spells, exposing them on the entry's pool" do
+      cantrip = create(:spell, discipline: :blood_rites, cantrip: true)
       entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
       spells = create_list(:spell, 2, discipline: :blood_rites)
 
@@ -143,11 +148,12 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
       expect(response).to have_http_status(:ok)
       returned = JSON.parse(response.body)["entries"].first
-      expect(returned["spell_discipline"]).to eq("blood_rites")
-      expect(returned["spells"].map { |s| s["id"] }).to match_array(spells.map(&:id))
+      pool = returned["pools"].first
+      expect(pool["chosen_disciplines"]).to eq([ "blood_rites" ])
+      expect(pool["spells"].map { |s| s["id"] }).to match_array(spells.map(&:id))
       expect(returned["mage"]).to be true
-      expect(returned["spell_slots"]).to eq(3)
-      expect(returned["cantrip"]).to be_nil
+      expect(pool["slot_count"]).to eq(3)
+      expect(pool["cantrips"].map { |s| s["id"] }).to eq([ cantrip.id ])
     end
 
     it "replaces a previous selection rather than appending" do
@@ -159,7 +165,7 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       patch_spells(entry, discipline: "divinity", spell_ids: [second.id])
 
       returned = JSON.parse(response.body)["entries"].first
-      expect(returned["spells"].map { |s| s["id"] }).to eq([second.id])
+      expect(returned["pools"].first["spells"].map { |s| s["id"] }).to eq([second.id])
     end
 
     it "saves an illegal selection but flips the list to invalid" do
@@ -176,9 +182,10 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
     it "returns 404 when the entry belongs to another user" do
       other = create(:list, faction: :guild, points: 100)
-      entry = create(:list_entry, list: other, entry: mage_ref, position: 1)
+      ref = mage_ref
+      entry = create(:list_entry, list: other, entry: ref, position: 1)
 
-      patch_spells(entry, discipline: "blood_rites", spell_ids: [])
+      patch_spells(entry, discipline: "blood_rites", spell_ids: [], pool_id: pool_id_for(ref))
       expect(response).to have_http_status(:not_found)
     end
 
@@ -192,6 +199,81 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
 
       expect(response).to have_http_status(:unprocessable_entity)
       expect(JSON.parse(response.body)).to have_key("errors")
+    end
+
+    it "rejects the edit once the game's owning player has confirmed their Agendas" do
+      game_player = create(:game_player, user: user, agendas_confirmed: true)
+      snapshot_list = create(:list, owner: game_player, faction: :guild, points: 100)
+      entry = create(:list_entry, list: snapshot_list, entry: mage_ref, position: 1)
+
+      patch_spells(entry, discipline: "blood_rites", spell_ids: [])
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]["base"].join).to match(/locked in for this game/)
+    end
+
+    describe "Apprentice Doctor's mentor pick" do
+      def mentor_derived_ref
+        profile = create(:profile, faction: :guild, ducats: 15)
+        profile.replace_spell_pools!([ { of: 1, slot_count: 0, mentor_derived: true, grants_cantrip: true, disciplines: [] } ])
+        create(:card_reference, profile: profile)
+      end
+
+      it "sets the mentor and resolves the pool's disciplines/slot_count from it" do
+        mentor_entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+        apprentice_entry = create(:list_entry, list: list, entry: mentor_derived_ref, position: 2)
+
+        patch "/api/v1/list_entries/#{apprentice_entry.id}/spells",
+              params: { entry: { mentored_by_entry_id: mentor_entry.id, pool_selections: [] } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:ok)
+        returned = JSON.parse(response.body)["entries"].find { |e| e["id"] == apprentice_entry.id }
+        expect(returned["mentored_by_entry_id"]).to eq(mentor_entry.id)
+        expect(returned["pools"].first["eligible_disciplines"]).to eq([ "blood_rites", "divinity" ])
+        # mage_ref is Mage (2) + Expert Sorcerer (1) = 3 total, but Apprenticeship only ever copies
+        # the Mage ability — mage_slot_count (2), not the mentor's combined slot_count (3).
+        expect(returned["pools"].first["slot_count"]).to eq(2)
+      end
+
+      it "leaves the current mentor untouched when the field is omitted" do
+        mentor_entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+        apprentice_entry = create(:list_entry, list: list, entry: mentor_derived_ref, position: 2,
+                                   mentored_by_entry: mentor_entry)
+        pool_id = apprentice_entry.profile.profile_spell_pools.first.id
+
+        patch "/api/v1/list_entries/#{apprentice_entry.id}/spells",
+              params: { entry: { pool_selections: [ { pool_id: pool_id, disciplines: [], spell_ids: [] } ] } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(apprentice_entry.reload.mentored_by_entry_id).to eq(mentor_entry.id)
+      end
+
+      it "clears the mentor when the field is sent as null" do
+        mentor_entry = create(:list_entry, list: list, entry: mage_ref, position: 1)
+        apprentice_entry = create(:list_entry, list: list, entry: mentor_derived_ref, position: 2,
+                                   mentored_by_entry: mentor_entry)
+
+        patch "/api/v1/list_entries/#{apprentice_entry.id}/spells",
+              params: { entry: { mentored_by_entry_id: nil, pool_selections: [] } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:ok)
+        expect(apprentice_entry.reload.mentored_by_entry_id).to be_nil
+      end
+
+      it "rejects a mentor entry from another user's list" do
+        other_list = create(:list, faction: :guild, points: 100)
+        other_mentor_entry = create(:list_entry, list: other_list, entry: mage_ref, position: 1)
+        apprentice_entry = create(:list_entry, list: list, entry: mentor_derived_ref, position: 2)
+
+        patch "/api/v1/list_entries/#{apprentice_entry.id}/spells",
+              params: { entry: { mentored_by_entry_id: other_mentor_entry.id, pool_selections: [] } }.to_json,
+              headers: headers
+
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
     end
   end
 

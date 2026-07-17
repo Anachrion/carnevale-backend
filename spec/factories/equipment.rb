@@ -11,9 +11,9 @@ end
 # Table name: equipment
 #
 #  id          :bigint           not null, primary key
-#  cost        :integer
-#  description :text
-#  name        :string
+#  cost        :integer          not null
+#  description :text             default(""), not null
+#  name        :string           not null
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
 #

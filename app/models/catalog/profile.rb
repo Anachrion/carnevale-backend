@@ -13,6 +13,9 @@ module Catalog
     has_many :profile_special_rules, -> { order(:position) }, class_name: "Catalog::ProfileSpecialRule"
     has_many :special_rules, through: :profile_special_rules
 
+    has_many :profile_spell_pools, -> { order(:position) }, class_name: "Catalog::ProfileSpellPool", dependent: :destroy
+    has_many :profile_granted_spells, -> { order(:position) }, class_name: "Catalog::ProfileGrantedSpell", dependent: :destroy
+
     # Recompute the cached selection validity of every gang that hired this profile. Its ducats,
     # keywords and spell-affecting abilities feed ListValidationService, but a backoffice edit here
     # touches none of those gangs' own rows — so without this their cached selection_valid /
@@ -39,40 +42,58 @@ module Catalog
     # Keywords stay free-form (Discipline (…), Leader); only abilities are held to the glossary.
     validates_ability_glossary :abilities, category: "character"
 
-    MAGE_ABILITY = /\AMage \((\d+)\)\z/
-    EXPERT_SORCERER_ABILITY = /\AExpert Sorcerer \((\d+)\)\z/
-    DISCIPLINE_KEYWORD = /\ADiscipline \((.+)\)\z/
-
-    # X from the "Mage (X)" ability, or nil if this profile is not a Mage. This is the number of
-    # (non-Cantrip) spells the model may know before Expert Sorcerer bonuses (rulebook p24).
-    def mage_level
-      abilities.filter_map { |a| a[MAGE_ABILITY, 1]&.to_i }.first
-    end
-
+    # Whether this profile can know spells at all — i.e. has at least one spell pool. Standard
+    # mages get their one pool from the one-time backfill (CARNEVALEB-47); Apprentice Doctor's is
+    # `mentor_derived` (present regardless of whether a mentor has been chosen yet).
     def mage?
-      mage_level.present?
+      profile_spell_pools.any?
     end
 
-    # X from the "Expert Sorcerer (X)" ability, added to the number of spells known; 0 if absent.
-    def expert_sorcerer_level
-      abilities.filter_map { |a| a[EXPERT_SORCERER_ABILITY, 1]&.to_i }.first || 0
-    end
-
-    # Maximum number of non-Cantrip spells this model may know. Cantrips are always known for free
-    # and do not count towards this total.
+    # Summary total across every pool's slot_count — informational only (the catalog browse
+    # endpoint), not used to enforce anything: real enforcement is per-pool, in
+    # ListValidationService. An `unlimited` pool contributes 0 here since it has no fixed slot count.
     def spell_slots
-      return 0 unless mage?
-
-      mage_level + expert_sorcerer_level
+      profile_spell_pools.sum(&:slot_count)
     end
 
-    # Discipline slugs this model may pick spells from, parsed from the "Discipline (A, B)" keyword
-    # (e.g. "Discipline (Blood Rites, Divinity)" => ["blood_rites", "divinity"]). Empty if none.
+    # The union of every pool's eligible discipline slugs — informational only, same caveat as
+    # spell_slots. A `mentor_derived` pool contributes nothing here since it has no static list.
     def disciplines
-      keyword = keywords.grep(DISCIPLINE_KEYWORD).first
-      return [] unless keyword
+      profile_spell_pools.flat_map(&:disciplines).uniq
+    end
 
-      keyword[DISCIPLINE_KEYWORD, 1].split(",").map { |name| name.strip.parameterize(separator: "_") }
+    # Replaces this profile's spell pools wholesale. `pools_data` is an array of hashes shaped like
+    # { of:, slot_count:, unlimited:, grants_cantrip:, resets_each_round:, mentor_derived:,
+    # special_rule_id:, disciplines: [...] }, in the order they should print/apply. A nil array means
+    # the caller said nothing about pools (the live card preview, for one), so the current set stands.
+    #
+    # Pools are owned, ordered child records (unlike weapons/special rules, which are join rows to a
+    # shared catalog) — replaced the same way illustrations are: destroy and recreate, rather than
+    # diffed in place, since a rework this infrequent doesn't need to preserve individual pool ids.
+    def replace_spell_pools!(pools_data)
+      return if pools_data.nil?
+
+      transaction do
+        profile_spell_pools.destroy_all
+        pools_data.each_with_index do |data, index|
+          pool = profile_spell_pools.create!(data.except(:disciplines).merge(position: index + 1))
+          Array(data[:disciplines]).each { |discipline| pool.profile_spell_pool_disciplines.create!(discipline: discipline) }
+        end
+      end
+    end
+
+    # Same idea for granted spells: { spell_id:, unique_spell_name:, unique_spell_cost:,
+    # unique_spell_difficulty:, unique_spell_description:, grant_kind:, consumes_slot:,
+    # resets_each_round:, special_rule_id: }.
+    def replace_granted_spells!(grants_data)
+      return if grants_data.nil?
+
+      transaction do
+        profile_granted_spells.destroy_all
+        grants_data.each_with_index do |data, index|
+          profile_granted_spells.create!(data.merge(position: index + 1))
+        end
+      end
     end
 
     # Weapons and special rules are shared records — one "Stiletto" row, referenced by every
@@ -126,23 +147,24 @@ end
 #
 # Table name: profiles
 #
-#  id             :bigint           not null, primary key
-#  abilities      :json             not null
-#  action_points  :integer          default(0), not null
-#  attack         :integer          default(0), not null
-#  command_points :integer          default(0), not null
-#  dexterity      :integer          default(0), not null
-#  ducats         :integer          default(0), not null
-#  faction        :string           default(NULL), not null
-#  keywords       :json             not null
-#  life_points    :integer          default(0), not null
-#  mind           :integer          default(0), not null
-#  movement       :integer          default(0), not null
-#  name           :string           default(""), not null
-#  protection     :integer          default(0), not null
-#  size           :integer          default(0), not null
-#  version        :string           default("2.2.0"), not null
-#  will_points    :integer          default(0), not null
-#  created_at     :datetime         not null
-#  updated_at     :datetime         not null
+#  id                           :bigint           not null, primary key
+#  abilities                    :json             not null
+#  action_points                :integer          default(0), not null
+#  attack                       :integer          default(0), not null
+#  command_points               :integer          default(0), not null
+#  dexterity                    :integer          default(0), not null
+#  distinct_discipline_per_copy :boolean          default(FALSE), not null
+#  ducats                       :integer          default(0), not null
+#  faction                      :string           default(NULL), not null
+#  keywords                     :json             not null
+#  life_points                  :integer          default(0), not null
+#  mind                         :integer          default(0), not null
+#  movement                     :integer          default(0), not null
+#  name                         :string           default(""), not null
+#  protection                   :integer          default(0), not null
+#  size                         :integer          default(0), not null
+#  version                      :string           default("2.2.0"), not null
+#  will_points                  :integer          default(0), not null
+#  created_at                   :datetime         not null
+#  updated_at                   :datetime         not null
 #

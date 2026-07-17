@@ -75,12 +75,27 @@ module Gang
       snapshot = List.defer_validation do
         List.transaction do
           List.create!(owner: owner, name: name, faction: faction, points: points, source_list_id: id).tap do |copy|
-            list_entries.includes(:entry_spells).each do |entry|
+            source_entries = list_entries.includes(:entry_spells, :entry_pool_disciplines).to_a
+            copied_by_source_id = {}
+
+            source_entries.each do |entry|
               copied = copy.list_entries.create!(
-                entry_type: entry.entry_type, entry_id: entry.entry_id,
-                position: entry.position, spell_discipline: entry.spell_discipline
+                entry_type: entry.entry_type, entry_id: entry.entry_id, position: entry.position
               )
-              entry.entry_spells.each { |es| copied.entry_spells.create!(spell_id: es.spell_id) }
+              copied_by_source_id[entry.id] = copied
+              entry.entry_spells.each { |es| copied.entry_spells.create!(spell_id: es.spell_id, pool_id: es.pool_id) }
+              entry.entry_pool_disciplines.each do |epd|
+                copied.entry_pool_disciplines.create!(pool_id: epd.pool_id, discipline: epd.discipline)
+              end
+            end
+
+            # mentored_by_entry_id points at another entry in the *same* list, so Apprentice
+            # Doctor's mentor link can only be remapped once every copy exists — a second pass,
+            # since the mentor may be created before or after her in position order.
+            source_entries.each do |entry|
+              next unless entry.mentored_by_entry_id
+
+              copied_by_source_id[entry.id].update!(mentored_by_entry_id: copied_by_source_id[entry.mentored_by_entry_id]&.id)
             end
           end
         end
@@ -111,4 +126,8 @@ end
 #
 #  index_lists_on_owner           (owner_type,owner_id)
 #  index_lists_on_source_list_id  (source_list_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (source_list_id => lists.id) ON DELETE => nullify
 #
