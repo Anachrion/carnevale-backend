@@ -1541,7 +1541,7 @@
 - name: Shackled Feaster
   faction: doctors
   version: 2.2.0
-  ducats: 7
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 5
@@ -2516,7 +2516,7 @@
 - name: Mezzetino
   faction: gifted
   version: 2.3.0
-  ducats: 13
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 4
@@ -2662,7 +2662,7 @@
 - name: Scapino
   faction: gifted
   version: 2.2.0
-  ducats: 0
+  ducats: 11
   movement: 5
   attack: 2
   dexterity: 5
@@ -3179,7 +3179,7 @@
 - name: Beggar
   faction: guild
   version: 2.2.0
-  ducats: 5
+  ducats: 6
   movement: 4
   attack: 2
   dexterity: 3
@@ -3496,7 +3496,7 @@
   movement: 4
   attack: 4
   dexterity: 4
-  protection: 3
+  protection: 4
   mind: 3
   action_points: 2
   will_points: 3
@@ -6562,7 +6562,7 @@
     offset_y: -12
     zoom: 60
     flipped: false
-- name: Bounding Telebine
+- name: Bounding Telchine
   faction: rashaar
   version: 2.2.1
   ducats: 9
@@ -6724,7 +6724,7 @@
 - name: Crybaby
   faction: rashaar
   version: 2.2.0
-  ducats: 0
+  ducats: 5
   movement: 6
   attack: 2
   dexterity: 4
@@ -6946,7 +6946,7 @@
 - name: Dagonite Zealot
   faction: rashaar
   version: 2.2.0
-  ducats: 0
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 6
@@ -6989,7 +6989,7 @@
 - name: Dagon Officiant
   faction: rashaar
   version: 2.2.0
-  ducats: 0
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 4
@@ -7292,7 +7292,7 @@
 - name: Infant Kraken
   faction: rashaar
   version: 2.3.1
-  ducats: 0
+  ducats: 5
   movement: 4
   attack: 2
   dexterity: 5
@@ -7953,7 +7953,7 @@
 - name: Slave
   faction: rashaar
   version: 2.2.0
-  ducats: 0
+  ducats: 4
   movement: 4
   attack: 2
   dexterity: 4
@@ -8089,6 +8089,7 @@
   abilities:
   - Fast Swimmer (1)
   - Mage (2)
+  - Water Creature
   weapons:
   - staff
   special_rules:
@@ -8304,7 +8305,7 @@
 - name: Al Naibii
   faction: strigoi
   version: 2.2.1
-  ducats: 9
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 4
@@ -8450,7 +8451,7 @@
     offset_y: -25
     zoom: 85
     flipped: false
-- name: Cetean Upior
+- name: Cetean Upiór
   faction: strigoi
   version: 2.3.0
   ducats: 21
@@ -9903,7 +9904,7 @@
 - name: Altar Boy
   faction: vatican
   version: 2.4.0
-  ducats: 8
+  ducats: 11
   movement: 4
   attack: 2
   dexterity: 5
@@ -10861,7 +10862,7 @@
 - name: Inquisitorial Spy
   faction: vatican
   version: 2.2.0
-  ducats: 9
+  ducats: 11
   movement: 4
   attack: 3
   dexterity: 5
