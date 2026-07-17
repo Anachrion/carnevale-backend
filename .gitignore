@@ -45,3 +45,9 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Compiled Flutter web bundle, served at /app. Materialised locally by bin/release-web (which
+# builds it from the sibling carnevale/ repo) right before `kamal deploy`, the same "build fresh
+# on the deploy machine" model as the LFS card images. Not committed: the minified output makes
+# huge, noisy diffs and would drift from the frontend source it was built from.
+/public/app
