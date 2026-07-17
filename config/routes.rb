@@ -114,17 +114,8 @@ Rails.application.routes.draw do
   # get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
-  # Defines the root path route ("/")
-  # TODO: replace with the backoffice dashboard once it exists.
-  #
-  # A signed-in visitor's root is the backoffice. Without this branch, root sends *everyone* to the
-  # sign-in page — and Devise bounces an already-signed-in visitor straight back off it, which is
-  # the redirect loop Firefox reports as "the page isn't redirecting properly".
-  authenticated :user do
-    root to: "backoffice/profiles#index", as: :authenticated_root
-  end
-
-  # 302, not redirect()'s default 301: a permanent redirect on the site's own root is cached by the
-  # browser for good, so it cannot be taken back once there is a dashboard here to land on.
-  root to: redirect("/users/sign_in", status: 302)
+  # The site root serves the Flutter web app (see WebAppController). The card-authoring backoffice
+  # lives under its own /backoffice namespace and is reached directly or via /users/sign_in, where
+  # after_sign_in_path_for lands signed-in admins on it — so root no longer needs a per-user branch.
+  root to: "web_app#index"
 end
