@@ -46,3 +46,11 @@ bin/rails server
 | Framework| Rails 8.1.3         |
 | Database | PostgreSQL 17        |
 | Runtime  | rbenv               |
+
+## License
+
+The **source code** in this repository is licensed under the [Apache License 2.0](LICENSE).
+
+This project bundles artwork, card data, rules text, faction symbols, and other content that is the intellectual property of **TT Combat** ("Carnevale"). That content is **not** covered by the Apache License — it is included with TT Combat's permission and remains © TT Combat, all rights reserved. See [NOTICE](NOTICE) for the full carve-out. If you reuse this code, you are responsible for removing that content or obtaining your own permission from TT Combat.
+
+This is an unofficial fan project, not affiliated with or endorsed by TT Combat.
