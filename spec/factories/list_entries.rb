@@ -13,7 +13,6 @@ end
 #  id                   :bigint           not null, primary key
 #  entry_type           :string           not null
 #  position             :integer          not null
-#  spell_discipline     :string
 #  summoned             :boolean          default(FALSE), not null
 #  created_at           :datetime         not null
 #  updated_at           :datetime         not null
