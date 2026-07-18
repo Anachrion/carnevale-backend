@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_130800) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_130900) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -210,7 +210,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_130800) do
     t.bigint "list_id", null: false
     t.bigint "mentored_by_entry_id"
     t.integer "position", null: false
-    t.string "spell_discipline"
     t.boolean "summoned", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["entry_type", "entry_id"], name: "index_list_entries_on_entry_type_and_entry_id"
@@ -251,7 +250,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_130800) do
     t.index ["profile_id"], name: "index_profile_granted_spells_on_profile_id"
     t.index ["special_rule_id"], name: "index_profile_granted_spells_on_special_rule_id"
     t.index ["spell_id"], name: "index_profile_granted_spells_on_spell_id"
-    t.check_constraint "grant_kind::text = ANY (ARRAY['named_spell'::character varying, 'all_cantrips'::character varying]::text[])", name: "profile_granted_spells_grant_kind_check"
+    t.check_constraint "grant_kind::text = ANY (ARRAY['named_spell'::character varying::text, 'all_cantrips'::character varying::text])", name: "profile_granted_spells_grant_kind_check"
   end
 
   create_table "profile_special_rules", force: :cascade do |t|
