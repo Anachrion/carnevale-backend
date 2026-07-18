@@ -41,6 +41,23 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       expect(positions).to eq([1, 2])
     end
 
+    it "pins a freshly-hired Leader to the top, shifting the models already hired down" do
+      henchman_a = guild_ref(keywords: ["Henchman"])
+      henchman_b = guild_ref(keywords: ["Henchman"])
+      post_entry(henchman_a)
+      post_entry(henchman_b)
+
+      post_entry(guild_ref(keywords: ["Leader"]))
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      leader = entries.find { |e| e["keywords"].include?("Leader") }
+      expect(leader["position"]).to eq(1)
+      # The two henchmen that were already hired keep their order, just below the Leader.
+      expect(entries.map { |e| e["position"] }.sort).to eq([1, 2, 3])
+      expect(entries.reject { |e| e["keywords"].include?("Leader") }.map { |e| e["position"] }).to eq([2, 3])
+    end
+
     it "creates the entry but marks the list's selection invalid when cost exceeds points limit" do
       post_entry(guild_ref(keywords: ["Leader"]))
       post_entry(guild_ref(cost: 101))
@@ -84,24 +101,49 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
   end
 
   describe "PATCH /api/v1/list_entries/:id" do
-    it "moves the entry to the requested position and returns the updated list" do
-      ref_a = guild_ref(keywords: ["Leader"])
-      ref_b = guild_ref
-      ref_c = guild_ref
-      e1 = create(:list_entry, list: list, entry: ref_a, position: 1)
-      e2 = create(:list_entry, list: list, entry: ref_b, position: 2)
-      e3 = create(:list_entry, list: list, entry: ref_c, position: 3)
+    it "reorders the non-leader models below the pinned Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+      e3 = create(:list_entry, list: list, entry: guild_ref, position: 3)
+
+      # Move the last model up to just below the Leader.
+      patch "/api/v1/list_entries/#{e3.id}",
+            params: { entry: { position: 2 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(leader.reload.position).to eq(1)
+      expect(e3.reload.position).to eq(2)
+      expect(e2.reload.position).to eq(3)
+    end
+
+    it "clamps a non-leader that asks for position 1 to just below the Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+      e3 = create(:list_entry, list: list, entry: guild_ref, position: 3)
 
       patch "/api/v1/list_entries/#{e3.id}",
             params: { entry: { position: 1 } }.to_json,
             headers: headers
 
       expect(response).to have_http_status(:ok)
-      positions = JSON.parse(response.body)["entries"].map { |e| e["position"] }
-      expect(positions).to eq([1, 2, 3])
-      expect(e3.reload.position).to eq(1)
-      expect(e1.reload.position).to eq(2)
+      # Position 1 stays the Leader's; e3 lands at 2, not above it.
+      expect(leader.reload.position).to eq(1)
+      expect(e3.reload.position).to eq(2)
       expect(e2.reload.position).to eq(3)
+    end
+
+    it "ignores a request to move the Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+
+      patch "/api/v1/list_entries/#{leader.id}",
+            params: { entry: { position: 2 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(leader.reload.position).to eq(1)
+      expect(e2.reload.position).to eq(2)
     end
 
     it "does not auto-sort after a manual reorder" do

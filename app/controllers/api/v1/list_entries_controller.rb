@@ -22,7 +22,9 @@ module Api
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
-          ListSortingService.call(@list)
+          # The Leader is pinned to the top of the list; a freshly-hired one jumps there rather than
+          # landing at the end. Every other model is appended in hire order and reordered by hand.
+          ListEntryReorderService.call(entry, 1) if leader?(entry)
           render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
           render_error(entry.errors)
@@ -31,7 +33,14 @@ module Api
 
       def update
         entry = find_owned_entry
-        ListEntryReorderService.call(entry, position_params[:position].to_i)
+        # The Leader is pinned to the top and can't be reordered by hand: moving the Leader itself is
+        # a no-op, and no other model may take position 1 while a Leader occupies it. Everything below
+        # the Leader reorders freely.
+        unless leader?(entry)
+          target = position_params[:position].to_i
+          target = target.clamp(2, entry.list.list_entries.count) if list_has_leader?(entry.list)
+          ListEntryReorderService.call(entry, target)
+        end
         render json: ListSerializer.new(entry.list.reload).as_json
       end
 
@@ -96,6 +105,19 @@ module Api
       end
 
       private
+
+      # Whether an entry is the gang's Leader — a card reference whose profile carries the Leader
+      # keyword. Equipment (no profile) is never a Leader. Drives the pin-to-top on hire.
+      def leader?(entry)
+        entry.profile&.keywords&.include?("Leader")
+      end
+
+      # Whether position 1 is currently held by a Leader — the exact condition under which a
+      # non-leader reorder must be clamped to stay below it.
+      def list_has_leader?(list)
+        top = list.list_entries.order(:position).first
+        top.present? && leader?(top)
+      end
 
       def find_owned_entry
         Gang::Entry.joins(:list).where(lists: { owner_type: "User", owner_id: current_user.id }).find(params[:id])

@@ -30,8 +30,8 @@ class ListEntryReorderService
     # The whole shuffle must be atomic: parking the moved row at a temporary negative position and
     # the row-by-row shifts each temporarily violate the `(list_id, position)` UNIQUE index's final
     # invariant, so a failure partway through would leave gaps/dupes and make a retry hit
-    # RecordNotUnique. Negative temp positions match ListSortingService's convention (they sit
-    # outside the valid 1..N range, so they never collide with a real row mid-shuffle).
+    # RecordNotUnique. The temporary negative position sits outside the valid 1..N range, so it
+    # never collides with a real row mid-shuffle.
     Gang::Entry.transaction do
       @entry.update_columns(position: -1)
 
