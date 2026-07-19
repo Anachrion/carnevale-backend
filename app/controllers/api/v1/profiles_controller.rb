@@ -77,6 +77,10 @@ module Api
           # Thieves, Sopracomito, La Signora) — lets the gang builder keep offering its "add" button
           # once a Leader is present. Enforcement is ListValidationService#check_leader_count.
           flexible_leader: profile.flexible_leader,
+          # The specific partner a *conditional* flex Leader demotes alongside (La Signora -> Il
+          # Capitano's profile id), or null when it demotes alongside any Leader. Lets the builder
+          # restrict which Leader can still be recruited once she's in the list.
+          flexible_leader_with: profile.flexible_leader_with_id,
           version: profile.version,
           # Spell-selection metadata derived from abilities/keywords (rulebook p24).
           mage: profile.mage?,
