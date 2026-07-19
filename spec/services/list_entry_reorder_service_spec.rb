@@ -78,17 +78,30 @@ RSpec.describe ListEntryReorderService, type: :service do
     expect(ordered_positions).to eq([1, 2, 3, 4, 5])
   end
 
-  # Non-regression for B-P1-5: the shuffle must be atomic. Failing on the final write (after the
-  # entry has been parked at position 0 and its neighbours shifted) previously left the list with a
-  # gap/dupe; wrapping the shuffle in a transaction rolls the whole thing back instead.
+  it "reorders correctly and heals gaps when positions are non-contiguous" do
+    # The real-world state now that adds append at max+1 and removes leave holes: positions drift
+    # out of a clean 1..N. The reorder must still land the entry where asked and renumber the list.
+    # (Reassigned high-to-low so no intermediate step collides with the (list_id, position) index.)
+    @e5.update_columns(position: 9)
+    @e4.update_columns(position: 8)
+    @e3.update_columns(position: 5)
+
+    described_class.call(@e5, 2) # move the last entry up to the second slot
+
+    expect(list.list_entries.order(:position).pluck(:id))
+      .to eq([@e1.id, @e5.id, @e2.id, @e3.id, @e4.id])
+    expect(ordered_positions).to eq([1, 2, 3, 4, 5])
+  end
+
+  # Non-regression for B-P1-5: the shuffle must be atomic. A failure partway through the renumber
+  # previously left the list with a gap/dupe; wrapping it in a transaction rolls the whole thing back.
   it "rolls back the entire reorder if a write fails partway through" do
-    original = @e2.method(:update_columns)
     calls = 0
-    allow(@e2).to receive(:update_columns) do |*args|
+    allow_any_instance_of(Gang::Entry).to receive(:update_columns).and_wrap_original do |m, *args|
       calls += 1
       raise ActiveRecord::StatementInvalid, "boom" if calls == 2
 
-      original.call(*args)
+      m.call(*args)
     end
 
     expect { described_class.call(@e2, 4) }.to raise_error(ActiveRecord::StatementInvalid)

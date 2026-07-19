@@ -20,34 +20,30 @@ class ListEntryReorderService
   def initialize(entry, new_position)
     @entry = entry
     @list = entry.list
-    @old_position = entry.position
-    @new_position = new_position.clamp(1, @list.list_entries.count)
+    @new_position = new_position
   end
 
+  # Moves the entry to `new_position` (1-based) and renumbers the whole list to a contiguous 1..N.
+  # Works off the ordered *list* by index rather than by position arithmetic, so it's correct even
+  # when positions have gaps — which they do now that adds append at max+1 and removes leave holes
+  # (the old renumber-on-every-add is gone). Renumbering also heals those gaps, so the stored order
+  # always matches the client's index-based view and a synced reorder never visibly jumps back.
   def call
-    return if @old_position == @new_position
+    entries = @list.list_entries.order(:position).to_a
+    current = entries.index { |e| e.id == @entry.id }
+    return if current.nil?
 
-    # The whole shuffle must be atomic: parking the moved row at a temporary negative position and
-    # the row-by-row shifts each temporarily violate the `(list_id, position)` UNIQUE index's final
-    # invariant, so a failure partway through would leave gaps/dupes and make a retry hit
-    # RecordNotUnique. The temporary negative position sits outside the valid 1..N range, so it
-    # never collides with a real row mid-shuffle.
+    target = (@new_position - 1).clamp(0, entries.size - 1)
+    return if current == target
+
+    entries.insert(target, entries.delete_at(current))
+
+    # Two passes (temporary negative positions, then the final 1..N) sidestep the
+    # `(list_id, position)` UNIQUE index mid-shuffle; the transaction makes the whole renumber atomic
+    # so a failure can't strand the list with negative/duplicate positions.
     Gang::Entry.transaction do
-      @entry.update_columns(position: -1)
-
-      if @new_position < @old_position
-        @list.list_entries
-             .where(position: @new_position..(@old_position - 1))
-             .order(position: :desc)
-             .each { |e| e.update_columns(position: e.position + 1) }
-      else
-        @list.list_entries
-             .where(position: (@old_position + 1)..@new_position)
-             .order(position: :asc)
-             .each { |e| e.update_columns(position: e.position - 1) }
-      end
-
-      @entry.update_columns(position: @new_position)
+      entries.each_with_index { |e, i| e.update_columns(position: -(i + 1)) }
+      entries.each_with_index { |e, i| e.update_columns(position: i + 1) }
     end
   end
 end
