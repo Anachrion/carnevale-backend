@@ -136,11 +136,13 @@ class ListValidationService
   end
 
   # Whether a Leader gives up the keyword (becoming a plain Hero) given the rest of the gang. A hard
-  # Leader never does. An *unconditional* flex Leader (The Duke, Prince of Thieves, Sopracomito)
-  # demotes whenever a hard Leader is present. A *conditional* flex Leader (La Signora, whose
-  # `flexible_leader_with` names a partner) demotes only when that specific partner — Il Capitano — is
-  # in the gang; alongside any other Leader she keeps the keyword, so the pair reads as two Leaders
-  # and the count check flags it.
+  # Leader never does. A *conditional* flex Leader (La Signora, whose `flexible_leader_with` names a
+  # partner) demotes only when that specific partner — Il Capitano — is in the gang; alongside any
+  # other Leader she keeps the keyword, so the pair reads as two Leaders. An *unconditional* flex
+  # Leader (The Duke, Prince of Thieves, Sopracomito) demotes whenever another *forced* Leader is
+  # present — one that keeps the keyword no matter what (a hard Leader, or a partnerless conditional
+  # flex Leader). It does NOT demote alongside another unconditional flex Leader on its own, since
+  # neither is forced; that ambiguity is resolved elsewhere (the topmost leads, the rest demote).
   def leader_demotes?(cr)
     return false unless cr.profile.flexible_leader
 
@@ -148,8 +150,18 @@ class ListValidationService
     if partner_id
       projected_card_references.any? { |o| o.profile_id == partner_id }
     else
-      leader_refs.any? { |o| !o.profile.flexible_leader }
+      leader_refs.any? { |o| forced_leader?(o) }
     end
+  end
+
+  # A Leader that keeps the Leader keyword regardless of what else is in the gang: a hard Leader, or a
+  # conditional flex Leader (La Signora) whose partner isn't present. Unconditional flex Leaders are
+  # never forced — they only lead when nothing else does.
+  def forced_leader?(cr)
+    return true unless cr.profile.flexible_leader
+
+    partner_id = cr.profile.flexible_leader_with_id
+    partner_id.present? && projected_card_references.none? { |o| o.profile_id == partner_id }
   end
 
   def check_leader_count

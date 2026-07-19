@@ -254,6 +254,16 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be false
         expect(result[:errors]).to include(match(/must have exactly one Leader/))
       end
+
+      it "demotes an unconditional flex Leader alongside a leading conditional flex Leader" do
+        capitano = partner_ref # absent from the gang, so La Signora keeps the keyword and leads
+        add_entry(list, conditional_flex_ref(partner: capitano), position: 1) # La Signora leads
+        add_entry(list, flex_leader_ref, position: 2) # The Duke demotes to a Hero alongside her
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
     end
 
     context "hero/henchman ratio" do
