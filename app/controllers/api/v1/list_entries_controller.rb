@@ -22,9 +22,10 @@ module Api
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
-          # The Leader is pinned to the top of the list; a freshly-hired one jumps there rather than
-          # landing at the end. Every other model is appended in hire order and reordered by hand.
-          ListEntryReorderService.call(entry, 1) if leader?(entry)
+          # The gang's effective Leader is pinned to the top; hiring the one that belongs there (a
+          # hard Leader, or a lone flex Leader) jumps it up — including when a new hard Leader demotes
+          # a flex Leader that was holding the top. Everything else is appended in hire order.
+          pin_effective_leader
           render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
           render_error(entry.errors)
@@ -33,12 +34,13 @@ module Api
 
       def update
         entry = find_owned_entry
-        # The Leader is pinned to the top and can't be reordered by hand: moving the Leader itself is
-        # a no-op, and no other model may take position 1 while a Leader occupies it. Everything below
-        # the Leader reorders freely.
-        unless leader?(entry)
+        leader = effective_leader_entry(entry.list)
+        # The effective Leader is pinned to the top and can't be reordered by hand: moving it is a
+        # no-op, and no other model may take position 1 while it holds it. Everything below the Leader
+        # (including a demoted flex Leader) reorders freely.
+        unless leader && entry.id == leader.id
           target = position_params[:position].to_i
-          target = target.clamp(2, entry.list.list_entries.count) if list_has_leader?(entry.list)
+          target = target.clamp(2, entry.list.list_entries.count) if leader
           ListEntryReorderService.call(entry, target)
         end
         render json: ListSerializer.new(entry.list.reload).as_json
@@ -106,17 +108,25 @@ module Api
 
       private
 
-      # Whether an entry is the gang's Leader — a card reference whose profile carries the Leader
-      # keyword. Equipment (no profile) is never a Leader. Drives the pin-to-top on hire.
-      def leader?(entry)
-        entry.profile&.keywords&.include?("Leader")
+      # The entry that keeps the Leader keyword once flex-Leader demotion is resolved — the hard
+      # Leader if any is fielded, else a lone flex Leader — and so the one pinned to the top of the
+      # list. Mirrors ListValidationService#effective_leader_refs. Nil when the gang holds no Leader.
+      # (Equipment carries no profile, so it's never a Leader.)
+      def effective_leader_entry(list)
+        leaders = list.list_entries.order(:position).select do |e|
+          e.profile&.keywords&.include?("Leader")
+        end
+        return nil if leaders.empty?
+
+        leaders.reject { |e| e.profile.flexible_leader }.first || leaders.first
       end
 
-      # Whether position 1 is currently held by a Leader — the exact condition under which a
-      # non-leader reorder must be clamped to stay below it.
-      def list_has_leader?(list)
-        top = list.list_entries.order(:position).first
-        top.present? && leader?(top)
+      # Moves the gang's effective Leader to position 1 if it isn't already there — run after a hire,
+      # so a freshly-added Leader (or a flex Leader that a new hard Leader just demoted past) ends up
+      # correctly pinned.
+      def pin_effective_leader
+        leader = effective_leader_entry(@list)
+        ListEntryReorderService.call(leader, 1) if leader && leader.position != 1
       end
 
       def find_owned_entry
