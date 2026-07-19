@@ -51,6 +51,31 @@ class ListValidationService
     @errors ||= []
   end
 
+  # Every list entry, loaded once with everything the checks below read preloaded — so the whole
+  # validation runs on one in-memory set instead of re-querying the entries (with its own
+  # `includes`) inside four separate checks, each re-triggering a per-entry profile lookup. This is
+  # the single hot path `refresh_selection_validity` runs after every list edit, so the query count
+  # it costs scales straight into how snappy add/remove feels.
+  def list_entries
+    @list_entries ||= begin
+      loaded = @list.list_entries
+                    .includes(:entry, :entry_pool_disciplines, entry_spells: :spell, mentored_by_entry: :entry)
+                    .to_a
+      # `entry` is polymorphic, so a card reference's `profile` (and that profile's spell pools) can't
+      # ride the `includes` above — preload it in one pass over the card references, both the entries'
+      # own and their mentors', exactly as ListSerializer does. resolved_pools and the keyword checks
+      # read these, and without the preload each read is a query per entry (the old N+1).
+      card_refs = (loaded.map(&:entry) + loaded.filter_map { |e| e.mentored_by_entry&.entry }).grep(Catalog::CardReference)
+      if card_refs.any?
+        ActiveRecord::Associations::Preloader.new(
+          records: card_refs,
+          associations: { profile: { profile_spell_pools: :profile_spell_pool_disciplines } }
+        ).call
+      end
+      loaded
+    end
+  end
+
   # Every rule below is a gang-*building* rule — the ducat limit, faction consistency, unique models,
   # the Leader count, the Hero/Henchman ratio. None of them has anything to say about a model
   # conjured onto the board mid-battle by a special rule, so summoned entries are excluded outright:
@@ -60,7 +85,7 @@ class ListValidationService
     # from under it leaves `entry` nil. Dropping those here keeps every check below (and the
     # after_commit revalidation they run in) from raising on `nil.cost`/`nil.name` and bricking all
     # edits to the list (B-26). An orphaned entry is broken data; ignoring it is safe and non-fatal.
-    @projected_items ||= @list.list_entries.where(summoned: false).includes(:entry).map(&:entry).compact
+    @projected_items ||= list_entries.reject(&:summoned?).map(&:entry).compact
   end
 
   def projected_card_references
@@ -120,7 +145,7 @@ class ListValidationService
   # one of that pool's committed disciplines, and the non-Cantrip spell count can't exceed the
   # pool's slot_count (an `unlimited` pool has nothing to check — it auto-knows everything).
   def check_spell_selections
-    @list.list_entries.includes(:entry_pool_disciplines, entry_spells: :spell).each do |list_entry|
+    list_entries.each do |list_entry|
       next if list_entry.entry.nil? # orphaned entry (see projected_items) — skip, don't raise
       # Checked on the entry's own raw associations, not #resolved_pools: a non-Mage profile has no
       # pools at all, so resolved_pools is always [] for it — relying on that here would silently
@@ -189,7 +214,7 @@ class ListValidationService
   # must each commit to a different Discipline from every other copy (their first pool only — no
   # profile with this flag has more than one).
   def check_distinct_discipline_per_copy
-    entries = @list.list_entries.includes(:entry_pool_disciplines).select { |e| e.profile&.distinct_discipline_per_copy? }
+    entries = list_entries.select { |e| e.profile&.distinct_discipline_per_copy? }
     entries.group_by { |e| e.profile.id }.each_value do |copies|
       next if copies.size <= 1
 
@@ -205,7 +230,7 @@ class ListValidationService
   # and a given mentor can only ever mentor one Apprentice Doctor ("A character can only be a
   # mentor to one Apprentice Doctor").
   def check_mentor_eligibility
-    entries_with_mentor = @list.list_entries.includes(:entry, mentored_by_entry: :entry).select(&:mentored_by_entry)
+    entries_with_mentor = list_entries.select(&:mentored_by_entry)
 
     entries_with_mentor.each do |list_entry|
       next if list_entry.entry.nil?
