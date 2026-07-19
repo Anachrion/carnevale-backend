@@ -20,9 +20,15 @@ servers:
     - 62.238.30.155
 
 # kamal-proxy terminates TLS and routes :443 -> the app container.
+# Each host gets its own free Let's Encrypt cert (HTTP-01), so every host below MUST
+# resolve to this server's IP before deploying or cert issuance fails. sslip.io is kept
+# alongside the real domain so existing alpha APKs (built with API_HOST=...sslip.io) keep working.
 proxy:
   ssl: true
-  host: 62.238.30.155.sslip.io   # after replace: e.g. 91.99.12.34.sslip.io
+  hosts:
+    - carnevale-app.com
+    - www.carnevale-app.com
+    - 62.238.30.155.sslip.io
   # app_port defaults to 80, which is where Thruster listens. No need to set it.
 
 registry:
@@ -59,7 +65,7 @@ env:
     DB_USERNAME: carnevale_backend
     # Used for password-reset email links + Action Cable allowed origins.
     # Point this at your real frontend when it exists; for now it's the API's own URL.
-    FRONTEND_URL: https://62.238.30.155.sslip.io
+    FRONTEND_URL: https://carnevale-app.com
     # Action Cable pub/sub backend (the redis accessory below, on the kamal network).
     REDIS_URL: redis://carnevale_backend-redis:6379/1
     # Backoffice card rendering: Grover's headless Chromium loads the card page from here.

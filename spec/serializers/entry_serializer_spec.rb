@@ -13,6 +13,16 @@ RSpec.describe EntrySerializer do
     Catalog::Spell.cantrips.index_by(&:discipline)
   end
 
+  it "exposes flexible_leader from the entry's profile (defaulting false)" do
+    flex = create(:profile, keywords: ["Leader", "Hero"], flexible_leader: true)
+    plain = create(:profile, keywords: ["Leader"])
+    flex_entry = create(:list_entry, entry: create(:card_reference, profile: flex))
+    plain_entry = create(:list_entry, entry: create(:card_reference, profile: plain))
+
+    expect(EntrySerializer.new(flex_entry, cantrips: cantrips).as_json[:flexible_leader]).to be true
+    expect(EntrySerializer.new(plain_entry, cantrips: cantrips).as_json[:flexible_leader]).to be false
+  end
+
   it "includes every required GrantedSpell key for an all_cantrips grant (Blood Crone's Major Arcana)" do
     Catalog::Spell::DISCIPLINES.each { |d| create(:spell, discipline: d, cantrip: true) }
     profile = create(:profile)
