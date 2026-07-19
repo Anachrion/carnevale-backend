@@ -71,6 +71,16 @@ RSpec.describe "Api::V1::Profiles", type: :request do
       names = JSON.parse(response.body).map { |p| p["name"] }
       expect(names).to eq(["Altar Boy"])
     end
+
+    it "exposes flexible_leader so the builder can keep offering a flex Leader once one is fielded" do
+      create(:profile, faction: "guild", name: "The Duke", keywords: ["Leader", "Hero"], flexible_leader: true)
+
+      get "/api/v1/profiles"
+
+      body = JSON.parse(response.body)
+      expect(body.find { |p| p["name"] == "The Duke" }["flexible_leader"]).to be true
+      expect(body.find { |p| p["name"] == "Capodecina" }["flexible_leader"]).to be false
+    end
   end
 
   describe "GET /api/v1/profiles/:id" do

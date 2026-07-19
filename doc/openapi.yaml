@@ -1950,7 +1950,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, keywords, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
+      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
       properties:
         id:
           type: integer
@@ -1978,6 +1978,14 @@ components:
             The underlying profile's printed keywords (e.g. ["Hero", "Doctor"]) — used client-side
             to filter Apprentice Doctor's Apprenticeship mentor candidates ("a character with both
             the Doctor and Hero keywords"). Empty for Equipment.
+        flexible_leader:
+          type: boolean
+          description: >
+            Whether this model is a "flex" Leader — one that drops its Leader keyword and becomes a
+            plain Hero when the gang already contains another Leader (The Duke, Prince of Thieves,
+            Sopracomito, La Signora). The gang builder uses it to keep offering a Leader model's
+            "add" button once a Leader is present; server-side enforcement is ListValidationService.
+            False for Equipment and for every non-flex Leader.
         identifier:
           type: string
           nullable: true
@@ -2303,6 +2311,7 @@ components:
         - size
         - abilities
         - keywords
+        - flexible_leader
         - version
         - mage
         - spell_slots
@@ -2347,6 +2356,14 @@ components:
           type: array
           items:
             type: string
+        flexible_leader:
+          type: boolean
+          description: >
+            Whether this Leader demotes to a plain Hero when the gang already contains another Leader
+            (The Duke, Prince of Thieves, Sopracomito, La Signora), and may therefore be added to a
+            gang that already has a Leader. The gang builder uses it to keep such a model's "add"
+            button enabled once a Leader is present; enforcement is ListValidationService. False for
+            every non-flex Leader and non-Leader profile.
         version:
           type: string
         mage:

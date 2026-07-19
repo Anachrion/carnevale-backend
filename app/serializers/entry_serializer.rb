@@ -53,6 +53,9 @@ class EntrySerializer
       # The Doctor+Hero keywords Apprentice Doctor's Apprenticeship mentor picker filters
       # candidates by — client-side only, ListValidationService is the real enforcement.
       keywords: profile&.keywords || [],
+      # Whether this Leader demotes to a plain Hero alongside another Leader (see ProfilesController)
+      # — lets the builder decide whether to still offer a Leader model once one is in the list.
+      flexible_leader: profile&.flexible_leader || false,
       cost: entry.cost,
       # The chosen card reference (illustration), mirroring the shape ProfilesController exposes
       # under `card_references` so the client can match this entry to one of them.

@@ -38,6 +38,13 @@ if defined?(Rake) && Rake::Task.task_defined?("spell_pools:configure_exceptions"
   Rake::Task["spell_pools:configure_exceptions"].invoke
 end
 
+# The Leaders that may be hired alongside another Leader (The Duke, Prince of Thieves, Sopracomito,
+# La Signora) — flag them so the gang builder keeps offering them; see lib/tasks/leader_exceptions.rake.
+# Idempotent, same reasoning as the spell-pool exceptions above.
+if defined?(Rake) && Rake::Task.task_defined?("leaders:configure_exceptions")
+  Rake::Task["leaders:configure_exceptions"].invoke
+end
+
 # ── Version card images ────────────────────────────────────────────────────────
 # Bump internal_version for any card whose images changed (no-op when public/cards is empty),
 # so the app knows which cards to re-download. See lib/tasks/cards.rake.
