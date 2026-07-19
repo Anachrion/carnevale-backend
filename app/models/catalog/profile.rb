@@ -30,6 +30,11 @@ module Catalog
     has_many :profile_spell_pools, -> { order(:position) }, class_name: "Catalog::ProfileSpellPool", dependent: :destroy
     has_many :profile_granted_spells, -> { order(:position) }, class_name: "Catalog::ProfileGrantedSpell", dependent: :destroy
 
+    # A conditional flex Leader (La Signora) demotes only alongside this specific partner (Il Capitano)
+    # rather than any Leader. Nil for hard Leaders and for the "demotes alongside any Leader" flex
+    # Leaders (The Duke, Prince of Thieves, Sopracomito).
+    belongs_to :flexible_leader_with, class_name: "Catalog::Profile", optional: true
+
     # Recompute the cached selection validity of every gang that hired this profile. Its ducats,
     # keywords and spell-affecting abilities feed ListValidationService, but a backoffice edit here
     # touches none of those gangs' own rows — so without this their cached selection_valid /
@@ -182,4 +187,13 @@ end
 #  will_points                  :integer          default(0), not null
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
+#  flexible_leader_with_id      :bigint
+#
+# Indexes
+#
+#  index_profiles_on_flexible_leader_with_id  (flexible_leader_with_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (flexible_leader_with_id => profiles.id)
 #

@@ -128,16 +128,27 @@ class ListValidationService
     @leader_refs ||= projected_card_references.select { |cr| cr.profile&.keywords&.include?("Leader") }
   end
 
-  # The references that actually *keep* the Leader keyword once flex-Leader demotion is resolved. A
-  # "flex" Leader (The Duke, Prince of Thieves, Sopracomito, La Signora — Catalog::Profile
-  # #flexible_leader) prints both Leader and Hero but drops Leader (becoming a plain Hero) whenever
-  # the gang holds another Leader; a hard Leader never yields. So: if any hard Leader is present they
-  # are the ones that keep the keyword and every flex Leader demotes around them; with no hard Leader,
-  # the flex Leaders keep it (a lone one legally, several only to be caught by the count check below).
+  # The references that actually *keep* the Leader keyword once flex-Leader demotion is resolved — a
+  # hard Leader never yields, and a flex Leader keeps the keyword unless its demotion condition is met
+  # (see #leader_demotes?). A lone effective Leader is legal; several are caught by the count check.
   def effective_leader_refs
-    @effective_leader_refs ||= begin
-      hard = leader_refs.reject { |cr| cr.profile.flexible_leader }
-      hard.any? ? hard : leader_refs
+    @effective_leader_refs ||= leader_refs.reject { |cr| leader_demotes?(cr) }
+  end
+
+  # Whether a Leader gives up the keyword (becoming a plain Hero) given the rest of the gang. A hard
+  # Leader never does. An *unconditional* flex Leader (The Duke, Prince of Thieves, Sopracomito)
+  # demotes whenever a hard Leader is present. A *conditional* flex Leader (La Signora, whose
+  # `flexible_leader_with` names a partner) demotes only when that specific partner — Il Capitano — is
+  # in the gang; alongside any other Leader she keeps the keyword, so the pair reads as two Leaders
+  # and the count check flags it.
+  def leader_demotes?(cr)
+    return false unless cr.profile.flexible_leader
+
+    partner_id = cr.profile.flexible_leader_with_id
+    if partner_id
+      projected_card_references.any? { |o| o.profile_id == partner_id }
+    else
+      leader_refs.any? { |o| !o.profile.flexible_leader }
     end
   end
 
