@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_130900) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -310,6 +310,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_130900) do
     t.boolean "distinct_discipline_per_copy", default: false, null: false
     t.integer "ducats", default: 0, null: false
     t.string "faction", default: "", null: false
+    t.boolean "flexible_leader", default: false, null: false
     t.json "keywords", default: [], null: false
     t.integer "life_points", default: 0, null: false
     t.integer "mind", default: 0, null: false

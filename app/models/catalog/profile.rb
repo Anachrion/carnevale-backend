@@ -170,6 +170,7 @@ end
 #  distinct_discipline_per_copy :boolean          default(FALSE), not null
 #  ducats                       :integer          default(0), not null
 #  faction                      :string           default(NULL), not null
+#  flexible_leader              :boolean          default(FALSE), not null
 #  keywords                     :json             not null
 #  life_points                  :integer          default(0), not null
 #  mind                         :integer          default(0), not null

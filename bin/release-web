@@ -10,8 +10,10 @@ set -euo pipefail
 BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND_DIR="${CARNEVALE_FRONTEND_DIR:-$BACKEND_DIR/../carnevale}"
 
-# Must match the production host in config/deploy.yml (proxy.host).
-API_HOST="62.238.30.155.sslip.io"
+# The web bundle is served same-origin from Rails at carnevale-app.com/app/, so bake the SAME host
+# it's served from. That makes /api/v1 calls same-origin — no CORS, no ALLOWED_ORIGINS needed.
+# (Must stay one of config/deploy.yml proxy.hosts; use the primary domain, not the sslip.io host.)
+API_HOST="carnevale-app.com"
 
 if [[ ! -d "$FRONTEND_DIR" ]]; then
   echo "error: frontend repo not found at $FRONTEND_DIR" >&2

@@ -73,6 +73,10 @@ module Api
           size: profile.size,
           abilities: profile.abilities,
           keywords: profile.keywords,
+          # A Leader that demotes to a plain Hero alongside another Leader (The Duke, Prince of
+          # Thieves, Sopracomito, La Signora) — lets the gang builder keep offering its "add" button
+          # once a Leader is present. Enforcement is ListValidationService#check_leader_count.
+          flexible_leader: profile.flexible_leader,
           version: profile.version,
           # Spell-selection metadata derived from abilities/keywords (rulebook p24).
           mage: profile.mage?,

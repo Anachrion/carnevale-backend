@@ -123,16 +123,41 @@ class ListValidationService
     end
   end
 
+  # Every card-reference carrying the printed Leader keyword.
+  def leader_refs
+    @leader_refs ||= projected_card_references.select { |cr| cr.profile&.keywords&.include?("Leader") }
+  end
+
+  # The references that actually *keep* the Leader keyword once flex-Leader demotion is resolved. A
+  # "flex" Leader (The Duke, Prince of Thieves, Sopracomito, La Signora — Catalog::Profile
+  # #flexible_leader) prints both Leader and Hero but drops Leader (becoming a plain Hero) whenever
+  # the gang holds another Leader; a hard Leader never yields. So: if any hard Leader is present they
+  # are the ones that keep the keyword and every flex Leader demotes around them; with no hard Leader,
+  # the flex Leaders keep it (a lone one legally, several only to be caught by the count check below).
+  def effective_leader_refs
+    @effective_leader_refs ||= begin
+      hard = leader_refs.reject { |cr| cr.profile.flexible_leader }
+      hard.any? ? hard : leader_refs
+    end
+  end
+
   def check_leader_count
     return if projected_items.empty?
     return if @list.points <= LEADER_REQUIRED_ABOVE_POINTS
 
-    leader_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Leader") }
-    @errors << "the gang must have exactly one Leader (found #{leader_count})" unless leader_count == 1
+    count = effective_leader_refs.size
+    @errors << "the gang must have exactly one Leader (found #{count})" unless count == 1
   end
 
   def check_hero_henchman_ratio
-    hero_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Hero") }
+    # The model that ends up as the Leader is not a Hero even if it prints the keyword (a sole flex
+    # Leader loses Hero); conversely a demoted flex Leader isn't excluded here, so it's counted as the
+    # Hero it has become. Everything else falls back to its printed keyword.
+    hero_count = projected_card_references.count do |cr|
+      next false if effective_leader_refs.include?(cr)
+
+      cr.profile&.keywords&.include?("Hero")
+    end
     henchman_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Henchman") }
     return if hero_count <= henchman_count
 

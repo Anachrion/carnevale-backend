@@ -180,6 +180,48 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be false
         expect(result[:errors]).to include(match(/must have exactly one Leader/))
       end
+
+      # Flex Leaders (The Duke, Prince of Thieves, Sopracomito, La Signora): print both Leader and
+      # Hero, drop Leader alongside another Leader, drop Hero when they're the only Leader.
+      def flex_leader_ref(cost: 10)
+        profile = create(:profile, faction: :guild, ducats: cost, keywords: ["Leader", "Hero"], flexible_leader: true)
+        create(:card_reference, profile: profile)
+      end
+
+      it "allows a flex Leader alongside a hard Leader (it demotes to a Hero)" do
+        add_entry(list, guild_ref(cost: 10, keywords: ["Leader"]), position: 1)
+        add_entry(list, flex_leader_ref, position: 2)
+        # The demoted flex Leader is now a Hero, so it needs a Henchman to keep the ratio.
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      it "counts a demoted flex Leader as a Hero for the Hero/Henchman ratio" do
+        add_entry(list, guild_ref(cost: 10, keywords: ["Leader"]), position: 1)
+        add_entry(list, flex_leader_ref, position: 2) # demotes to Hero, no Henchman to match
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/more Heroes.*than Henchmen/))
+      end
+
+      it "treats a lone flex Leader as the Leader (and not a Hero)" do
+        add_entry(list, flex_leader_ref, position: 1)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      it "fails when two flex Leaders are the only Leaders (both demote, leaving none)" do
+        add_entry(list, flex_leader_ref, position: 1)
+        add_entry(list, flex_leader_ref, position: 2)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be false
+        expect(result[:errors]).to include(match(/must have exactly one Leader/))
+      end
     end
 
     context "hero/henchman ratio" do
