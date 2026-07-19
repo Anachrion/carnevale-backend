@@ -16,6 +16,14 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     create(:card_reference, profile: profile)
   end
 
+  # A flex Leader (The Duke et al.): prints both Leader and Hero and demotes to a plain Hero when
+  # the gang already holds another Leader.
+  def flex_leader_ref(cost: 20)
+    profile = create(:profile, faction: :guild, ducats: cost,
+                     keywords: ["Leader", "Hero"], flexible_leader: true)
+    create(:card_reference, profile: profile)
+  end
+
   def post_entry(ref, target_list: list, headers: self.headers)
     post "/api/v1/list_entries",
          params: { entry: { list_id: target_list.id, entry_type: ref.class.name, entry_id: ref.id } }.to_json,
@@ -56,6 +64,35 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       # The two henchmen that were already hired keep their order, just below the Leader.
       expect(entries.map { |e| e["position"] }.sort).to eq([1, 2, 3])
       expect(entries.reject { |e| e["keywords"].include?("Leader") }.map { |e| e["position"] }).to eq([2, 3])
+    end
+
+    it "pins a lone flex Leader to the top, like a hard one" do
+      post_entry(guild_ref(keywords: ["Henchman"]))
+      post_entry(flex_leader_ref) # the only Leader present — keeps the keyword, so it leads
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      top = entries.min_by { |e| e["position"] }
+      expect(top["flexible_leader"]).to be true
+    end
+
+    it "does not pin a flex Leader once a hard Leader holds the top" do
+      post_entry(guild_ref(keywords: ["Leader"])) # hard Leader → position 1
+      post_entry(flex_leader_ref) # demotes to a Hero, so it appends below rather than pinning
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      expect(entries.min_by { |e| e["position"] }["flexible_leader"]).to be false
+      expect(entries.find { |e| e["flexible_leader"] }["position"]).to be > 1
+    end
+
+    it "moves a newly-hired hard Leader above a flex Leader that held the top" do
+      post_entry(flex_leader_ref) # lone flex Leader → position 1
+      post_entry(guild_ref(keywords: ["Leader"])) # hard Leader takes over the top, flex demotes
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      expect(entries.min_by { |e| e["position"] }["flexible_leader"]).to be false
     end
 
     it "creates the entry but marks the list's selection invalid when cost exceeds points limit" do
