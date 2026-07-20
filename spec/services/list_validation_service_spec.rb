@@ -214,13 +214,13 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be true
       end
 
-      it "fails when two flex Leaders are the only Leaders (both demote, leaving none)" do
-        add_entry(list, flex_leader_ref, position: 1)
-        add_entry(list, flex_leader_ref, position: 2)
+      it "resolves two unconditional flex Leaders — the topmost leads, the other demotes to a Hero" do
+        add_entry(list, flex_leader_ref, position: 1) # leads (topmost)
+        add_entry(list, flex_leader_ref, position: 2) # demotes to a Hero — the player may promote it
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
 
         result = described_class.call(list)
-        expect(result[:success]).to be false
-        expect(result[:errors]).to include(match(/must have exactly one Leader/))
+        expect(result[:success]).to be true
       end
 
       # La Signora is a *conditional* flex Leader: she demotes only alongside her named partner

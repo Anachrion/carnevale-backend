@@ -123,65 +123,40 @@ class ListValidationService
     end
   end
 
-  # Every card-reference carrying the printed Leader keyword.
-  def leader_refs
-    @leader_refs ||= projected_card_references.select { |cr| cr.profile&.keywords&.include?("Leader") }
+  # Non-summoned card-reference entries in list (position) order — the input LeaderResolver needs to
+  # settle flex-Leader demotion (which entry leads, which demote, which of the ambiguous ones the
+  # player could promote). Entry-level, not card-ref-level, because the topmost-leads tiebreak needs
+  # positions.
+  def projected_card_ref_entries
+    @projected_card_ref_entries ||= list_entries
+      .reject(&:summoned?)
+      .select { |e| e.entry.is_a?(Catalog::CardReference) }
+      .sort_by(&:position)
   end
 
-  # The references that actually *keep* the Leader keyword once flex-Leader demotion is resolved — a
-  # hard Leader never yields, and a flex Leader keeps the keyword unless its demotion condition is met
-  # (see #leader_demotes?). A lone effective Leader is legal; several are caught by the count check.
-  def effective_leader_refs
-    @effective_leader_refs ||= leader_refs.reject { |cr| leader_demotes?(cr) }
-  end
-
-  # Whether a Leader gives up the keyword (becoming a plain Hero) given the rest of the gang. A hard
-  # Leader never does. A *conditional* flex Leader (La Signora, whose `flexible_leader_with` names a
-  # partner) demotes only when that specific partner — Il Capitano — is in the gang; alongside any
-  # other Leader she keeps the keyword, so the pair reads as two Leaders. An *unconditional* flex
-  # Leader (The Duke, Prince of Thieves, Sopracomito) demotes whenever another *forced* Leader is
-  # present — one that keeps the keyword no matter what (a hard Leader, or a partnerless conditional
-  # flex Leader). It does NOT demote alongside another unconditional flex Leader on its own, since
-  # neither is forced; that ambiguity is resolved elsewhere (the topmost leads, the rest demote).
-  def leader_demotes?(cr)
-    return false unless cr.profile.flexible_leader
-
-    partner_id = cr.profile.flexible_leader_with_id
-    if partner_id
-      projected_card_references.any? { |o| o.profile_id == partner_id }
-    else
-      leader_refs.any? { |o| forced_leader?(o) }
-    end
-  end
-
-  # A Leader that keeps the Leader keyword regardless of what else is in the gang: a hard Leader, or a
-  # conditional flex Leader (La Signora) whose partner isn't present. Unconditional flex Leaders are
-  # never forced — they only lead when nothing else does.
-  def forced_leader?(cr)
-    return true unless cr.profile.flexible_leader
-
-    partner_id = cr.profile.flexible_leader_with_id
-    partner_id.present? && projected_card_references.none? { |o| o.profile_id == partner_id }
+  def leader_resolution
+    @leader_resolution ||= LeaderResolver.call(projected_card_ref_entries)
   end
 
   def check_leader_count
     return if projected_items.empty?
     return if @list.points <= LEADER_REQUIRED_ABOVE_POINTS
 
-    count = effective_leader_refs.size
+    count = leader_resolution.effective.size
     @errors << "the gang must have exactly one Leader (found #{count})" unless count == 1
   end
 
   def check_hero_henchman_ratio
-    # The model that ends up as the Leader is not a Hero even if it prints the keyword (a sole flex
-    # Leader loses Hero); conversely a demoted flex Leader isn't excluded here, so it's counted as the
-    # Hero it has become. Everything else falls back to its printed keyword.
-    hero_count = projected_card_references.count do |cr|
-      next false if effective_leader_refs.include?(cr)
+    # The entry that keeps the Leader keyword is not a Hero even if it prints one (a sole flex Leader
+    # loses Hero); a demoted flex Leader isn't excluded, so it's counted as the Hero it has become.
+    # Everything else falls back to its printed keyword.
+    effective = leader_resolution.effective
+    hero_count = projected_card_ref_entries.count do |e|
+      next false if effective.include?(e)
 
-      cr.profile&.keywords&.include?("Hero")
+      e.profile&.keywords&.include?("Hero")
     end
-    henchman_count = projected_card_references.count { |cr| cr.profile&.keywords&.include?("Henchman") }
+    henchman_count = projected_card_ref_entries.count { |e| e.profile&.keywords&.include?("Henchman") }
     return if hero_count <= henchman_count
 
     @errors << "the gang cannot have more Heroes (#{hero_count}) than Henchmen (#{henchman_count})"

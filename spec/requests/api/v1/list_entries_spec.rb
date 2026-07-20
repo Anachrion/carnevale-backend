@@ -183,6 +183,25 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       expect(e2.reload.position).to eq(2)
     end
 
+    it "promotes a demoted flex Leader to the top, demoting the previous one" do
+      # Two unconditional flex Leaders, no forced Leader: the topmost leads, the other is promotable.
+      leader = create(:list_entry, list: list, entry: flex_leader_ref, position: 1)
+      other = create(:list_entry, list: list, entry: flex_leader_ref, position: 2)
+
+      patch "/api/v1/list_entries/#{other.id}",
+            params: { entry: { position: 1 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(other.reload.position).to eq(1)
+      entries = JSON.parse(response.body)["entries"]
+      promoted = entries.find { |e| e["id"] == other.id }
+      demoted = entries.find { |e| e["id"] == leader.id }
+      expect(promoted["demoted_leader"]).to be false # now the Leader
+      expect(demoted["demoted_leader"]).to be true # demoted to a Hero
+      expect(demoted["promotable_leader"]).to be true # and could be promoted back
+    end
+
     it "does not auto-sort after a manual reorder" do
       leader_profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader"])
       henchman_profile = create(:profile, faction: :guild, ducats: 5, keywords: ["Henchman"])
