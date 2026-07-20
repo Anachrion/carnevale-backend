@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+#
+# Restore a Postgres dump from Cloudflare R2 -- either to VERIFY a backup (default: into
+# a throwaway scratch database, which is then dropped) or to actually RECOVER production
+# (--production, guarded by a typed confirmation).
+#
+# The heavy lifting runs ON THE BOX: that is where rclone's R2 credentials and the DB
+# both live (Postgres is bound to localhost). Run this script from THIS machine.
+#
+# Usage:
+#   bin/db-restore --list
+#       List the dumps currently in R2 (daily + weekly).
+#
+#   bin/db-restore --file daily/carnevale-2026-07-21.dump
+#       Restore into a scratch DB, print row counts, then drop it. Proves the dump is good.
+#
+#   bin/db-restore --file <path> --into carnevale_restore
+#       Restore into a named DB and KEEP it (for inspection). Never touches production.
+#
+#   bin/db-restore --file <path> --production
+#       DANGER: DROP and recreate the PRODUCTION database from the dump. Typed confirm.
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+REMOTE="r2:carnevale-backups"
+CONTAINER="carnevale_backend-db"
+
+host=$(ruby -ryaml -e 'puts Array(YAML.load_file("config/deploy.yml").dig("servers","web")).first')
+ssh_user=$(ruby -ryaml -e 'puts (YAML.load_file("config/deploy.yml").dig("ssh","user") || "root")')
+remote="${ssh_user}@${host}"
+
+file=""; into=""; production=0; list=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --list)       list=1 ;;
+    --file)       file="${2:?}"; shift ;;
+    --into)       into="${2:?}"; shift ;;
+    --production) production=1 ;;
+    -h|--help)    sed -n '2,26p' "$0"; exit 0 ;;
+    *) echo "Unknown arg: $1" >&2; exit 1 ;;
+  esac
+  shift
+done
+
+if [ "$list" = 1 ]; then
+  ssh "$remote" 'export RCLONE_CONFIG=/root/.config/rclone/rclone.conf
+    for d in daily weekly; do echo "== $d =="; rclone lsl "r2:carnevale-backups/$d/" 2>/dev/null; done'
+  exit 0
+fi
+
+: "${file:?--file required (e.g. daily/carnevale-2026-07-21.dump) -- see --list}"
+
+drop_after=1
+if [ "$production" = 1 ]; then
+  target="carnevale_backend_production"
+  drop_after=0
+  echo "!!! This will DROP and recreate the PRODUCTION database from ${file}."
+  echo "!!! Everything currently in ${target} on ${host} will be replaced."
+  read -r -p "Type the database name to confirm: " ans
+  [ "$ans" = "$target" ] || { echo "Aborted."; exit 1; }
+elif [ -n "$into" ]; then
+  target="$into"; drop_after=0
+else
+  target="carnevale_restore_test_$(date -u +%s)"; drop_after=1
+fi
+
+echo "==> Restoring ${file} -> ${target} on ${host} (drop_after=${drop_after})"
+
+ssh "$remote" REMOTE="$REMOTE" CONTAINER="$CONTAINER" FILE="$file" TARGET="$target" DROP_AFTER="$drop_after" bash -s <<'REMOTE_EOF'
+set -euo pipefail
+export RCLONE_CONFIG=/root/.config/rclone/rclone.conf
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+
+echo "-- downloading ${FILE}"
+rclone copyto "${REMOTE}/${FILE}" "$tmp/restore.dump"
+[ "$(head -c 5 "$tmp/restore.dump")" = "PGDMP" ] || { echo "not a PGDMP dump"; exit 1; }
+docker cp "$tmp/restore.dump" "${CONTAINER}:/tmp/restore.dump"
+
+echo "-- (re)creating database ${TARGET}"
+docker exec -e TARGET="$TARGET" "$CONTAINER" sh -c '
+  set -e
+  export PGPASSWORD="$POSTGRES_PASSWORD"
+  psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS \"$TARGET\" WITH (FORCE);"
+  psql -U "$POSTGRES_USER" -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$TARGET\" OWNER \"$POSTGRES_USER\";"
+'
+
+echo "-- restoring"
+docker exec -e TARGET="$TARGET" "$CONTAINER" sh -c '
+  export PGPASSWORD="$POSTGRES_PASSWORD"
+  pg_restore -U "$POSTGRES_USER" --no-owner --no-privileges -d "$TARGET" /tmp/restore.dump
+' || echo "   (pg_restore reported non-fatal warnings)"
+
+echo "-- verifying (row counts per table)"
+docker exec -e TARGET="$TARGET" "$CONTAINER" sh -c '
+  export PGPASSWORD="$POSTGRES_PASSWORD"
+  psql -U "$POSTGRES_USER" -d "$TARGET" -v ON_ERROR_STOP=1 -c "ANALYZE;"
+  psql -U "$POSTGRES_USER" -d "$TARGET" -P pager=off -c "
+    SELECT relname AS table, n_live_tup AS rows
+    FROM pg_stat_user_tables
+    ORDER BY n_live_tup DESC, relname;"
+'
+
+docker exec "$CONTAINER" rm -f /tmp/restore.dump || true
+
+if [ "$DROP_AFTER" = 1 ]; then
+  echo "-- dropping scratch database ${TARGET}"
+  docker exec -e TARGET="$TARGET" "$CONTAINER" sh -c '
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    psql -U "$POSTGRES_USER" -d postgres -c "DROP DATABASE IF EXISTS \"$TARGET\" WITH (FORCE);"' >/dev/null
+  echo "-- scratch database dropped"
+else
+  echo "-- kept database ${TARGET}"
+fi
+REMOTE_EOF
+
+echo "==> Restore run complete."

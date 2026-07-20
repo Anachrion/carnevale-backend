@@ -1,0 +1,10 @@
+[Unit]
+Description=Nightly (03:00 UTC) off-site Postgres backup for carnevale
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+# If the box was down at 03:00, run the backup as soon as it comes back up.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

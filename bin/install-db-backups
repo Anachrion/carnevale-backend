@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+#
+# Install (or update) the nightly off-site DB backup on the production box.
+#
+# Run from THIS machine. It copies deploy/backup/* to the server, installs rclone,
+# writes the Cloudflare R2 credentials (from .kamal/backup.env) into rclone's config,
+# and enables the systemd timer. Idempotent -- re-run any time to push a script change.
+#
+# Requires .kamal/backup.env (gitignored, alongside .kamal/deploy.env) with:
+#
+#     R2_ACCOUNT_ID=...
+#     R2_ACCESS_KEY_ID=...
+#     R2_SECRET_ACCESS_KEY=...
+#     R2_BUCKET=carnevale-backups
+#
+# Usage:
+#   bin/install-db-backups            # install + enable the timer, run one backup now
+#   bin/install-db-backups --no-run   # install only, don't fire a backup immediately
+
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+run_now=1
+[ "${1:-}" = "--no-run" ] && run_now=0
+
+# --- R2 credentials ---------------------------------------------------------
+[ -f .kamal/backup.env ] || { echo "Missing .kamal/backup.env (R2 credentials) -- see the header of this script." >&2; exit 1; }
+# shellcheck disable=SC1091
+set -a; source .kamal/backup.env; set +a
+: "${R2_ACCOUNT_ID:?set R2_ACCOUNT_ID in .kamal/backup.env}"
+: "${R2_ACCESS_KEY_ID:?set R2_ACCESS_KEY_ID in .kamal/backup.env}"
+: "${R2_SECRET_ACCESS_KEY:?set R2_SECRET_ACCESS_KEY in .kamal/backup.env}"
+
+# --- server, from config/deploy.yml so this follows the box if it moves -----
+host=$(ruby -ryaml -e 'puts Array(YAML.load_file("config/deploy.yml").dig("servers","web")).first')
+ssh_user=$(ruby -ryaml -e 'puts (YAML.load_file("config/deploy.yml").dig("ssh","user") || "root")')
+remote="${ssh_user}@${host}"
+echo "==> Target: ${remote}"
+
+echo "==> Ensuring rclone is installed"
+ssh "$remote" 'command -v rclone >/dev/null || { apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq rclone; }'
+
+echo "==> Writing rclone R2 config (/root/.config/rclone/rclone.conf, mode 600)"
+ssh "$remote" 'install -d -m 700 /root/.config/rclone'
+ssh "$remote" 'cat > /root/.config/rclone/rclone.conf && chmod 600 /root/.config/rclone/rclone.conf' <<EOF
+[r2]
+type = s3
+provider = Cloudflare
+access_key_id = ${R2_ACCESS_KEY_ID}
+secret_access_key = ${R2_SECRET_ACCESS_KEY}
+endpoint = https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com
+region = auto
+# A bucket-scoped R2 token can't do the account-level bucket check/create rclone
+# otherwise runs before an upload -> that would 403. Skip it (the bucket exists).
+no_check_bucket = true
+# R2 flaps (501 Not Implemented) on the HEAD rclone issues to verify an object right
+# after PUT, forcing a whole-copy retry. The PUT itself returns 200 and is integrity-
+# checked server-side via Content-MD5, so skip the post-upload HEAD for clean uploads.
+no_head = true
+EOF
+
+echo "==> Installing backup script -> /opt/carnevale/db-backup.sh"
+ssh "$remote" 'install -d -m 755 /opt/carnevale'
+scp -q deploy/backup/db-backup.sh "${remote}:/opt/carnevale/db-backup.sh"
+ssh "$remote" 'chmod 750 /opt/carnevale/db-backup.sh'
+
+echo "==> Installing systemd service + timer"
+scp -q deploy/backup/carnevale-db-backup.service deploy/backup/carnevale-db-backup.timer "${remote}:/etc/systemd/system/"
+ssh "$remote" 'systemctl daemon-reload && systemctl enable --now carnevale-db-backup.timer'
+
+echo "==> Timer:"
+ssh "$remote" 'systemctl list-timers carnevale-db-backup.timer --no-pager | head -n 3'
+
+if [ "$run_now" = 1 ]; then
+  echo "==> Running one backup now (systemctl start blocks until it finishes)"
+  ssh "$remote" 'systemctl start carnevale-db-backup.service' || echo "   (service reported failure -- see log below)"
+  ssh "$remote" 'journalctl -u carnevale-db-backup.service -n 40 --no-pager -o cat'
+fi
+
+echo "==> Done."
