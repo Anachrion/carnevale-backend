@@ -42,6 +42,8 @@
 # Personal research notes, not for the repo
 /docs/HOSTING_NOTES.md
 .kamal/deploy.env
+# R2 credentials for the off-site DB backup (bin/install-db-backups).
+.kamal/backup.env
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
