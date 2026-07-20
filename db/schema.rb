@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -311,6 +311,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
     t.integer "ducats", default: 0, null: false
     t.string "faction", default: "", null: false
     t.boolean "flexible_leader", default: false, null: false
+    t.bigint "flexible_leader_with_id"
     t.json "keywords", default: [], null: false
     t.integer "life_points", default: 0, null: false
     t.integer "mind", default: 0, null: false
@@ -321,6 +322,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
     t.datetime "updated_at", null: false
     t.string "version", default: "2.2.0", null: false
     t.integer "will_points", default: 0, null: false
+    t.index ["flexible_leader_with_id"], name: "index_profiles_on_flexible_leader_with_id"
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -432,5 +434,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
   add_foreign_key "profile_spell_pools", "special_rules", on_delete: :nullify
   add_foreign_key "profile_weapons", "profiles"
   add_foreign_key "profile_weapons", "weapons"
+  add_foreign_key "profiles", "profiles", column: "flexible_leader_with_id"
   add_foreign_key "refresh_tokens", "users"
 end

@@ -16,6 +16,14 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     create(:card_reference, profile: profile)
   end
 
+  # A flex Leader (The Duke et al.): prints both Leader and Hero and demotes to a plain Hero when
+  # the gang already holds another Leader.
+  def flex_leader_ref(cost: 20)
+    profile = create(:profile, faction: :guild, ducats: cost,
+                     keywords: ["Leader", "Hero"], flexible_leader: true)
+    create(:card_reference, profile: profile)
+  end
+
   def post_entry(ref, target_list: list, headers: self.headers)
     post "/api/v1/list_entries",
          params: { entry: { list_id: target_list.id, entry_type: ref.class.name, entry_id: ref.id } }.to_json,
@@ -39,6 +47,52 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       expect(response).to have_http_status(:created)
       positions = JSON.parse(response.body)["entries"].map { |e| e["position"] }
       expect(positions).to eq([1, 2])
+    end
+
+    it "pins a freshly-hired Leader to the top, shifting the models already hired down" do
+      henchman_a = guild_ref(keywords: ["Henchman"])
+      henchman_b = guild_ref(keywords: ["Henchman"])
+      post_entry(henchman_a)
+      post_entry(henchman_b)
+
+      post_entry(guild_ref(keywords: ["Leader"]))
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      leader = entries.find { |e| e["keywords"].include?("Leader") }
+      expect(leader["position"]).to eq(1)
+      # The two henchmen that were already hired keep their order, just below the Leader.
+      expect(entries.map { |e| e["position"] }.sort).to eq([1, 2, 3])
+      expect(entries.reject { |e| e["keywords"].include?("Leader") }.map { |e| e["position"] }).to eq([2, 3])
+    end
+
+    it "pins a lone flex Leader to the top, like a hard one" do
+      post_entry(guild_ref(keywords: ["Henchman"]))
+      post_entry(flex_leader_ref) # the only Leader present — keeps the keyword, so it leads
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      top = entries.min_by { |e| e["position"] }
+      expect(top["flexible_leader"]).to be true
+    end
+
+    it "does not pin a flex Leader once a hard Leader holds the top" do
+      post_entry(guild_ref(keywords: ["Leader"])) # hard Leader → position 1
+      post_entry(flex_leader_ref) # demotes to a Hero, so it appends below rather than pinning
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      expect(entries.min_by { |e| e["position"] }["flexible_leader"]).to be false
+      expect(entries.find { |e| e["flexible_leader"] }["position"]).to be > 1
+    end
+
+    it "moves a newly-hired hard Leader above a flex Leader that held the top" do
+      post_entry(flex_leader_ref) # lone flex Leader → position 1
+      post_entry(guild_ref(keywords: ["Leader"])) # hard Leader takes over the top, flex demotes
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      expect(entries.min_by { |e| e["position"] }["flexible_leader"]).to be false
     end
 
     it "creates the entry but marks the list's selection invalid when cost exceeds points limit" do
@@ -84,24 +138,68 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
   end
 
   describe "PATCH /api/v1/list_entries/:id" do
-    it "moves the entry to the requested position and returns the updated list" do
-      ref_a = guild_ref(keywords: ["Leader"])
-      ref_b = guild_ref
-      ref_c = guild_ref
-      e1 = create(:list_entry, list: list, entry: ref_a, position: 1)
-      e2 = create(:list_entry, list: list, entry: ref_b, position: 2)
-      e3 = create(:list_entry, list: list, entry: ref_c, position: 3)
+    it "reorders the non-leader models below the pinned Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+      e3 = create(:list_entry, list: list, entry: guild_ref, position: 3)
+
+      # Move the last model up to just below the Leader.
+      patch "/api/v1/list_entries/#{e3.id}",
+            params: { entry: { position: 2 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(leader.reload.position).to eq(1)
+      expect(e3.reload.position).to eq(2)
+      expect(e2.reload.position).to eq(3)
+    end
+
+    it "clamps a non-leader that asks for position 1 to just below the Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+      e3 = create(:list_entry, list: list, entry: guild_ref, position: 3)
 
       patch "/api/v1/list_entries/#{e3.id}",
             params: { entry: { position: 1 } }.to_json,
             headers: headers
 
       expect(response).to have_http_status(:ok)
-      positions = JSON.parse(response.body)["entries"].map { |e| e["position"] }
-      expect(positions).to eq([1, 2, 3])
-      expect(e3.reload.position).to eq(1)
-      expect(e1.reload.position).to eq(2)
+      # Position 1 stays the Leader's; e3 lands at 2, not above it.
+      expect(leader.reload.position).to eq(1)
+      expect(e3.reload.position).to eq(2)
       expect(e2.reload.position).to eq(3)
+    end
+
+    it "ignores a request to move the Leader" do
+      leader = create(:list_entry, list: list, entry: guild_ref(keywords: ["Leader"]), position: 1)
+      e2 = create(:list_entry, list: list, entry: guild_ref, position: 2)
+
+      patch "/api/v1/list_entries/#{leader.id}",
+            params: { entry: { position: 2 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(leader.reload.position).to eq(1)
+      expect(e2.reload.position).to eq(2)
+    end
+
+    it "promotes a demoted flex Leader to the top, demoting the previous one" do
+      # Two unconditional flex Leaders, no forced Leader: the topmost leads, the other is promotable.
+      leader = create(:list_entry, list: list, entry: flex_leader_ref, position: 1)
+      other = create(:list_entry, list: list, entry: flex_leader_ref, position: 2)
+
+      patch "/api/v1/list_entries/#{other.id}",
+            params: { entry: { position: 1 } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(other.reload.position).to eq(1)
+      entries = JSON.parse(response.body)["entries"]
+      promoted = entries.find { |e| e["id"] == other.id }
+      demoted = entries.find { |e| e["id"] == leader.id }
+      expect(promoted["demoted_leader"]).to be false # now the Leader
+      expect(demoted["demoted_leader"]).to be true # demoted to a Hero
+      expect(demoted["promotable_leader"]).to be true # and could be promoted back
     end
 
     it "does not auto-sort after a manual reorder" do

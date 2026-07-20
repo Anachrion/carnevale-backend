@@ -1950,7 +1950,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
+      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, demoted_leader, promotable_leader, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
       properties:
         id:
           type: integer
@@ -1986,6 +1986,18 @@ components:
             Sopracomito, La Signora). The gang builder uses it to keep offering a Leader model's
             "add" button once a Leader is present; server-side enforcement is ListValidationService.
             False for Equipment and for every non-flex Leader.
+        demoted_leader:
+          type: boolean
+          description: >
+            Whether this flex Leader has been demoted to a plain Hero by the gang's composition (it
+            prints Leader but has lost it). The client shows the Hero keyword and never pins it as the
+            gang's Leader. False for the effective Leader and for non-Leaders.
+        promotable_leader:
+          type: boolean
+          description: >
+            Whether this demoted flex Leader could be promoted to Leader instead — only in the
+            ambiguous case of several unconditional flex Leaders and no forced Leader, where the
+            player chooses. The client shows a "promote" action that moves it to the top.
         identifier:
           type: string
           nullable: true
@@ -2364,6 +2376,14 @@ components:
             gang that already has a Leader. The gang builder uses it to keep such a model's "add"
             button enabled once a Leader is present; enforcement is ListValidationService. False for
             every non-flex Leader and non-Leader profile.
+        flexible_leader_with:
+          type: integer
+          nullable: true
+          description: >
+            For a *conditional* flex Leader (La Signora), the profile id of the specific partner she
+            demotes alongside (Il Capitano). Null when the profile demotes alongside any Leader, or
+            isn't a flex Leader. The gang builder uses it to restrict which Leader can still be
+            recruited once she is in the list.
         version:
           type: string
         mage:

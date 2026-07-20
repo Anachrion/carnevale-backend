@@ -26,6 +26,14 @@ class ListSerializer
 
   def as_json
     entries = list_entries_for_render
+    # Resolve flex-Leader demotion once for the whole list, then tag each entry, so the client doesn't
+    # re-derive it. Card references only (equipment carries no keyword); summoned models sit outside
+    # the gang-building rules.
+    resolution = LeaderResolver.call(
+      entries.reject(&:summoned?).select { |e| e.entry.is_a?(Catalog::CardReference) },
+    )
+    demoted_ids = resolution.demoted.map(&:id).to_set
+    promotable_ids = resolution.promotable.map(&:id).to_set
     {
       id: @list.id,
       # The source list this was snapshotted from (null for a source list itself) — lets the client
@@ -41,7 +49,13 @@ class ListSerializer
       total_cost: entries.reject(&:summoned?).sum { |e| e.cost.to_i },
       selection_valid: @list.selection_valid,
       selection_errors: @list.selection_errors,
-      entries: entries.map { |entry| EntrySerializer.new(entry, cantrips: cantrips, turn: @turn).as_json }
+      entries: entries.map { |entry|
+        EntrySerializer.new(
+          entry, cantrips: cantrips, turn: @turn,
+          demoted_leader: demoted_ids.include?(entry.id),
+          promotable_leader: promotable_ids.include?(entry.id)
+        ).as_json
+      }
     }
   end
 

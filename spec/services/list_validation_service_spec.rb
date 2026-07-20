@@ -214,13 +214,55 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be true
       end
 
-      it "fails when two flex Leaders are the only Leaders (both demote, leaving none)" do
-        add_entry(list, flex_leader_ref, position: 1)
-        add_entry(list, flex_leader_ref, position: 2)
+      it "resolves two unconditional flex Leaders — the topmost leads, the other demotes to a Hero" do
+        add_entry(list, flex_leader_ref, position: 1) # leads (topmost)
+        add_entry(list, flex_leader_ref, position: 2) # demotes to a Hero — the player may promote it
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      # La Signora is a *conditional* flex Leader: she demotes only alongside her named partner
+      # (Il Capitano), not any Leader.
+      def partner_ref
+        create(:card_reference, profile: create(:profile, faction: :gifted, ducats: 10, keywords: ["Leader"]))
+      end
+
+      def conditional_flex_ref(partner:)
+        profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Leader", "Hero"],
+                         flexible_leader: true, flexible_leader_with: partner.profile)
+        create(:card_reference, profile: profile)
+      end
+
+      it "demotes a conditional flex Leader alongside her named partner" do
+        capitano = partner_ref
+        add_entry(list, capitano, position: 1)
+        add_entry(list, conditional_flex_ref(partner: capitano), position: 2) # demotes → Hero
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
+      end
+
+      it "does not demote a conditional flex Leader alongside a different Leader" do
+        capitano = partner_ref # her partner, but NOT the one in the gang
+        add_entry(list, guild_ref(cost: 10, keywords: ["Leader"]), position: 1)
+        add_entry(list, conditional_flex_ref(partner: capitano), position: 2) # keeps Leader → two
 
         result = described_class.call(list)
         expect(result[:success]).to be false
         expect(result[:errors]).to include(match(/must have exactly one Leader/))
+      end
+
+      it "demotes an unconditional flex Leader alongside a leading conditional flex Leader" do
+        capitano = partner_ref # absent from the gang, so La Signora keeps the keyword and leads
+        add_entry(list, conditional_flex_ref(partner: capitano), position: 1) # La Signora leads
+        add_entry(list, flex_leader_ref, position: 2) # The Duke demotes to a Hero alongside her
+        add_entry(list, guild_ref(cost: 10, keywords: ["Henchman"]), position: 3)
+
+        result = described_class.call(list)
+        expect(result[:success]).to be true
       end
     end
 
