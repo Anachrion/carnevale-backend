@@ -17,6 +17,7 @@ module Api
     class BaseController < ActionController::API
       include RendersApiErrors
       include AuthenticatesClient
+      include SwitchesLocale
 
       rescue_from ActiveRecord::RecordNotFound, with: -> { head :not_found }
       # Otherwise an unrescued RecordInvalid (e.g. a create! deep in a service) 500s, and a missing
