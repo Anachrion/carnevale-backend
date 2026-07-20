@@ -87,6 +87,9 @@ jobs:
           RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
         run: bin/rails tailwindcss:build
 
+      - name: Stub the Flutter web bundle
+        run: mkdir -p public/app && echo '<!doctype html><title>stub</title>' > public/app/index.html
+
       - name: Run tests
         env:
           RAILS_ENV: test
