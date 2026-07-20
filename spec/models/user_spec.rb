@@ -1,7 +1,29 @@
 require 'rails_helper'
 
 RSpec.describe User, type: :model do
-  pending "add some examples to (or delete) #{__FILE__}"
+  describe ".find_for_database_authentication" do
+    let!(:user) { create(:user, email: "Player@Example.com", username: "PlayerOne") }
+
+    it "finds the user by email" do
+      expect(described_class.find_for_database_authentication(email: "Player@Example.com")).to eq(user)
+    end
+
+    it "finds the user by email case-insensitively" do
+      expect(described_class.find_for_database_authentication(email: "player@example.com")).to eq(user)
+    end
+
+    it "finds the user by username" do
+      expect(described_class.find_for_database_authentication(email: "PlayerOne")).to eq(user)
+    end
+
+    it "finds the user by username case-insensitively" do
+      expect(described_class.find_for_database_authentication(email: "playerone")).to eq(user)
+    end
+
+    it "returns nil when neither matches" do
+      expect(described_class.find_for_database_authentication(email: "nobody")).to be_nil
+    end
+  end
 end
 
 # == Schema Information

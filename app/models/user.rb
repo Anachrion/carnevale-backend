@@ -25,6 +25,14 @@ class User < ApplicationRecord
   has_many :refresh_tokens, dependent: :delete_all
 
   validates :username, presence: true, uniqueness: { case_sensitive: false }
+
+  # Devise builds `conditions` from the login param (still keyed `:email` — authentication_keys is
+  # left at its default) and hands it here. Override the lookup so that value can match either the
+  # email or the username column, letting a user sign in with whichever one they remember.
+  def self.find_for_database_authentication(conditions)
+    login = conditions[:email].to_s.strip.downcase
+    where("lower(email) = :login OR lower(username) = :login", login: login).first
+  end
 end
 
 # == Schema Information
