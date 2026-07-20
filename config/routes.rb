@@ -34,6 +34,7 @@ Rails.application.routes.draw do
         member do
           patch :spells
           patch :illustration
+          patch :upgrade
         end
       end
       resources :profiles, only: %i[index show]

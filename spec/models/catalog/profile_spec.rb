@@ -48,6 +48,7 @@ end
 #  action_points                :integer          default(0), not null
 #  attack                       :integer          default(0), not null
 #  command_points               :integer          default(0), not null
+#  companion_upgrade_ducats     :integer          default(0), not null
 #  dexterity                    :integer          default(0), not null
 #  distinct_discipline_per_copy :boolean          default(FALSE), not null
 #  ducats                       :integer          default(0), not null
@@ -59,6 +60,7 @@ end
 #  movement                     :integer          default(0), not null
 #  name                         :string           default(""), not null
 #  protection                   :integer          default(0), not null
+#  recruitable                  :boolean          default(TRUE), not null
 #  size                         :integer          default(0), not null
 #  version                      :string           default("2.2.0"), not null
 #  will_points                  :integer          default(0), not null

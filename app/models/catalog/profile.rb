@@ -30,6 +30,12 @@ module Catalog
     has_many :profile_spell_pools, -> { order(:position) }, class_name: "Catalog::ProfileSpellPool", dependent: :destroy
     has_many :profile_granted_spells, -> { order(:position) }, class_name: "Catalog::ProfileGrantedSpell", dependent: :destroy
 
+    # The models this profile automatically brings into a gang (CARNEVALEB-23) — the Emissary of
+    # Mother Hydra's Tentacles. `companions` is the profiles themselves; `profile_companions` carries
+    # the per-companion base/upgraded counts CompanionSyncService reads.
+    has_many :profile_companions, class_name: "Catalog::ProfileCompanion", dependent: :destroy
+    has_many :companions, through: :profile_companions, source: :companion_profile
+
     # A conditional flex Leader (La Signora) demotes only alongside this specific partner (Il Capitano)
     # rather than any Leader. Nil for hard Leaders and for the "demotes alongside any Leader" flex
     # Leaders (The Duke, Prince of Thieves, Sopracomito).
@@ -171,6 +177,7 @@ end
 #  action_points                :integer          default(0), not null
 #  attack                       :integer          default(0), not null
 #  command_points               :integer          default(0), not null
+#  companion_upgrade_ducats     :integer          default(0), not null
 #  dexterity                    :integer          default(0), not null
 #  distinct_discipline_per_copy :boolean          default(FALSE), not null
 #  ducats                       :integer          default(0), not null
@@ -182,6 +189,7 @@ end
 #  movement                     :integer          default(0), not null
 #  name                         :string           default(""), not null
 #  protection                   :integer          default(0), not null
+#  recruitable                  :boolean          default(TRUE), not null
 #  size                         :integer          default(0), not null
 #  version                      :string           default("2.2.0"), not null
 #  will_points                  :integer          default(0), not null

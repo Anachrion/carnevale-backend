@@ -438,6 +438,104 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
     end
   end
 
+  # A model that automatically brings companions (like the Emissary of Mother Hydra): it carries a
+  # paid upgrade and `companion_count` distinct non-recruitable companions, each 1-per / 2-when-upgraded.
+  def emissary_ref(companion_count: 4, upgrade_ducats: 12)
+    parent = create(:profile, faction: :guild, ducats: 50, keywords: ["Hero"],
+                    companion_upgrade_ducats: upgrade_ducats)
+    companion_count.times do
+      companion = create(:profile, faction: :guild, ducats: 0, recruitable: false, keywords: ["Henchman"])
+      create(:card_reference, profile: companion)
+      create(:profile_companion, profile: parent, companion_profile: companion, base_quantity: 1, upgraded_quantity: 2)
+    end
+    create(:card_reference, profile: parent)
+  end
+
+  describe "auto-included companions (CARNEVALEB-23)" do
+    it "auto-adds the companions when the parent is hired" do
+      post_entry(emissary_ref(companion_count: 4))
+
+      expect(response).to have_http_status(:created)
+      entries = JSON.parse(response.body)["entries"]
+      companions = entries.select { |e| e["companion_of_entry_id"] }
+      parent = entries.find { |e| e["companion_of_entry_id"].nil? }
+      expect(companions.size).to eq(4)
+      expect(companions.map { |e| e["companion_of_entry_id"] }.uniq).to eq([parent["id"]])
+    end
+
+    it "rejects hiring a non-recruitable model directly" do
+      companion = create(:profile, faction: :guild, ducats: 0, recruitable: false)
+      ref = create(:card_reference, profile: companion)
+
+      post_entry(ref)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(list.list_entries).to be_empty
+    end
+
+    it "refuses to remove a companion on its own" do
+      post_entry(emissary_ref(companion_count: 4))
+      companion = JSON.parse(response.body)["entries"].find { |e| e["companion_of_entry_id"] }
+
+      delete "/api/v1/list_entries/#{companion['id']}", headers: headers
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(Gang::Entry.exists?(companion["id"])).to be true
+    end
+
+    it "rolls the whole hire back if companion sync fails (no orphaned parent)" do
+      allow(CompanionSyncService).to receive(:call).and_raise(StandardError, "boom")
+
+      expect { post_entry(emissary_ref(companion_count: 4)) }.to raise_error("boom")
+
+      expect(list.list_entries.reload).to be_empty
+    end
+
+    it "removes the companions with the parent" do
+      post_entry(emissary_ref(companion_count: 4))
+      parent = JSON.parse(response.body)["entries"].find { |e| e["companion_of_entry_id"].nil? }
+
+      delete "/api/v1/list_entries/#{parent['id']}", headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["entries"]).to be_empty
+    end
+  end
+
+  describe "PATCH /api/v1/list_entries/:id/upgrade" do
+    it "doubles the companions and adds the upgrade cost when bought" do
+      post_entry(emissary_ref(companion_count: 4, upgrade_ducats: 12))
+      body = JSON.parse(response.body)
+      parent = body["entries"].find { |e| e["companion_of_entry_id"].nil? }
+      base_cost = body["total_cost"]
+
+      patch "/api/v1/list_entries/#{parent['id']}/upgrade",
+            params: { entry: { upgrade_selected: true } }.to_json, headers: headers
+
+      expect(response).to have_http_status(:ok)
+      body = JSON.parse(response.body)
+      companions = body["entries"].select { |e| e["companion_of_entry_id"] }
+      updated_parent = body["entries"].find { |e| e["id"] == parent["id"] }
+      expect(companions.size).to eq(8)
+      expect(updated_parent["upgrade_selected"]).to be(true)
+      expect(updated_parent["cost"]).to eq(parent["cost"] + 12)
+      expect(body["total_cost"]).to eq(base_cost + 12)
+    end
+
+    it "drops the extra companions again when the upgrade is cancelled" do
+      post_entry(emissary_ref(companion_count: 4))
+      parent = JSON.parse(response.body)["entries"].find { |e| e["companion_of_entry_id"].nil? }
+      patch "/api/v1/list_entries/#{parent['id']}/upgrade",
+            params: { entry: { upgrade_selected: true } }.to_json, headers: headers
+
+      patch "/api/v1/list_entries/#{parent['id']}/upgrade",
+            params: { entry: { upgrade_selected: false } }.to_json, headers: headers
+
+      companions = JSON.parse(response.body)["entries"].select { |e| e["companion_of_entry_id"] }
+      expect(companions.size).to eq(4)
+    end
+  end
+
   describe "authorization" do
     let(:other_list) { create(:list, faction: :guild, points: 100) }
 

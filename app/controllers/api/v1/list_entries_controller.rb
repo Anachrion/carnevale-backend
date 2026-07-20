@@ -19,17 +19,42 @@ module Api
 
       def create
         @list = current_user.lists.find(entry_params[:list_id])
+        # Some models can only arrive as another model's companion (the Emissary's Tentacles) — they
+        # can't be hired directly. The client hides them from the hire search; this rejects a request
+        # that reaches the endpoint anyway (a stale client, or a hand-rolled call).
+        return render_error("This model cannot be hired") unless hired_profile_recruitable?
+
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
-        if entry.save
+        # Hire the model and add any companions it brings atomically: if the companion sync fails,
+        # the whole hire rolls back rather than leaving an orphaned parent (an Emissary with no
+        # Tentacles) that would 500 and dirty the gang.
+        saved = false
+        Gang::Entry.transaction do
+          saved = entry.save
+          raise ActiveRecord::Rollback unless saved
           # The gang's effective Leader is pinned to the top; hiring the one that belongs there (a
           # hard Leader, or a lone flex Leader) jumps it up — including when a new hard Leader demotes
           # a flex Leader that was holding the top. Everything else is appended in hire order.
           pin_effective_leader
+          # A model that brings companions (the Emissary of Mother Hydra) auto-adds its Tentacles now.
+          CompanionSyncService.call(entry)
+        end
+        if saved
           render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
           render_error(entry.errors)
         end
+      end
+
+      # Toggles a parent model's optional paid upgrade (the Emissary's +12 Ducats for a second set of
+      # Tentacles) and reconciles its companion entries to match. Styled like #illustration / #spells;
+      # only the model's own reusable Gang::List is editable (pre-game, in the builder).
+      def upgrade
+        entry = find_owned_entry
+        entry.update!(upgrade_selected: upgrade_params[:upgrade_selected])
+        CompanionSyncService.call(entry)
+        render json: ListSerializer.new(entry.list.reload).as_json
       end
 
       def update
@@ -50,6 +75,10 @@ module Api
 
       def destroy
         entry = find_owned_entry
+        # A companion (a Tentacle) can't be removed on its own — it leaves only when the model that
+        # brought it does. Removing the parent cascades its companions away automatically.
+        return render_error("Remove the model that brought it instead") if entry.companion_of_entry_id.present?
+
         entry.destroy
         render json: ListSerializer.new(entry.list.reload).as_json
       end
@@ -155,8 +184,20 @@ module Api
         end
       end
 
+      # Whether the model being hired may be recruited directly. Only card-reference hires carry a
+      # profile; equipment (and anything without a resolvable profile) is recruitable by default.
+      def hired_profile_recruitable?
+        return true unless entry_params[:entry_type] == "Catalog::CardReference"
+
+        Catalog::CardReference.find_by(id: entry_params[:entry_id])&.profile&.recruitable? != false
+      end
+
       def entry_params
         params.require(:entry).permit(:list_id, :entry_type, :entry_id)
+      end
+
+      def upgrade_params
+        params.require(:entry).permit(:upgrade_selected)
       end
 
       def position_params
