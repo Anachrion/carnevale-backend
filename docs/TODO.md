@@ -21,13 +21,14 @@ picture, and `DATA_AND_BACKUPS.md` for who owns which data, what a restore looks
 and which of these gaps actually loses information. To make it production-ready
 (roughly in priority order):
 
-- **P1: Off-site database backups.** None today — the biggest risk. Add a nightly
-  `pg_dump` (from the Postgres container) → gzip → upload *off the server*, with
-  rotation (e.g. 7 daily + 4 weekly). Destination TBD: Cloudflare R2 (free at this
-  scale, recommended) or Hetzner Storage Box (~€3/mo). Test a restore before trusting it.
-  Note: `catalog:export` now snapshots the *catalog* to git, but that is not a substitute —
-  it does not cover **player data** (lists, games, users) or Active Storage anything beyond
-  illustration blobs. This `pg_dump` is what protects everything on the box's single volume.
+- **P1: Off-site database backups. (DONE, 2026-07-20)** A nightly `pg_dump -Fc` runs off the
+  Postgres container, uploads *off the server* to Cloudflare R2 (bucket `carnevale-backups`), and
+  rotates 7 daily + 4 weekly. A systemd timer on the box (`carnevale-db-backup.timer`, 03:00 UTC)
+  fires `deploy/backup/db-backup.sh`; installed/updated with `bin/install-db-backups`; restored with
+  `bin/db-restore` (default target is a scratch DB, so it doubles as the verification path). Restore
+  was tested end-to-end at setup — player data (users, lists, games) came back intact. Full write-up
+  in `docs/DATA_AND_BACKUPS.md`. This protects the **player data** (lists, games, users) that
+  `catalog:export` never covered.
 - **P2: Real domain + DNS** — replaces the temporary `sslip.io` host (also unblocks the
   App Links note under Auth above).
 - **P2: Finish the Solid stack** — generate the solid_queue/cache/cable schemas so

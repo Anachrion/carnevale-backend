@@ -1,0 +1,12 @@
+[Unit]
+Description=Off-site Postgres backup for carnevale to Cloudflare R2
+Documentation=https://github.com/Anachrion/carnevale-backend/blob/main/docs/DATA_AND_BACKUPS.md
+Wants=network-online.target
+After=docker.service network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/carnevale/db-backup.sh
+# Give the dump + upload room, but don't hang the timer forever.
+TimeoutStartSec=1800
