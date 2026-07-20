@@ -47,4 +47,13 @@ end
 #  will_points                  :integer          default(0), not null
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
+#  flexible_leader_with_id      :bigint
+#
+# Indexes
+#
+#  index_profiles_on_flexible_leader_with_id  (flexible_leader_with_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (flexible_leader_with_id => profiles.id)
 #

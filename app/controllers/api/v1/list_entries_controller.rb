@@ -22,7 +22,10 @@ module Api
         next_position = (@list.list_entries.maximum(:position) || 0) + 1
         entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
         if entry.save
-          ListSortingService.call(@list)
+          # The gang's effective Leader is pinned to the top; hiring the one that belongs there (a
+          # hard Leader, or a lone flex Leader) jumps it up — including when a new hard Leader demotes
+          # a flex Leader that was holding the top. Everything else is appended in hire order.
+          pin_effective_leader
           render json: ListSerializer.new(@list.reload).as_json, status: :created
         else
           render_error(entry.errors)
@@ -31,7 +34,17 @@ module Api
 
       def update
         entry = find_owned_entry
-        ListEntryReorderService.call(entry, position_params[:position].to_i)
+        resolution = leader_resolution(entry.list)
+        leader = resolution.effective.first
+        promotable = resolution.promotable.any? { |e| e.id == entry.id }
+        # The effective Leader is pinned to the top and can't be reordered by hand (moving it is a
+        # no-op). Nobody else may take position 1 while it holds it — except a *promotable* flex Leader,
+        # which is exactly how the player promotes it (it becomes the new Leader, demoting the old one).
+        unless leader && entry.id == leader.id
+          target = position_params[:position].to_i
+          target = target.clamp(2, entry.list.list_entries.count) if leader && !promotable
+          ListEntryReorderService.call(entry, target)
+        end
         render json: ListSerializer.new(entry.list.reload).as_json
       end
 
@@ -96,6 +109,27 @@ module Api
       end
 
       private
+
+      # Settles flex-Leader demotion for a list — which entry keeps the Leader keyword, which demote,
+      # and which the player could promote — the same LeaderResolver ListSerializer and
+      # ListValidationService use, so the three never disagree.
+      def leader_resolution(list)
+        entries = list.list_entries.where(summoned: false).includes(:entry).to_a
+        card_refs = entries.map(&:entry).grep(Catalog::CardReference)
+        if card_refs.any?
+          ActiveRecord::Associations::Preloader.new(records: card_refs, associations: :profile).call
+        end
+        ordered = entries.select { |e| e.entry.is_a?(Catalog::CardReference) }.sort_by(&:position)
+        LeaderResolver.call(ordered)
+      end
+
+      # Moves the gang's effective Leader to position 1 if it isn't already there — run after a hire,
+      # so a freshly-added Leader (or a flex Leader that a new hard Leader just demoted past) ends up
+      # correctly pinned.
+      def pin_effective_leader
+        leader = leader_resolution(@list).effective.first
+        ListEntryReorderService.call(leader, 1) if leader && leader.position != 1
+      end
 
       def find_owned_entry
         Gang::Entry.joins(:list).where(lists: { owner_type: "User", owner_id: current_user.id }).find(params[:id])
