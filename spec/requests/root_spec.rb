@@ -7,15 +7,13 @@ RSpec.describe "Root and the sign-in door", type: :request do
   let(:admin) { create(:user, :admin) }
 
   describe "GET /" do
-    it "sends a signed-out visitor to the sign-in page, without a permanent redirect" do
+    it "serves the Flutter app to a signed-out visitor" do
       get root_path
 
-      expect(response).to redirect_to("/users/sign_in")
-      # A 301 on "/" would be cached by the browser for good.
-      expect(response).to have_http_status(:found)
+      expect(response).to have_http_status(:ok)
     end
 
-    it "serves the backoffice to a signed-in admin rather than bouncing to sign-in" do
+    it "serves the Flutter app to a signed-in admin too" do
       sign_in admin
       get root_path
 
