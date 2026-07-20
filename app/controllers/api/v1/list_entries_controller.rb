@@ -34,13 +34,15 @@ module Api
 
       def update
         entry = find_owned_entry
-        leader = effective_leader_entry(entry.list)
-        # The effective Leader is pinned to the top and can't be reordered by hand: moving it is a
-        # no-op, and no other model may take position 1 while it holds it. Everything below the Leader
-        # (including a demoted flex Leader) reorders freely.
+        resolution = leader_resolution(entry.list)
+        leader = resolution.effective.first
+        promotable = resolution.promotable.any? { |e| e.id == entry.id }
+        # The effective Leader is pinned to the top and can't be reordered by hand (moving it is a
+        # no-op). Nobody else may take position 1 while it holds it — except a *promotable* flex Leader,
+        # which is exactly how the player promotes it (it becomes the new Leader, demoting the old one).
         unless leader && entry.id == leader.id
           target = position_params[:position].to_i
-          target = target.clamp(2, entry.list.list_entries.count) if leader
+          target = target.clamp(2, entry.list.list_entries.count) if leader && !promotable
           ListEntryReorderService.call(entry, target)
         end
         render json: ListSerializer.new(entry.list.reload).as_json
@@ -108,24 +110,24 @@ module Api
 
       private
 
-      # The entry that keeps the Leader keyword once flex-Leader demotion is resolved — the hard
-      # Leader if any is fielded, else a lone flex Leader — and so the one pinned to the top of the
-      # list. Mirrors ListValidationService#effective_leader_refs. Nil when the gang holds no Leader.
-      # (Equipment carries no profile, so it's never a Leader.)
-      def effective_leader_entry(list)
-        leaders = list.list_entries.order(:position).select do |e|
-          e.profile&.keywords&.include?("Leader")
+      # Settles flex-Leader demotion for a list — which entry keeps the Leader keyword, which demote,
+      # and which the player could promote — the same LeaderResolver ListSerializer and
+      # ListValidationService use, so the three never disagree.
+      def leader_resolution(list)
+        entries = list.list_entries.where(summoned: false).includes(:entry).to_a
+        card_refs = entries.map(&:entry).grep(Catalog::CardReference)
+        if card_refs.any?
+          ActiveRecord::Associations::Preloader.new(records: card_refs, associations: :profile).call
         end
-        return nil if leaders.empty?
-
-        leaders.reject { |e| e.profile.flexible_leader }.first || leaders.first
+        ordered = entries.select { |e| e.entry.is_a?(Catalog::CardReference) }.sort_by(&:position)
+        LeaderResolver.call(ordered)
       end
 
       # Moves the gang's effective Leader to position 1 if it isn't already there — run after a hire,
       # so a freshly-added Leader (or a flex Leader that a new hard Leader just demoted past) ends up
       # correctly pinned.
       def pin_effective_leader
-        leader = effective_leader_entry(@list)
+        leader = leader_resolution(@list).effective.first
         ListEntryReorderService.call(leader, 1) if leader && leader.position != 1
       end
 

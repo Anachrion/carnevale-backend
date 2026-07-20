@@ -18,10 +18,15 @@ class EntrySerializer
   # `turn` is the owning player's turn cursor, passed through to EntryStateSerializer to derive
   # `activated`, and used here to derive each known/granted spell's `cast` flag; nil outside a live
   # game, where nothing reads as cast and nothing reads as activated.
-  def initialize(list_entry, cantrips:, turn: nil)
+  def initialize(list_entry, cantrips:, turn: nil, demoted_leader: false, promotable_leader: false)
     @entry = list_entry
     @cantrips = cantrips
     @turn = turn
+    # Flex-Leader demotion, resolved once per list by ListSerializer (LeaderResolver): whether this
+    # entry has lost its Leader keyword (so the client shows Hero, not Leader), and — in the ambiguous
+    # "several flex Leaders, no forced Leader" case — whether the player could promote it instead.
+    @demoted_leader = demoted_leader
+    @promotable_leader = promotable_leader
   end
 
   def as_json
@@ -56,6 +61,12 @@ class EntrySerializer
       # Whether this Leader demotes to a plain Hero alongside another Leader (see ProfilesController)
       # — lets the builder decide whether to still offer a Leader model once one is in the list.
       flexible_leader: profile&.flexible_leader || false,
+      # This flex Leader has been demoted to a plain Hero by the gang's composition (it prints Leader
+      # but lost it); the client shows Hero and never pins it as the Leader.
+      demoted_leader: @demoted_leader,
+      # A demoted flex Leader the player could promote to Leader instead (only in the ambiguous case
+      # of several unconditional flex Leaders and no forced Leader). The client shows a "promote" action.
+      promotable_leader: @promotable_leader,
       cost: entry.cost,
       # The chosen card reference (illustration), mirroring the shape ProfilesController exposes
       # under `card_references` so the client can match this entry to one of them.
