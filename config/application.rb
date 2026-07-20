@@ -23,5 +23,14 @@ module CarnevaleBackend
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Internationalization. English stays the default (and the fallback for any key a translation
+    # file is missing); French is the first added locale. The API picks a request's locale from the
+    # Accept-Language header the Flutter app sends (see Api::V1::BaseController). Only these two are
+    # accepted, so an unknown header value falls back to the default rather than 500-ing on a
+    # missing locale.
+    config.i18n.available_locales = %i[en fr]
+    config.i18n.default_locale = :en
+    config.i18n.fallbacks = [ :en ]
   end
 end
