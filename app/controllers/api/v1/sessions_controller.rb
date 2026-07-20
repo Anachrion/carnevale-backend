@@ -16,6 +16,7 @@ module Api
   module V1
     class SessionsController < Devise::SessionsController
       include AuthenticatesClient
+      include SwitchesLocale
 
       skip_before_action :verify_authenticity_token, raise: false
       # Devise guards #destroy with verify_signed_out_user, which looks for a user in the Devise

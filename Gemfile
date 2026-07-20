@@ -24,6 +24,11 @@ gem "bcrypt", "~> 3.1.7"
 gem "devise"
 # JWT authentication strategy for Devise, used by the Flutter API clients [https://github.com/waiting-for-dev/devise-jwt]
 gem "devise-jwt"
+# Locale data for i18n: rails-i18n ships translations for ActiveModel/ActiveRecord validation
+# messages, dates, and number formats (the API surfaces validation errors verbatim to the Flutter
+# app, so these must be translated); devise-i18n does the same for Devise's auth messages.
+gem "rails-i18n"
+gem "devise-i18n"
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem "tzinfo-data", platforms: %i[ windows jruby ]

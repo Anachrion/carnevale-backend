@@ -1,0 +1,6 @@
+# French translations for app-specific strings. Framework defaults — ActiveModel/ActiveRecord
+# validation messages, dates, number formats — come from the rails-i18n gem, and Devise's auth
+# messages from devise-i18n, so this file only needs keys the app itself defines under `en:` in
+# en.yml. Anything missing here falls back to English (config.i18n.fallbacks in application.rb).
+fr:
+  hello: "Bonjour tout le monde"

@@ -17,6 +17,7 @@ module Api
     class PasswordsController < Devise::PasswordsController
       include RendersApiErrors
       include AuthenticatesClient
+      include SwitchesLocale
 
       skip_before_action :verify_authenticity_token, raise: false
       respond_to :json
