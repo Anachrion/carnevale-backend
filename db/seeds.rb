@@ -45,6 +45,13 @@ if defined?(Rake) && Rake::Task.task_defined?("leaders:configure_exceptions")
   Rake::Task["leaders:configure_exceptions"].invoke
 end
 
+# The models that can only arrive as another model's companion (the Emissary of Mother Hydra's
+# Tentacles) and the Emissary's auto-included companions + paid upgrade; see
+# lib/tasks/companions.rake. Idempotent, same reasoning as the exceptions above.
+if defined?(Rake) && Rake::Task.task_defined?("companions:configure_exceptions")
+  Rake::Task["companions:configure_exceptions"].invoke
+end
+
 # ── Version card images ────────────────────────────────────────────────────────
 # Bump internal_version for any card whose images changed (no-op when public/cards is empty),
 # so the app knows which cards to re-download. See lib/tasks/cards.rake.

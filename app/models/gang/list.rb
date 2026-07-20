@@ -75,10 +75,19 @@ module Gang
         .where(entry_type: "Catalog::Equipment")
         .joins("INNER JOIN equipment ON equipment.id = list_entries.entry_id")
         .group(:list_id).sum("equipment.cost")
+      # The Ducats added by a bought companion upgrade (the Emissary's +12 for a second set of
+      # Tentacles) — folded in here so this SQL sum matches Gang::Entry#cost, which adds the same
+      # surcharge in Ruby (CARNEVALEB-23). Keep the two in step.
+      upgrades = hired
+        .where(entry_type: "Catalog::CardReference", upgrade_selected: true)
+        .joins("INNER JOIN card_references ON card_references.id = list_entries.entry_id")
+        .joins("INNER JOIN profiles ON profiles.id = card_references.profile_id")
+        .group(:list_id).sum("profiles.companion_upgrade_ducats")
 
       costs = Hash.new(0)
       model.each { |list_id, sum| costs[list_id] += sum }
       equipment.each { |list_id, sum| costs[list_id] += sum }
+      upgrades.each { |list_id, sum| costs[list_id] += sum }
       costs
     end
 
@@ -94,7 +103,8 @@ module Gang
 
             source_entries.each do |entry|
               copied = copy.list_entries.create!(
-                entry_type: entry.entry_type, entry_id: entry.entry_id, position: entry.position
+                entry_type: entry.entry_type, entry_id: entry.entry_id, position: entry.position,
+                upgrade_selected: entry.upgrade_selected
               )
               copied_by_source_id[entry.id] = copied
               entry.entry_spells.each { |es| copied.entry_spells.create!(spell_id: es.spell_id, pool_id: es.pool_id) }
@@ -103,13 +113,15 @@ module Gang
               end
             end
 
-            # mentored_by_entry_id points at another entry in the *same* list, so Apprentice
-            # Doctor's mentor link can only be remapped once every copy exists — a second pass,
-            # since the mentor may be created before or after her in position order.
+            # mentored_by_entry_id and companion_of_entry_id both point at another entry in the *same*
+            # list (Apprentice Doctor's mentor link; the Emissary → Tentacle link), so they can only
+            # be remapped once every copy exists — a second pass, since the target may be created
+            # before or after this entry in position order.
             source_entries.each do |entry|
-              next unless entry.mentored_by_entry_id
-
-              copied_by_source_id[entry.id].update!(mentored_by_entry_id: copied_by_source_id[entry.mentored_by_entry_id]&.id)
+              updates = {}
+              updates[:mentored_by_entry_id] = copied_by_source_id[entry.mentored_by_entry_id]&.id if entry.mentored_by_entry_id
+              updates[:companion_of_entry_id] = copied_by_source_id[entry.companion_of_entry_id]&.id if entry.companion_of_entry_id
+              copied_by_source_id[entry.id].update!(updates) if updates.any?
             end
           end
         end

@@ -76,6 +76,15 @@ class EntrySerializer
       # Conjured mid-game by a special rule rather than hired. Costs the gang nothing and is exempt
       # from the gang-building rules; the client marks it and offers to remove it again.
       summoned: entry.summoned,
+      # Auto-included companion bookkeeping (CARNEVALEB-23). `companion_of_entry_id` is the entry of
+      # the model that brought this one (the Emissary that owns this Tentacle), or null for a normal
+      # model — the client renders a companion read-only and never offers to remove it. The upgrade
+      # fields describe the *parent's* optional paid upgrade: whether it's bought, whether it's on
+      # offer, and its Ducat cost — the client shows the toggle only when upgrade_available.
+      companion_of_entry_id: entry.companion_of_entry_id,
+      upgrade_selected: entry.upgrade_selected,
+      upgrade_available: profile ? profile.companion_upgrade_ducats.positive? : false,
+      upgrade_ducats: profile&.companion_upgrade_ducats || 0,
       # Only present once the game has started (Encounter::Game#start!); nil beforehand
       # and for equipment entries, which have no HP/WP/CP to track.
       state: entry.entry_state && EntryStateSerializer.new(entry.entry_state, turn: @turn).as_json,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_120200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -204,6 +204,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
   end
 
   create_table "list_entries", force: :cascade do |t|
+    t.bigint "companion_of_entry_id"
     t.datetime "created_at", null: false
     t.bigint "entry_id", null: false
     t.string "entry_type", null: false
@@ -212,6 +213,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
     t.integer "position", null: false
     t.boolean "summoned", default: false, null: false
     t.datetime "updated_at", null: false
+    t.boolean "upgrade_selected", default: false, null: false
+    t.index ["companion_of_entry_id"], name: "index_list_entries_on_companion_of_entry_id"
     t.index ["entry_type", "entry_id"], name: "index_list_entries_on_entry_type_and_entry_id"
     t.index ["list_id", "position"], name: "index_list_entries_on_list_id_and_position", unique: true
     t.index ["list_id"], name: "index_list_entries_on_list_id"
@@ -231,6 +234,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
     t.datetime "updated_at", null: false
     t.index ["owner_type", "owner_id"], name: "index_lists_on_owner"
     t.index ["source_list_id"], name: "index_lists_on_source_list_id"
+  end
+
+  create_table "profile_companions", force: :cascade do |t|
+    t.integer "base_quantity", default: 1, null: false
+    t.bigint "companion_profile_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "upgraded_quantity", default: 1, null: false
+    t.index ["companion_profile_id"], name: "index_profile_companions_on_companion_profile_id"
+    t.index ["profile_id", "companion_profile_id"], name: "index_profile_companions_on_profile_and_companion", unique: true
+    t.index ["profile_id"], name: "index_profile_companions_on_profile_id"
   end
 
   create_table "profile_granted_spells", force: :cascade do |t|
@@ -305,6 +320,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
     t.integer "action_points", default: 0, null: false
     t.integer "attack", default: 0, null: false
     t.integer "command_points", default: 0, null: false
+    t.integer "companion_upgrade_ducats", default: 0, null: false
     t.datetime "created_at", null: false
     t.integer "dexterity", default: 0, null: false
     t.boolean "distinct_discipline_per_copy", default: false, null: false
@@ -318,6 +334,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
     t.integer "movement", default: 0, null: false
     t.string "name", default: "", null: false
     t.integer "protection", default: 0, null: false
+    t.boolean "recruitable", default: true, null: false
     t.integer "size", default: 0, null: false
     t.datetime "updated_at", null: false
     t.string "version", default: "2.2.0", null: false
@@ -421,9 +438,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_130000) do
   add_foreign_key "game_players", "users"
   add_foreign_key "games", "scenarios"
   add_foreign_key "illustrations", "profiles"
+  add_foreign_key "list_entries", "list_entries", column: "companion_of_entry_id", on_delete: :cascade
   add_foreign_key "list_entries", "list_entries", column: "mentored_by_entry_id", on_delete: :nullify
   add_foreign_key "list_entries", "lists"
   add_foreign_key "lists", "lists", column: "source_list_id", on_delete: :nullify
+  add_foreign_key "profile_companions", "profiles"
+  add_foreign_key "profile_companions", "profiles", column: "companion_profile_id"
   add_foreign_key "profile_granted_spells", "profiles"
   add_foreign_key "profile_granted_spells", "special_rules", on_delete: :nullify
   add_foreign_key "profile_granted_spells", "spells"

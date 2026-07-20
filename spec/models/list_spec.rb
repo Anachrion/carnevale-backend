@@ -20,12 +20,23 @@ RSpec.describe Gang::List, type: :model do
       expect(create(:list, faction: :guild, points: 100).total_cost).to eq(0)
     end
 
+    # CARNEVALEB-23: a bought companion upgrade (the Emissary's +12) lives on the entry, and its
+    # Ducats must count — matching Gang::Entry#cost, which adds the same surcharge in Ruby.
+    it "adds the Ducats of a bought companion upgrade" do
+      list = create(:list, faction: :guild, points: 500)
+      parent = create(:card_reference, profile: create(:profile, faction: :guild, ducats: 50, companion_upgrade_ducats: 12))
+      create(:list_entry, list: list, entry: parent, position: 1, upgrade_selected: true)
+
+      expect(list.total_cost).to eq(62)
+    end
+
     it "does not scale its query count with the number of entries (no N+1)" do
       list = create(:list, faction: :guild, points: 900)
       6.times { |i| create(:list_entry, list: list, entry: guild_ref(cost: 10), position: i + 1) }
 
-      # Two aggregate queries (models + gear), regardless of how many entries there are.
-      expect(count_queries { list.total_cost }).to eq(2)
+      # Three aggregate queries (models + gear + bought companion upgrades), regardless of how many
+      # entries there are — a fixed count, not one per entry.
+      expect(count_queries { list.total_cost }).to eq(3)
     end
   end
 
@@ -115,6 +126,25 @@ RSpec.describe Gang::List, type: :model do
       copied_apprentice = snapshot.list_entries.find_by(entry: apprentice_ref)
       expect(copied_apprentice.mentored_by_entry_id).to eq(copied_mentor.id)
       expect(copied_apprentice.mentored_by_entry_id).not_to eq(mentor_entry.id)
+    end
+
+    # CARNEVALEB-23: companion_of_entry_id points at another entry in the same list, so — like a
+    # mentor link — it must be remapped to the copied entries, and the parent's upgrade flag carried over.
+    it "copies the upgrade flag and remaps the companion link to the copied entries" do
+      list = create(:list, faction: :guild, points: 300)
+      parent_ref = create(:card_reference, profile: create(:profile, faction: :guild, ducats: 50, companion_upgrade_ducats: 12))
+      companion_ref = create(:card_reference, profile: create(:profile, faction: :guild, ducats: 0, recruitable: false))
+      parent_entry = create(:list_entry, list: list, entry: parent_ref, position: 1, upgrade_selected: true)
+      create(:list_entry, list: list, entry: companion_ref, position: 2, companion_of_entry: parent_entry)
+      game_player = create(:game_player)
+
+      snapshot = list.snapshot_for(game_player)
+
+      copied_parent = snapshot.list_entries.find_by(entry: parent_ref)
+      copied_companion = snapshot.list_entries.find_by(entry: companion_ref)
+      expect(copied_parent.upgrade_selected).to be(true)
+      expect(copied_companion.companion_of_entry_id).to eq(copied_parent.id)
+      expect(copied_companion.companion_of_entry_id).not_to eq(parent_entry.id)
     end
 
     it "stays unaffected by later edits to the original list" do
