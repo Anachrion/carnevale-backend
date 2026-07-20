@@ -63,6 +63,18 @@ RSpec.describe ListValidationService, type: :service do
         expect(result[:success]).to be false
         expect(result[:errors].first).to match(/exceeds the 100 points limit/)
       end
+
+      # CARNEVALEB-23: the Emissary's bought +12 upgrade lives on the entry, not the profile — the
+      # points check must count it, or a gang that's actually over budget would read as valid.
+      it "counts a bought companion upgrade against the limit" do
+        ref = create(:card_reference, profile: create(:profile, faction: :guild, ducats: 95, companion_upgrade_ducats: 12))
+        entry = add_entry(list, ref)
+        entry.update_columns(upgrade_selected: true)
+
+        result = described_class.call(list.reload)
+        expect(result[:success]).to be false
+        expect(result[:errors].first).to match(/total cost \(107\) exceeds the 100 points limit/)
+      end
     end
 
     context "faction consistency" do

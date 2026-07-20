@@ -570,6 +570,19 @@ RSpec.describe "Api::V1::Games", type: :request do
                 params: { card_reference_id: create(:reference).id }.to_json, headers: h
       expect(host.response).to have_http_status(:unprocessable_entity)
     end
+
+    # A non-recruitable model (the Emissary's Tentacles) can only arrive with the model that brings
+    # it — never conjured on its own (CARNEVALEB-23).
+    it "rejects summoning a non-recruitable model" do
+      host, _guest, h, _g, game_id, = start_game_with_models
+
+      tentacle = create(:reference, profile: create(:profile, recruitable: false))
+      host.post "/api/v1/games/#{game_id}/summons",
+                params: { card_reference_id: tentacle.id }.to_json, headers: h
+
+      expect(host.response).to have_http_status(:unprocessable_entity)
+      expect(Gang::Entry.where(entry: tentacle)).to be_empty
+    end
   end
 
   describe "DELETE /api/v1/games/:id/summons/:list_entry_id" do

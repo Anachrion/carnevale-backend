@@ -93,7 +93,10 @@ class ListValidationService
   end
 
   def check_points_limit
-    total = projected_items.sum { |item| item.cost.to_i }
+    # Sum the *entries'* cost, not the catalog records', so a bought companion upgrade (the Emissary's
+    # +12 Ducats) counts — it lives on the entry, not the profile. This is exactly ListSerializer's
+    # total_cost, so the builder's points bar and the validity check never disagree (CARNEVALEB-23).
+    total = list_entries.reject(&:summoned?).sum { |entry| entry.cost.to_i }
     return if total <= @list.points
 
     @errors << "total cost (#{total}) exceeds the #{@list.points} points limit"

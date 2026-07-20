@@ -506,6 +506,40 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /list_entries/{id}/upgrade:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    patch:
+      operationId: setListEntryUpgrade
+      summary: Toggle a model's optional paid companion upgrade
+      description: >
+        Buys or drops a model's optional paid upgrade — the Emissary of Mother Hydra's +12 Ducats
+        for a second set of Tentacles (8 instead of 4) — and reconciles its auto-included companion
+        entries to match. The upgrade's Ducat cost is added to the entry's cost. Returns 404 if the
+        entry's list doesn't belong to the current user.
+      tags: [ListEntries]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EntryUpgradeInput"
+      responses:
+        "200":
+          description: OK — returns the updated list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
   /spells:
     get:
       operationId: getSpells
@@ -1719,6 +1753,20 @@ components:
                 the same profile (a different illustration of the same model); the request is
                 rejected otherwise.
 
+    EntryUpgradeInput:
+      type: object
+      required: [entry]
+      properties:
+        entry:
+          type: object
+          required: [upgrade_selected]
+          properties:
+            upgrade_selected:
+              type: boolean
+              description: >
+                Whether to buy this model's optional paid upgrade (the Emissary's +12 Ducats for a
+                second set of Tentacles). Its companion entries are reconciled to match.
+
     SetEntrySpellsInput:
       type: object
       required: [entry]
@@ -1950,7 +1998,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, demoted_leader, promotable_leader, cost, summoned, mage, distinct_discipline_per_copy, pools, granted_spells]
+      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, demoted_leader, promotable_leader, cost, summoned, upgrade_selected, upgrade_available, upgrade_ducats, mage, distinct_discipline_per_copy, pools, granted_spells]
       properties:
         id:
           type: integer
@@ -2024,6 +2072,28 @@ components:
             gang nothing and is exempt from the gang-building rules (ducat limit, faction
             consistency, unique/Leader/ratio), so a legal summon can't push a gang over its limit or
             flip it to invalid. It is also the only kind of model that can be removed mid-game.
+        companion_of_entry_id:
+          type: integer
+          nullable: true
+          description: >
+            Id of the entry that automatically brought this one in — the Emissary of Mother Hydra
+            that owns this Tentacle (CARNEVALEB-23). Null for a normally hired model. A companion is
+            read-only in the builder: it can't be reordered or removed on its own, only alongside the
+            model that brought it.
+        upgrade_selected:
+          type: boolean
+          description: >
+            Whether this model's optional paid upgrade has been bought — the Emissary's +12 Ducats
+            for a second set of Tentacles. Its Ducat cost is already included in `cost`. Toggle via
+            PATCH /list_entries/{id}/upgrade.
+        upgrade_available:
+          type: boolean
+          description: >
+            Whether this model offers an optional paid upgrade at all. The client shows the upgrade
+            toggle only when true. False for models with no upgrade and for Equipment.
+        upgrade_ducats:
+          type: integer
+          description: The Ducat cost of this model's optional upgrade (0 when none is offered).
         state:
           allOf:
             - $ref: "#/components/schemas/EntryState"
@@ -2324,6 +2394,7 @@ components:
         - abilities
         - keywords
         - flexible_leader
+        - recruitable
         - version
         - mage
         - spell_slots
@@ -2376,6 +2447,13 @@ components:
             gang that already has a Leader. The gang builder uses it to keep such a model's "add"
             button enabled once a Leader is present; enforcement is ListValidationService. False for
             every non-flex Leader and non-Leader profile.
+        recruitable:
+          type: boolean
+          description: >
+            Whether this model may be hired or summoned directly. False for a model that can only
+            arrive as another model's companion (the Emissary of Mother Hydra's Tentacles) — the
+            client drops it from the hire search and the summon picker, though it stays browsable in
+            the Cards catalog. True for every ordinary model.
         flexible_leader_with:
           type: integer
           nullable: true

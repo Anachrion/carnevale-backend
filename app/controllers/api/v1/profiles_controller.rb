@@ -77,6 +77,10 @@ module Api
           # Thieves, Sopracomito, La Signora) — lets the gang builder keep offering its "add" button
           # once a Leader is present. Enforcement is ListValidationService#check_leader_count.
           flexible_leader: profile.flexible_leader,
+          # Whether this model may be hired or summoned directly. False for a model that can only
+          # arrive as another model's companion (the Emissary's Tentacles) — the client drops it from
+          # the hire search and the summon picker, though it stays browsable in the Cards catalog.
+          recruitable: profile.recruitable,
           # The specific partner a *conditional* flex Leader demotes alongside (La Signora -> Il
           # Capitano's profile id), or null when it demotes alongside any Leader. Lets the builder
           # restrict which Leader can still be recruited once she's in the list.

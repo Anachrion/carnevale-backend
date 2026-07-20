@@ -28,9 +28,29 @@ module Gang
     # from. Nullified (not cascaded) if that entry is removed — see the migration.
     belongs_to :mentored_by_entry, class_name: "Gang::Entry", optional: true
 
-    delegate :cost, to: :entry
+    # The Emissary → Tentacle link (CARNEVALEB-23). A companion entry points at the model that brought
+    # it; removing that parent cascades its companions away (ON DELETE CASCADE, mirrored by
+    # dependent: :destroy so the after_commit revalidation still fires). `upgrade_selected` lives on
+    # the *parent* — whether its optional paid upgrade (more companions) has been bought.
+    belongs_to :companion_of_entry, class_name: "Gang::Entry", optional: true
+    has_many :companion_entries, class_name: "Gang::Entry", foreign_key: "companion_of_entry_id", dependent: :destroy
 
     validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    # This entry's ducat cost: the catalog cost of the model/equipment, plus the parent's paid
+    # companion upgrade if it's been bought (CARNEVALEB-23). The single source of truth for cost —
+    # ListSerializer, ListValidationService#check_points_limit and Gang::List#total_cost all agree
+    # because they all go through here (the batch total_costs_for reproduces the same sum in SQL).
+    def cost
+      entry&.cost.to_i + upgrade_surcharge
+    end
+
+    # The extra Ducats this entry costs for its selected optional upgrade — the Emissary's +12 for a
+    # second set of Tentacles — or 0 when no upgrade is bought or the profile offers none.
+    def upgrade_surcharge
+      return 0 unless upgrade_selected && profile
+
+      profile.companion_upgrade_ducats.to_i
+    end
     validates :position, uniqueness: { scope: :list_id }
     # entry_type is client-supplied on create (POST /list_entries); without this, any AR class name
     # constantizes and saves, then blows up every later read that calls .cost/.name on it.
@@ -103,18 +123,21 @@ end
 #
 # Table name: list_entries
 #
-#  id                   :bigint           not null, primary key
-#  entry_type           :string           not null
-#  position             :integer          not null
-#  summoned             :boolean          default(FALSE), not null
-#  created_at           :datetime         not null
-#  updated_at           :datetime         not null
-#  entry_id             :bigint           not null
-#  list_id              :bigint           not null
-#  mentored_by_entry_id :bigint
+#  id                    :bigint           not null, primary key
+#  entry_type            :string           not null
+#  position              :integer          not null
+#  summoned              :boolean          default(FALSE), not null
+#  upgrade_selected      :boolean          default(FALSE), not null
+#  created_at            :datetime         not null
+#  updated_at            :datetime         not null
+#  companion_of_entry_id :bigint
+#  entry_id              :bigint           not null
+#  list_id               :bigint           not null
+#  mentored_by_entry_id  :bigint
 #
 # Indexes
 #
+#  index_list_entries_on_companion_of_entry_id    (companion_of_entry_id)
 #  index_list_entries_on_entry_type_and_entry_id  (entry_type,entry_id)
 #  index_list_entries_on_list_id                  (list_id)
 #  index_list_entries_on_list_id_and_position     (list_id,position) UNIQUE
@@ -122,6 +145,7 @@ end
 #
 # Foreign Keys
 #
+#  fk_rails_...  (companion_of_entry_id => list_entries.id) ON DELETE => cascade
 #  fk_rails_...  (list_id => lists.id)
 #  fk_rails_...  (mentored_by_entry_id => list_entries.id) ON DELETE => nullify
 #
