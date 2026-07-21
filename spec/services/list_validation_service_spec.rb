@@ -216,7 +216,7 @@ RSpec.describe ListValidationService, type: :service do
 
         result = described_class.call(list)
         expect(result[:success]).to be false
-        expect(result[:errors]).to include(match(/more Heroes.*than Henchmen/))
+        expect(result[:errors]).to include(match(/too many Heroes.*Henchmen/))
       end
 
       it "treats a lone flex Leader as the Leader (and not a Hero)" do
@@ -289,7 +289,7 @@ RSpec.describe ListValidationService, type: :service do
 
         result = described_class.call(list)
         expect(result[:success]).to be false
-        expect(result[:errors]).to include(match(/cannot have more Heroes.*than Henchmen/))
+        expect(result[:errors]).to include(match(/too many Heroes.*Henchmen/))
       end
 
       it "succeeds when Heroes are matched by an equal number of Henchmen" do
