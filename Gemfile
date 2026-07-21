@@ -53,6 +53,10 @@ gem "thruster", require: false
 
 # Use Active Storage variants [https://guides.rubyonrails.org/active_storage_overview.html#transforming-images]
 gem "image_processing", "~> 2.0"
+# image_processing 2.0 dropped its runtime dependency on the libvips binding, so declare it
+# explicitly; Active Storage's variant processor defaults to :vips and the catalog importer
+# calls `require "vips"` directly.
+gem "ruby-vips"
 # Declarative content-type / size validation for Active Storage attachments (illustration uploads).
 gem "active_storage_validations"
 gem "rack-cors"
