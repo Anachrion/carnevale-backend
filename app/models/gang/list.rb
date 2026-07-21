@@ -15,6 +15,7 @@
 module Gang
   class List < ApplicationRecord
     include HasFaction
+    include IdempotentEntries
 
     belongs_to :owner, polymorphic: true
     has_many :list_entries, class_name: "Gang::Entry", dependent: :destroy

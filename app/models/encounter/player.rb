@@ -118,19 +118,18 @@ module Encounter
     # ListValidationService). Deliberately unrestricted as to *what* can be summoned: the rule lives
     # on the summoner's card and only the player knows what it permits, so the app tracks rather than
     # adjudicates. Returns the new entry, or nil if the player can't act.
-    def summon!(card_reference)
+    def summon!(card_reference, request_key: nil)
       return nil unless playing? && list
 
-      transaction do
-        entry = list.list_entries.create!(
-          entry_type: "Catalog::CardReference",
-          entry_id: card_reference.id,
-          position: (list.list_entries.maximum(:position) || 0) + 1,
-          summoned: true
-        )
-        Encounter::EntryState.create_for!(entry)
-        entry
-      end
+      # Idempotent + position-race-safe, same as a hire (see IdempotentEntries): a re-sent summon
+      # replays its row instead of conjuring a second model, and the entry state is created atomically
+      # with it. A replay returns the existing entry without re-running the block.
+      list.add_entry_idempotently(
+        request_key: request_key,
+        entry_type: "Catalog::CardReference",
+        entry_id: card_reference.id,
+        summoned: true
+      ) { |entry| Encounter::EntryState.create_for!(entry) }
     end
 
     # Removes a summoned model — the summon was a mistake, or the rule that sustained it has ended.

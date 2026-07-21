@@ -15,6 +15,8 @@
 module Api
   module V1
     class ListEntriesController < BaseController
+      include AcceptsIdempotencyKey
+
       before_action :authenticate_user!
 
       def create
@@ -24,27 +26,24 @@ module Api
         # that reaches the endpoint anyway (a stale client, or a hand-rolled call).
         return render_error("This model cannot be hired") unless hired_profile_recruitable?
 
-        next_position = (@list.list_entries.maximum(:position) || 0) + 1
-        entry = @list.list_entries.build(entry_type: entry_params[:entry_type], entry_id: entry_params[:entry_id], position: next_position)
-        # Hire the model and add any companions it brings atomically: if the companion sync fails,
-        # the whole hire rolls back rather than leaving an orphaned parent (an Emissary with no
-        # Tentacles) that would 500 and dirty the gang.
-        saved = false
-        Gang::Entry.transaction do
-          saved = entry.save
-          raise ActiveRecord::Rollback unless saved
+        # Hire the model (idempotently — a flaky client's re-sent hire replays the original row instead
+        # of duplicating; a concurrent add that races the position index retries) and add any companions
+        # it brings atomically: if the companion sync fails, the whole hire rolls back rather than
+        # leaving an orphaned parent (an Emissary with no Tentacles) that would 500 and dirty the gang.
+        @list.add_entry_idempotently(
+          request_key: idempotency_key,
+          entry_type: entry_params[:entry_type],
+          entry_id: entry_params[:entry_id]
+        ) do |_entry|
           # The gang's effective Leader is pinned to the top; hiring the one that belongs there (a
           # hard Leader, or a lone flex Leader) jumps it up — including when a new hard Leader demotes
           # a flex Leader that was holding the top. Everything else is appended in hire order.
           pin_effective_leader
           # A model that brings companions (the Emissary of Mother Hydra) auto-adds its Tentacles now.
-          CompanionSyncService.call(entry)
+          CompanionSyncService.call(_entry)
         end
-        if saved
-          render json: ListSerializer.new(@list.reload).as_json, status: :created
-        else
-          render_error(entry.errors)
-        end
+
+        render json: ListSerializer.new(@list.reload).as_json, status: :created
       end
 
       # Toggles a parent model's optional paid upgrade (the Emissary's +12 Ducats for a second set of

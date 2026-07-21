@@ -133,6 +133,7 @@ end
 #  id                    :bigint           not null, primary key
 #  entry_type            :string           not null
 #  position              :integer          not null
+#  request_key           :string
 #  summoned              :boolean          default(FALSE), not null
 #  upgrade_selected      :boolean          default(FALSE), not null
 #  created_at            :datetime         not null
@@ -148,6 +149,7 @@ end
 #  index_list_entries_on_entry_type_and_entry_id  (entry_type,entry_id)
 #  index_list_entries_on_list_id                  (list_id)
 #  index_list_entries_on_list_id_and_position     (list_id,position) UNIQUE
+#  index_list_entries_on_list_id_and_request_key  (list_id,request_key) UNIQUE WHERE (request_key IS NOT NULL)
 #  index_list_entries_on_mentored_by_entry_id     (mentored_by_entry_id)
 #
 # Foreign Keys
