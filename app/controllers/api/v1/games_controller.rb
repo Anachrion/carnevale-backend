@@ -15,6 +15,8 @@
 module Api
   module V1
     class GamesController < BaseController
+      include AcceptsIdempotencyKey
+
       # Origins a client may request, derived from the single source of truth on the model so they
       # can't drift. The model's "drawn" list also includes server-internal origins (the opening
       # `initial` draw and `recycle`) that aren't client-initiated, so those are excluded here.
@@ -205,7 +207,7 @@ module Api
         # A non-recruitable model (the Emissary's Tentacles) can only arrive with the model that
         # brings it — never summoned on its own. The picker hides them; this rejects a stale request.
         return render_error("This model cannot be summoned") if card_reference.profile&.recruitable? == false
-        return render_error("Could not summon that model") unless @game_player.summon!(card_reference)
+        return render_error("Could not summon that model") unless @game_player.summon!(card_reference, request_key: idempotency_key)
 
         broadcast_state!(@game)
         render json: player_list_json(@game_player), status: :created

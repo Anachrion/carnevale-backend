@@ -343,6 +343,8 @@ paths:
       summary: Add a card to a list
       description: Returns 404 if the list doesn't belong to the current user.
       tags: [ListEntries]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       security:
         - ApiKeyAuth: []
           bearerAuth: []
@@ -1083,6 +1085,8 @@ paths:
         cannot push it over its limit or flip it to invalid. Broadcast to both players as a
         `game_state` event; the response is the player's updated gang.
       tags: [Games]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
       security:
         - ApiKeyAuth: []
           bearerAuth: []
@@ -1594,6 +1598,21 @@ components:
       required: true
       schema:
         type: integer
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        Optional client-generated opaque token that makes this additive create idempotent: a
+        request re-sent after a lost response (e.g. the app's optimistic sync queue retrying a
+        timed-out hire) replays the original result instead of creating a duplicate. Mint one token
+        per logical action and reuse it across that action's retries. Bounded to
+        `[A-Za-z0-9._-]{16,128}`; a value outside that is ignored (the create proceeds
+        non-idempotently).
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._-]{16,128}$'
 
     AgendaId:
       name: agenda_id

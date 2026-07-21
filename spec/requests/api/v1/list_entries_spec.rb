@@ -49,6 +49,39 @@ RSpec.describe "Api::V1::ListEntries", type: :request do
       expect(positions).to eq([1, 2])
     end
 
+    context "idempotency (Idempotency-Key header)" do
+      it "replays the original result on a repeated key instead of hiring twice" do
+        ref = guild_ref
+        key = SecureRandom.uuid
+
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => key))
+        expect(response).to have_http_status(:created)
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => key))
+        expect(response).to have_http_status(:created)
+
+        expect(list.list_entries.count).to eq(1)
+        expect(JSON.parse(response.body)["entries"].size).to eq(1)
+      end
+
+      it "hires twice when the keys differ" do
+        ref = guild_ref
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => SecureRandom.uuid))
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => SecureRandom.uuid))
+
+        expect(list.list_entries.count).to eq(2)
+      end
+
+      it "ignores an implausible key (too short) and falls back to a normal hire" do
+        ref = guild_ref
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => "x"))
+        post_entry(ref, headers: headers.merge("Idempotency-Key" => "x"))
+
+        # The key is out of bounds, so it's dropped: both are normal, non-idempotent hires.
+        expect(list.list_entries.count).to eq(2)
+        expect(list.list_entries.pluck(:request_key)).to all(be_nil)
+      end
+    end
+
     it "pins a freshly-hired Leader to the top, shifting the models already hired down" do
       henchman_a = guild_ref(keywords: ["Henchman"])
       henchman_b = guild_ref(keywords: ["Henchman"])

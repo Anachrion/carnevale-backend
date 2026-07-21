@@ -36,6 +36,9 @@ module Gang
     has_many :companion_entries, class_name: "Gang::Entry", foreign_key: "companion_of_entry_id", dependent: :destroy
 
     validates :position, presence: true, numericality: { only_integer: true, greater_than: 0 }
+    # Client-supplied idempotency token (see AcceptsIdempotencyKey / IdempotentEntries). Bounded at
+    # the controller boundary already; this is a defence-in-depth cap on the unique-indexed column.
+    validates :request_key, length: { maximum: 128 }, allow_nil: true
     # This entry's ducat cost: the catalog cost of the model/equipment, plus the parent's paid
     # companion upgrade if it's been bought (CARNEVALEB-23). The single source of truth for cost —
     # ListSerializer, ListValidationService#check_points_limit and Gang::List#total_cost all agree
@@ -126,6 +129,7 @@ end
 #  id                    :bigint           not null, primary key
 #  entry_type            :string           not null
 #  position              :integer          not null
+#  request_key           :string
 #  summoned              :boolean          default(FALSE), not null
 #  upgrade_selected      :boolean          default(FALSE), not null
 #  created_at            :datetime         not null
@@ -141,6 +145,7 @@ end
 #  index_list_entries_on_entry_type_and_entry_id  (entry_type,entry_id)
 #  index_list_entries_on_list_id                  (list_id)
 #  index_list_entries_on_list_id_and_position     (list_id,position) UNIQUE
+#  index_list_entries_on_list_id_and_request_key  (list_id,request_key) UNIQUE WHERE (request_key IS NOT NULL)
 #  index_list_entries_on_mentored_by_entry_id     (mentored_by_entry_id)
 #
 # Foreign Keys
