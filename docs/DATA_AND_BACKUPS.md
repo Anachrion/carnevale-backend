@@ -173,7 +173,7 @@ remove it in the backoffice.
 
 In the order I would do it:
 
-1. **Nightly `pg_dump`, off the box** (`docs/TODO.md` P1). **Done** (2026-07-20) — nightly to R2, 7+4
+1. **Nightly `pg_dump`, off the box** (CARNEVALEB-11). **Done** (2026-07-20) — nightly to R2, 7+4
    rotation, restore tested. See [The nightly database backup](#the-nightly-database-backup).
 2. **Automate the catalog snapshot** (P2). It is manual, so the safety net is only as fresh as the
    last time someone remembered. `bin/catalog-snapshot` is a cron job away.

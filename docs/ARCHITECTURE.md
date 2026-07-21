@@ -6,7 +6,7 @@
 - **Rails API mode** — REST API, no views
 - **Devise + devise-jwt** — authentication, JWT token delivered on login and sent automatically with every request
 - **Action Cable** — WebSocket server for live game sessions
-- **SQLite** (dev) → PostgreSQL (prod)
+- **PostgreSQL** (dev and prod)
 
 ### Frontend (Flutter)
 - **dio** — HTTP client for all REST calls; JWT interceptor attaches the token automatically
@@ -44,10 +44,10 @@
 - Gangs synced across all user devices via the backend
 
 ### Game session
-- User A creates a game: picks scenario, point limit, deployment
+- User A creates a game: picks scenario and Ducat limit (deployment zones are agreed at the table, not in-app)
 - A unique join code is generated and shared with User B
 - User B joins with the code
-- Both users pick their faction and gang
+- Both users pick their gang (its faction comes with the list)
 - Both users can see each other's gang and models
 - Once the game starts, each player can track per-model:
   - HP (life points)
