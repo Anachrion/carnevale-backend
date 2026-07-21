@@ -64,6 +64,52 @@ RSpec.describe Encounter::EntryState, type: :model do
     end
   end
 
+  describe "tokens" do
+    def token(overrides = {})
+      { "id" => "t1", "color" => "crimson", "text" => "Pulse", "toggleable" => true, "active" => true }.merge(overrides)
+    end
+
+    it "is valid with a well-formed token (and a colour-only token with no text)" do
+      expect(build(:entry_state, tokens: [ token, { "id" => "t2", "color" => "teal", "toggleable" => false, "active" => true } ])).to be_valid
+    end
+
+    it "rejects a colour outside the palette" do
+      expect(build(:entry_state, tokens: [ token("color" => "gold") ])).not_to be_valid
+    end
+
+    it "rejects a non-boolean toggleable/active" do
+      expect(build(:entry_state, tokens: [ token("active" => "yes") ])).not_to be_valid
+    end
+
+    it "rejects text longer than the max" do
+      expect(build(:entry_state, tokens: [ token("text" => "x" * (Encounter::EntryState::TOKEN_TEXT_MAX + 1)) ])).not_to be_valid
+    end
+
+    it "rejects duplicate ids" do
+      expect(build(:entry_state, tokens: [ token, token("color" => "teal") ])).not_to be_valid
+    end
+
+    describe "#upsert_token" do
+      it "appends a new token and updates an existing one in place (idempotent replay by id)" do
+        state = build(:entry_state, tokens: [])
+        state.upsert_token(token("id" => "a"))
+        state.upsert_token(token("id" => "b", "color" => "teal"))
+        state.upsert_token(token("id" => "a", "active" => false)) # replay/toggle of a
+
+        expect(state.tokens.map { |t| t["id"] }).to eq(%w[a b])           # order kept, no dup
+        expect(state.tokens.first["active"]).to be(false)                 # a was updated in place
+      end
+    end
+
+    describe "#remove_token" do
+      it "drops the token with the given id" do
+        state = build(:entry_state, tokens: [ token("id" => "a"), token("id" => "b", "color" => "teal") ])
+        state.remove_token("a")
+        expect(state.tokens.map { |t| t["id"] }).to eq(%w[b])
+      end
+    end
+  end
+
   describe "#activated?" do
     it "is true only on the turn the model was stamped with" do
       entry_state = build(:entry_state, counters: base_counters("activated_on_turn" => 3))
@@ -222,6 +268,7 @@ end
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null
+#  tokens                  :json             not null
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
 #  list_entry_id           :bigint           not null

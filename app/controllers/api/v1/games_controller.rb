@@ -266,6 +266,18 @@ module Api
         end
       end
 
+      # Adds or updates one of the current player's own tokens on a model (CARNEVALEB-16) — a free-form
+      # marker (colour + optional label) the player tracks by hand. Keyed on the client-generated `id`,
+      # so a re-sent create replays onto the same row instead of duplicating, and the same call edits a
+      # token or flips its `active` state.
+      def update_token
+        update_entry_state! { |state| state.upsert_token(token_params) }
+      end
+
+      def remove_token
+        update_entry_state! { |state| state.remove_token(params[:token_id]) }
+      end
+
       # The turn counter is per-player: advance/rewind move only the requesting player's cursor
       # (clamped to [1, scenario.turns]) so one player can correct a past-turn score without moving
       # the other's view. See Encounter::Player#advance_turn!/#rewind_turn!.
@@ -397,6 +409,12 @@ module Api
 
       def spell_cast_params
         params.require(:spell_cast).permit(:key, :cast)
+      end
+
+      # No type casting (same as counters_params): JSON carries real booleans/strings, and EntryState's
+      # tokens_shape rejects anything else. `text` is optional (a colour-only token omits it).
+      def token_params
+        params.require(:token).permit(:id, :color, :text, :toggleable, :active).to_h
       end
     end
   end

@@ -29,6 +29,14 @@ module Encounter
       "activated_on_turn" => nil
     }.freeze
 
+    # Player-attached tokens (CARNEVALEB-16): a free-form marker the player sticks on a model to track
+    # an effect a rule granted. Each is { "id" => <client uuid>, "color" => one of TOKEN_COLORS,
+    # "text" => optional label, "toggleable" => bool, "active" => bool }. The colour is a fixed,
+    # theme-independent palette key resolved to a swatch on the client; keeping the key (not a hex)
+    # server-side keeps it themeable and validatable.
+    TOKEN_COLORS = %w[crimson azure teal amethyst fuchsia pewter].freeze
+    TOKEN_TEXT_MAX = 40
+
     belongs_to :list_entry, class_name: "Gang::Entry"
 
     validates :list_entry_id, uniqueness: true
@@ -38,6 +46,7 @@ module Encounter
               presence: true, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
     validate :counters_shape
     validate :spell_casts_shape
+    validate :tokens_shape
 
     # Snapshots the entry's profile stats as both current and starting values, and resets every
     # counter to its default — called once per model when a game starts (Encounter::Game#start!).
@@ -103,6 +112,22 @@ module Encounter
       self.spell_casts = cast ? spell_casts.merge(key => turn) : spell_casts.except(key)
     end
 
+    # Adds a token, or updates the one that already carries this `id` (in place, so its shelf position
+    # is kept). Keying on the client-generated `id` makes a re-sent create idempotent — a flaky-network
+    # retry replays onto the same row instead of conjuring a duplicate — and lets a toggle/edit target
+    # one token. `attrs` is the client payload (string keys); only the known fields are stored.
+    def upsert_token(attrs)
+      attrs = attrs.to_h.stringify_keys.slice("id", "color", "text", "toggleable", "active")
+      updated = tokens.dup
+      idx = updated.index { |t| t["id"] == attrs["id"] }
+      idx ? updated[idx] = attrs : updated << attrs
+      self.tokens = updated
+    end
+
+    def remove_token(id)
+      self.tokens = tokens.reject { |t| t["id"] == id }
+    end
+
     private
 
     def counters_shape
@@ -135,6 +160,32 @@ module Encounter
         errors.add(:spell_casts, "turn for #{key.inspect} must be a positive integer") unless turn.is_a?(Integer) && turn.positive?
       end
     end
+
+    # Each token: { "id" => non-blank string (unique within the model), "color" => a TOKEN_COLORS key,
+    # "text" => optional string (<= TOKEN_TEXT_MAX), "toggleable"/"active" => booleans }.
+    def tokens_shape
+      return errors.add(:tokens, "must be an array") unless tokens.is_a?(Array)
+
+      ids = []
+      tokens.each do |token|
+        next errors.add(:tokens, "each token must be an object") unless token.is_a?(Hash)
+
+        id = token["id"]
+        errors.add(:tokens, "token id must be a non-empty string") unless id.is_a?(String) && id.present?
+        ids << id
+        errors.add(:tokens, "token color must be one of #{TOKEN_COLORS.join(', ')}") unless TOKEN_COLORS.include?(token["color"])
+
+        text = token["text"]
+        unless text.nil? || (text.is_a?(String) && text.length <= TOKEN_TEXT_MAX)
+          errors.add(:tokens, "token text must be a string of at most #{TOKEN_TEXT_MAX} characters")
+        end
+
+        %w[toggleable active].each do |flag|
+          errors.add(:tokens, "token #{flag} must be true or false") unless [ true, false ].include?(token[flag])
+        end
+      end
+      errors.add(:tokens, "token ids must be unique") if ids.compact.length != ids.compact.uniq.length
+    end
   end
 end
 
@@ -151,6 +202,7 @@ end
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null
+#  tokens                  :json             not null
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
 #  list_entry_id           :bigint           not null
