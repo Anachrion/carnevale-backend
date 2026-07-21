@@ -181,7 +181,8 @@ apply the same guard.
 These are fine for testing but **must** be addressed before real production:
 
 1. **No database backups.** Postgres runs in a single container. If the VM or volume
-   dies, data is lost. _(Tracked as P1 in `TODO.md`.)_
+   dies, data is lost. _(Resolved — CARNEVALEB-11; nightly off-site backups now run, see
+   `DATA_AND_BACKUPS.md`. This gaps list is refreshed in full under CARNEVALEB-54.)_
 2. **Background jobs disabled.** `solid_queue` / `solid_cache` / `solid_cable` gems and
    separate `queue`/`cache`/`cable` databases are configured, but their **schemas were
    never generated**, so the Solid Queue worker is turned off (it would crash on missing

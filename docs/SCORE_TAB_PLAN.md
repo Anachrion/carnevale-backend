@@ -1,5 +1,9 @@
 # Score Tab — Implementation Plan
 
+> **Status: implemented.** The Score tab has shipped (`lib/screens/score_tab.dart` in the
+> app; agenda draw/score/discard/confirm, the mulligan window, and turn advance/rewind on the
+> backend). This document is kept as the historical design plan; it is no longer a to-do.
+
 A **Score** tab in the in-progress game page (first tab, before "My Models" and the
 opponent tab). It shows the scenario, the score, the turn counter, and each player's
 agendas (in hand / scored / discarded), and lets a player draw, score, and discard
