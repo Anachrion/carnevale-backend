@@ -38,10 +38,6 @@ gem "solid_cache"
 gem "solid_queue"
 gem "solid_cable"
 
-# Backs the production Action Cable adapter (config/cable.yml). Runs as a Kamal
-# accessory in production; only pub/sub, so no persistence is needed.
-gem "redis"
-
 # Reduces boot times through caching; required in config/boot.rb
 gem "bootsnap", require: false
 
