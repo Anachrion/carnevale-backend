@@ -26,6 +26,7 @@ end
 #  starting_command_points :integer          not null
 #  starting_life_points    :integer          not null
 #  starting_will_points    :integer          not null
+#  tokens                  :json             not null
 #  created_at              :datetime         not null
 #  updated_at              :datetime         not null
 #  list_entry_id           :bigint           not null
