@@ -162,7 +162,7 @@ class ListValidationService
     henchman_count = projected_card_ref_entries.count { |e| e.profile&.keywords&.include?("Henchman") }
     return if hero_count <= henchman_count
 
-    @errors << "the gang cannot have more Heroes (#{hero_count}) than Henchmen (#{henchman_count})"
+    @errors << "too many Heroes: #{hero_count} vs #{henchman_count} Henchmen"
   end
 
   # Enforces the spell-selection rules per pool (rulebook p24, generalized for CARNEVALEB-47's
