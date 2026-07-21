@@ -326,9 +326,13 @@ Devise.setup do |config|
     # `assets:precompile` in the Docker image build boots the production env with
     # SECRET_KEY_BASE_DUMMY and no master key, so credentials can't be decrypted. Use a
     # throwaway secret there; the real one is required at runtime (Kamal sets RAILS_MASTER_KEY).
+    # DEVISE_JWT_SECRET_KEY lets CI supply a throwaway secret without the master key, so
+    # Dependabot-triggered runs (which get no repo secrets) can still boot the app.
     jwt.secret =
       if ENV["SECRET_KEY_BASE_DUMMY"]
         "dummy_secret_for_asset_precompile"
+      elsif ENV["DEVISE_JWT_SECRET_KEY"].present?
+        ENV["DEVISE_JWT_SECRET_KEY"]
       else
         Rails.application.credentials.devise_jwt_secret_key!
       end
