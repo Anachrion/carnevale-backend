@@ -1203,6 +1203,95 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/entries/{list_entry_id}/tokens:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    patch:
+      operationId: updateToken
+      summary: Add or update a player token on one of the current player's own models
+      description: |
+        Player tokens are free-form markers (a colour + optional label, optionally toggleable) the
+        player uses to track an in-game effect a rule granted. Only available while the game is
+        in_progress, and only for the requesting player's own models — the opponent's 404. Each token
+        is keyed by a client-generated `id`: sending the same id again updates that token (edit it /
+        flip its `active`) instead of adding a duplicate, so a retried request is safe. Broadcast to
+        both players as a `game_state` event.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTokenInput"
+      responses:
+        "200":
+          description: The model's full updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryState"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status, an invalid token, or an entry with no state (equipment)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /games/{id}/entries/{list_entry_id}/tokens/{token_id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: token_id
+        in: path
+        required: true
+        schema:
+          type: string
+
+    delete:
+      operationId: removeToken
+      summary: Remove a player token from one of the current player's own models
+      description: |
+        Removes the token with this client-generated id. Only available while the game is
+        in_progress, and only for the requesting player's own models. Broadcast to both players.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: The model's full updated state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EntryState"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status, or an entry with no state (equipment)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /games/{id}/entries/{list_entry_id}/stats:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -2351,7 +2440,7 @@ components:
 
     EntryState:
       type: object
-      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters, activated, dead]
+      required: [life_points, will_points, command_points, stunned, hidden, guarding, carrying_objective, underwater_counters, activated, dead, tokens]
       properties:
         life_points:
           $ref: "#/components/schemas/EntryStatValue"
@@ -2383,6 +2472,44 @@ components:
             Whether this model has lost its last life point. Derived from `life_points.current == 0`,
             not stored separately — so a model is killed by setting its HP to 0 through the usual
             stats endpoint, and revived by giving it HP back. A dead model stays fully editable.
+        tokens:
+          type: array
+          description: Player-attached tokens (free-form markers) on this model.
+          items:
+            $ref: "#/components/schemas/Token"
+
+    Token:
+      type: object
+      required: [id, color, toggleable, active]
+      properties:
+        id:
+          type: string
+          description: Client-generated stable id; re-sending the same id updates the token instead of adding a duplicate.
+        color:
+          type: string
+          enum: [crimson, azure, teal, amethyst, fuchsia, pewter]
+        text:
+          type: string
+          nullable: true
+          maxLength: 40
+          description: Optional label; a colour-only token omits it and renders as a dot.
+        toggleable:
+          type: boolean
+          description: Whether the player can flip it on/off (a recurring effect) rather than only add/remove it.
+        active:
+          type: boolean
+        count:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: A counter token's running total (grows or spends); null for plain/toggleable tokens.
+
+    UpdateTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          $ref: "#/components/schemas/Token"
 
     EntryStatValue:
       type: object

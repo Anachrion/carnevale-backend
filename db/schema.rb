@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_134232) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_195437) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -136,6 +136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_134232) do
     t.integer "starting_command_points", null: false
     t.integer "starting_life_points", null: false
     t.integer "starting_will_points", null: false
+    t.json "tokens", default: [], null: false
     t.datetime "updated_at", null: false
     t.index ["list_entry_id"], name: "index_entry_states_on_list_entry_id", unique: true
   end

@@ -620,6 +620,47 @@ RSpec.describe "Api::V1::Games", type: :request do
     end
   end
 
+  describe "tokens on a model (entries/:list_entry_id/tokens)" do
+    it "adds a token, updates it by id (idempotent replay/toggle), then removes it" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+      base = "/api/v1/games/#{game_id}/entries/#{host_entry_id}/tokens"
+
+      host.patch base, params: { token: { id: "abc", color: "crimson", text: "Pulse", toggleable: true, active: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["tokens"]).to eq([ { "id" => "abc", "color" => "crimson", "text" => "Pulse", "toggleable" => true, "active" => true } ])
+
+      # Same id again = replay/toggle, not a duplicate.
+      host.patch base, params: { token: { id: "abc", color: "crimson", text: "Pulse", toggleable: true, active: false } }.to_json, headers: h
+      expect(json(host)["tokens"].length).to eq(1)
+      expect(json(host)["tokens"].first["active"]).to be(false)
+
+      host.delete "#{base}/abc", headers: h
+      expect(host.response).to have_http_status(:ok)
+      expect(json(host)["tokens"]).to eq([])
+    end
+
+    it "rejects a colour outside the palette" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/tokens",
+                 params: { token: { id: "x", color: "gold", toggleable: false, active: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 404 for the opponent's models" do
+      _host, guest, _h, g, game_id, host_entry_id, = start_game_with_models
+      guest.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/tokens",
+                  params: { token: { id: "x", color: "teal", toggleable: false, active: true } }.to_json, headers: g
+      expect(guest.response).to have_http_status(:not_found)
+    end
+
+    it "rejects edits while the game isn't in progress" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(start: false)
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/tokens",
+                 params: { token: { id: "x", color: "teal", toggleable: false, active: true } }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
+
   describe "PATCH /api/v1/games/:id/entries/:list_entry_id/counters" do
     it "toggles counters on the player's own model, merging partial updates" do
       host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
