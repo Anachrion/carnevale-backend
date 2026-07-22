@@ -414,7 +414,7 @@ module Api
       # No type casting (same as counters_params): JSON carries real booleans/strings, and EntryState's
       # tokens_shape rejects anything else. `text` is optional (a colour-only token omits it).
       def token_params
-        params.require(:token).permit(:id, :color, :text, :toggleable, :active).to_h
+        params.require(:token).permit(:id, :color, :text, :toggleable, :active, :count).to_h
       end
     end
   end

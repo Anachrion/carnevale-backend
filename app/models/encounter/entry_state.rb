@@ -117,7 +117,7 @@ module Encounter
     # retry replays onto the same row instead of conjuring a duplicate — and lets a toggle/edit target
     # one token. `attrs` is the client payload (string keys); only the known fields are stored.
     def upsert_token(attrs)
-      attrs = attrs.to_h.stringify_keys.slice("id", "color", "text", "toggleable", "active")
+      attrs = attrs.to_h.stringify_keys.slice("id", "color", "text", "toggleable", "active", "count")
       updated = tokens.dup
       idx = updated.index { |t| t["id"] == attrs["id"] }
       idx ? updated[idx] = attrs : updated << attrs
@@ -182,6 +182,13 @@ module Encounter
 
         %w[toggleable active].each do |flag|
           errors.add(:tokens, "token #{flag} must be true or false") unless [ true, false ].include?(token[flag])
+        end
+
+        # A counter token carries a non-negative running total (grows or spends); a plain/toggleable
+        # token omits it.
+        count = token["count"]
+        unless count.nil? || (count.is_a?(Integer) && count >= 0)
+          errors.add(:tokens, "token count must be a non-negative integer or null")
         end
       end
       errors.add(:tokens, "token ids must be unique") if ids.compact.length != ids.compact.uniq.length

@@ -2498,6 +2498,11 @@ components:
           description: Whether the player can flip it on/off (a recurring effect) rather than only add/remove it.
         active:
           type: boolean
+        count:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: A counter token's running total (grows or spends); null for plain/toggleable tokens.
 
     UpdateTokenInput:
       type: object
