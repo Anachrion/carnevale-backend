@@ -71,6 +71,8 @@ Rails.application.routes.draw do
           patch "entries/:list_entry_id/counters", action: :update_counters
           patch "entries/:list_entry_id/stats", action: :update_stats
           patch "entries/:list_entry_id/spell_casts", action: :update_spell_cast
+          patch "entries/:list_entry_id/tokens", action: :update_token
+          delete "entries/:list_entry_id/tokens/:token_id", action: :remove_token
           patch :archive
           patch :unarchive
         end
