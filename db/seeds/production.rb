@@ -2,9 +2,12 @@
 #
 # The single account here is the Google Play review account: Google's reviewers sign in with these
 # credentials to examine the app (declared under Play Console → App content → App access, since the
-# whole app sits behind a login). The credentials are intentionally committed — they are handed to
-# Google in plaintext anyway — and this is a plain, NON-admin user with no access to /backoffice.
-# Keep REVIEW_PASSWORD in sync with what is entered in the Play Console.
+# whole app sits behind a login). It is a plain, NON-admin user with no access to /backoffice.
+#
+# Its credentials live in Infisical (prod) and reach the container via config/deploy.yml's
+# env.secret list — never committed to git, matching the project's no-secrets-in-repo posture.
+# Whatever you enter in the Play Console must match the Infisical values. ENV.fetch (not ENV[]) so a
+# missing secret fails loudly instead of seeding an account with a blank, guessable login.
 #
 # Idempotent: find_or_initialize + save (re-)asserts the credentials without creating duplicates,
 # so re-running always leaves a working review login. NOTE this file touches only the review
@@ -12,11 +15,12 @@
 # against an existing production database (e.g. `bin/rails runner 'load "db/seeds/production.rb"'`)
 # without clobbering backoffice-authored catalog data.
 
-REVIEW_EMAIL = "playstore-review@carnevale-app.com"
-REVIEW_PASSWORD = "Review-YEKLljkgccgGZ7VD"
+REVIEW_EMAIL    = ENV.fetch("PLAY_REVIEW_EMAIL")
+REVIEW_PASSWORD = ENV.fetch("PLAY_REVIEW_PASSWORD")
+REVIEW_USERNAME = "PlayReview"
 
 review = User.find_or_initialize_by(email: REVIEW_EMAIL)
-review.username = "PlayReview"
+review.username = REVIEW_USERNAME
 review.password = REVIEW_PASSWORD
 review.admin = false
 review.save!

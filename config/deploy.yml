@@ -77,6 +77,10 @@ env:
     # any client built without a matching --dart-define=API_KEY starts getting 401s.
     # See docs/DEPLOYMENT.md "Rotating or enabling API_KEY" before changing it.
     - API_KEY
+    # Google Play review account credentials, consumed by db/seeds/production.rb (ENV.fetch).
+    # Kept in Infisical, not git; must match what is entered in the Play Console → App access.
+    - PLAY_REVIEW_EMAIL
+    - PLAY_REVIEW_PASSWORD
 
 # Persist Active Storage uploads across deploys (config.active_storage.service = :local).
 volumes:
