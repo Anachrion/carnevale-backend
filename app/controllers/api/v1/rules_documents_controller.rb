@@ -17,9 +17,9 @@ module Api
     class RulesDocumentsController < BaseController
       def index
         documents = RulesDocument.all
-        return unless stale?(etag: documents, public: true)
+        return unless stale?(etag: documents)
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         render json: documents.map(&:as_json)
       end
     end

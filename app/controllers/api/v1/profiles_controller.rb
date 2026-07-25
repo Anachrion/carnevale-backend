@@ -18,18 +18,18 @@ module Api
       def index
         scope = Catalog::Profile.all
         scope = scope.where(faction: params[:faction]) if params[:faction].present?
-        return unless stale?(etag: catalog_etag(scope), public: true)
+        return unless stale?(etag: catalog_etag(scope))
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         profiles = scope.includes(:weapons, :special_rules, :card_references, profile_spell_pools: :profile_spell_pool_disciplines)
         render json: profiles.map { |p| profile_json(p) }
       end
 
       def show
         profile = Catalog::Profile.includes(:weapons, :special_rules, :card_references, profile_spell_pools: :profile_spell_pool_disciplines).find(params[:id])
-        return unless stale?(etag: catalog_etag(profile), public: true)
+        return unless stale?(etag: catalog_etag(profile))
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         render json: profile_json(profile)
       end
 

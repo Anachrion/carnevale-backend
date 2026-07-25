@@ -19,9 +19,9 @@ module Api
         scope = Catalog::Ability.all
         scope = scope.where(category: params[:category]) if params[:category].present?
         scope = scope.order(:category, :name)
-        return unless stale?(scope, public: true)
+        return unless stale?(scope)
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         render json: scope.map { |a| { name: a.name, category: a.category, description: a.description } }
       end
     end

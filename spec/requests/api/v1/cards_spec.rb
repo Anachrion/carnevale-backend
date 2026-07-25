@@ -53,9 +53,12 @@ RSpec.describe "Api::V1::Cards", type: :request do
       expect(identifiers).to eq(["vatican-altar-boy"])
     end
 
-    it "advertises a public, cacheable response and returns 304 when unchanged" do
+    it "advertises a privately cacheable response and returns 304 when unchanged" do
       get "/api/v1/cards/manifest"
-      expect(response.headers["Cache-Control"]).to include("public", "max-age")
+      expect(response.headers["Cache-Control"]).to include("private", "max-age")
+      # Never "public": Thruster would then shared-cache this by URL alone and serve it
+      # without the X-Api-Key check ever running. See AuthenticatesClient.
+      expect(response.headers["Cache-Control"]).not_to include("public")
       etag = response.headers["ETag"]
       expect(etag).to be_present
 

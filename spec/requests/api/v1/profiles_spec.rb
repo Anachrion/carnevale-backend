@@ -24,9 +24,12 @@ RSpec.describe "Api::V1::Profiles", type: :request do
       expect(body["card_references"].map { |c| c["identifier"] }).to include("guild-capodecina")
     end
 
-    it "advertises a public, cacheable response and 304s when nothing changed" do
+    it "advertises a privately cacheable response and 304s when nothing changed" do
       get "/api/v1/profiles"
-      expect(response.headers["Cache-Control"]).to include("public", "max-age")
+      expect(response.headers["Cache-Control"]).to include("private", "max-age")
+      # Never "public": Thruster would then shared-cache this by URL alone and serve it
+      # without the X-Api-Key check ever running. See AuthenticatesClient.
+      expect(response.headers["Cache-Control"]).not_to include("public")
       etag = response.headers["ETag"]
       expect(etag).to be_present
 

@@ -6,11 +6,14 @@ RSpec.describe "Api::V1 catalogue caching", type: :request do
   describe "GET /api/v1/spells" do
     before { create(:spell) }
 
-    it "advertises a public, cacheable response with a validator" do
+    it "advertises a privately cacheable response with a validator" do
       get "/api/v1/spells"
 
       expect(response).to have_http_status(:ok)
-      expect(response.headers["Cache-Control"]).to include("public", "max-age")
+      expect(response.headers["Cache-Control"]).to include("private", "max-age")
+      # Never "public": Thruster would then shared-cache this by URL alone and serve it
+      # without the X-Api-Key check ever running. See AuthenticatesClient.
+      expect(response.headers["Cache-Control"]).not_to include("public")
       expect(response.headers["ETag"]).to be_present
     end
 

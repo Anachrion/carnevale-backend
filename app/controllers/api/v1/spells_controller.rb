@@ -19,9 +19,9 @@ module Api
         scope = Catalog::Spell.all
         scope = scope.where(discipline: params[:discipline]) if params[:discipline].present?
         scope = scope.order(:discipline, :cantrip, :name)
-        return unless stale?(scope, public: true)
+        return unless stale?(scope)
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         render json: scope.map { |s| SpellSerializer.new(s).as_json }
       end
     end

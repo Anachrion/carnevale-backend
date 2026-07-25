@@ -22,6 +22,14 @@
 # Included by both Api::V1::BaseController and the Devise-derived auth controllers (sessions,
 # registrations, passwords), which don't share a base class — mirrors how RendersApiErrors is
 # already shared the same way.
+#
+# DO NOT mark responses `public: true` (in `expires_in` or `stale?`). Thruster sits in front of
+# Puma and caches public responses keyed on URL only — X-Api-Key is not part of the cache key.
+# The first keyed request would then populate the cache and every later request would be served
+# straight from it, never reaching Rails, so this check would never run. That silently made the
+# whole read-only catalog fetchable without a key. The catalog controllers therefore use plain
+# `expires_in 1.hour` (private): clients still revalidate cheaply via ETag, but no shared cache
+# can answer on the app's behalf.
 module AuthenticatesClient
   extend ActiveSupport::Concern
 

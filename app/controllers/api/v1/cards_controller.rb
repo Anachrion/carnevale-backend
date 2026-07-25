@@ -22,9 +22,9 @@ module Api
       def manifest
         scope = Catalog::CardReference.includes(:profile)
         scope = scope.where(profiles: { faction: params[:faction] }).references(:profile) if params[:faction].present?
-        return unless stale?(scope, public: true)
+        return unless stale?(scope)
 
-        expires_in 1.hour, public: true
+        expires_in 1.hour
         render json: { cards: scope.map { |cr| card_json(cr) } }
       end
 
