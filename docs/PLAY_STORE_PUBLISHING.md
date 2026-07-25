@@ -38,7 +38,7 @@ Two different keys are involved. This trips people up, so:
 
 | Key | Held by | Role |
 |---|---|---|
-| **Upload key** | us — `~/carnevale-upload.jks` | signs the AAB we upload to Play |
+| **Upload key** | us — in Infisical (`/android` folder, Production) | signs the AAB we upload to Play |
 | **App signing key** | Google | signs the APKs actually delivered to devices |
 
 Play App Signing is mandatory for new apps, so Google generates and holds the second
@@ -46,10 +46,20 @@ key. Our upload key only proves to Play that an upload is genuinely from us.
 
 **Status: already created** (18 July 2026).
 
-- Keystore: `~/carnevale-upload.jks`, alias `upload`
+- Keystore + passwords live in **Infisical** (project `carnevale`, Production, `/android`
+  folder): `ANDROID_UPLOAD_KEYSTORE_B64` (base64 of the .jks), `ANDROID_UPLOAD_STORE_PASSWORD`,
+  `ANDROID_UPLOAD_KEY_ALIAS`. Alias `upload`.
 - Certificate: `CN=Carnevale, OU=Anachrion, O=Carnevale, C=FR`
-- Gradle reads it from `~/Workspace/carnevale/android/key.properties` (git-ignored,
-  contains plaintext passwords)
+- `~/Workspace/carnevale/bin/android-signing` materializes `android/key.properties`
+  and `android/upload-keystore.jks` (both git-ignored) from those secrets. Gradle reads
+  `key.properties` from there. Run before a release build:
+
+  ```sh
+  infisical run --env=prod --path=/android -- bin/android-signing
+  ```
+
+  There is no longer a standalone `~/carnevale-upload.jks` — Infisical is the source of
+  truth, and the working copy is regenerated on demand.
 
 > **Do not regenerate it.** `android/app/build.gradle.kts` silently falls back to
 > the *debug* keys when `key.properties` is missing, which produces an AAB Play will
@@ -60,9 +70,10 @@ key. Our upload key only proves to Play that an upload is genuinely from us.
 > # expect CN=Carnevale …   (CN=Android Debug means key.properties wasn't picked up)
 > ```
 
-Back the `.jks` and its passwords up in a password manager. Losing it is recoverable
-— Google supports an upload-key reset precisely because they hold the real signing
-key — but it costs days of support turnaround.
+The `.jks` and its passwords are backed up in Infisical (see above), so losing the
+laptop no longer loses the key. Even if it were lost, it's recoverable — Google
+supports an upload-key reset precisely because they hold the real signing key — but
+that costs days of support turnaround, so Infisical is the fast path.
 
 ## 2. Building the bundle
 
