@@ -103,14 +103,19 @@ the private `Anachrion/carnevale` repo:
 ```bash
 # from the carnevale frontend repo/
 infisical run --env=prod --projectId 5924d033-10b3-4a0a-abb0-bb6766ede058 -- \
-  flutter build apk \
-    --dart-define=API_HOST=62.238.30.155.sslip.io \
+  flutter build apk --release \
+    --dart-define=API_HOST=carnevale-app.com \
     --dart-define=API_USE_TLS=true \
     --dart-define=API_KEY="$API_KEY"
 ```
 
 Both the web and APK builds point at the same production API — bumping the API host
 means updating it in `bin/release-web` **and** the APK build command.
+
+**Alphas moved from `62.238.30.155.sslip.io` to `carnevale-app.com` at alpha.26** (the
+`API_KEY` release, which already forced every tester to reinstall). The sslip.io host
+stays in `config/deploy.yml` `proxy.hosts` only to keep alpha.25-and-earlier builds
+resolving; it can be dropped once nobody is on one of those.
 
 `API_KEY` must be baked in: the backend rejects requests without `X-Api-Key`. Any APK
 built before this was added stops working the moment `API_KEY` is live in production,
