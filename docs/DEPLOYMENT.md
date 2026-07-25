@@ -125,8 +125,10 @@ aren't fully wired up yet — see below.)
   > to its own database.
 
   > The `--domain` flag is required: the CLI defaults to the US instance
-  > (`app.infisical.com`) and this org lives on EU Cloud. `infisical init` records it in
-  > `.infisical.json` so you only pass it by hand for `login`.
+  > (`app.infisical.com`) and this org lives on EU Cloud. `infisical init` does **not**
+  > persist it, so `.infisical.json` carries a hand-added `"domain"` field — that is what
+  > makes every later `infisical run` hit the EU instance on any machine. Without it the
+  > CLI falls back to per-machine login state, which a fresh checkout doesn't have.
 
 ### Redeploy (the normal case)
 After committing code changes:
