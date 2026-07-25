@@ -41,8 +41,9 @@ Persistent Docker volumes survive redeploys: `…_storage` (Active Storage uploa
 
 ## Deploying the backend
 
-Prerequisites (one-time, on your Mac): **Docker running**, and a populated
-`.kamal/deploy.env` (git-ignored secrets — see onboarding notes / Bitwarden).
+Prerequisites (one-time, on your Mac): **Docker running**, and the **Infisical CLI**
+logged in against EU Cloud (`infisical login --domain https://eu.infisical.com`).
+Secrets live in the `carnevale` project, Production environment.
 
 Kamal builds from the **working tree** (not `git archive`), so that LFS card images
 ship as real bytes. Run `git lfs pull` once so they're materialised, and **commit
@@ -50,7 +51,7 @@ your code changes** before deploying.
 
 ```bash
 cd ~/Workspace/carnevale-backend
-source .kamal/deploy.env && kamal deploy
+infisical run --env=prod -- kamal deploy
 ```
 
 ### Everyday commands
@@ -81,12 +82,12 @@ build artifact). The next Kamal deploy ships it inside the image.
 
 ```bash
 # from carnevale-backend/
-bin/release-web            # build + stage into public/app
-bin/release-web --deploy   # ...and run `kamal deploy` immediately
+bin/release-web                                        # build + stage into public/app
+infisical run --env=prod -- bin/release-web --deploy   # ...and run `kamal deploy` immediately
 
 # or stage, then deploy manually:
 bin/release-web
-source .kamal/deploy.env && kamal deploy
+infisical run --env=prod -- kamal deploy
 ```
 
 It builds with `--dart-define=API_HOST=62.238.30.155.sslip.io
@@ -117,7 +118,8 @@ means updating it in `bin/release-web` **and** the APK build command.
 |---|---|
 | `config/deploy.yml` | The entire Kamal config (committed) |
 | `.kamal/secrets` | Secret *references* only — no real values (committed) |
-| `.kamal/deploy.env` | The real secret **values** (git-ignored) |
+| `.infisical.json` | Which Infisical project/environment this repo reads (committed) |
+| Infisical → `carnevale` → Production | The real secret **values** |
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
 | `docs/DEPLOYMENT.md` | Full backend deploy detail, rationale, and TODOs |
 | `docs/DATA_AND_BACKUPS.md` | Catalog snapshots & the backup gap |

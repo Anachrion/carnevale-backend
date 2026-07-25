@@ -40,8 +40,9 @@ if [[ "${1:-}" == "--deploy" ]]; then
   echo "==> Deploying with Kamal"
   cd "$BACKEND_DIR"
   # shellcheck disable=SC1091
-  source .kamal/deploy.env
+  source bin/_load-secrets
+  require_secrets KAMAL_REGISTRY_PASSWORD RAILS_MASTER_KEY CARNEVALE_BACKEND_DATABASE_PASSWORD
   kamal deploy
 else
-  echo "    Run 'source .kamal/deploy.env && kamal deploy' to ship it, or re-run with --deploy."
+  echo "    Run 'infisical run --env=prod -- kamal deploy' to ship it, or re-run with --deploy."
 fi

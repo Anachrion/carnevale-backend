@@ -30,7 +30,8 @@ remote="${ssh_user}@${host}"
 
 echo "==> Exporting the catalog inside the running container on ${host}"
 # shellcheck disable=SC1091
-source .kamal/deploy.env
+source bin/_load-secrets
+require_secrets KAMAL_REGISTRY_PASSWORD RAILS_MASTER_KEY CARNEVALE_BACKEND_DATABASE_PASSWORD
 kamal app exec --reuse "bin/rails catalog:export"
 
 echo "==> Locating that container"

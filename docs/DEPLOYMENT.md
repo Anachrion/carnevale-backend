@@ -19,7 +19,7 @@ and what to do to make it truly production-ready.
 | **Cost** | ~€7.19/mo (server €6.59 + IPv4 €0.60) |
 | **Database** | PostgreSQL 17, running as a Kamal accessory container on the same VM |
 | **TLS** | Automatic Let's Encrypt via kamal-proxy, on a free `sslip.io` hostname |
-| **Redeploy** | `source .kamal/deploy.env && bundle exec kamal deploy` |
+| **Redeploy** | `infisical run --env=prod -- bundle exec kamal deploy` |
 
 ---
 
@@ -109,27 +109,37 @@ aren't fully wired up yet — see below.)
 
 ### Prerequisites (one-time, on your Mac)
 - **Docker Desktop** running (Kamal builds the image locally).
-- **`.kamal/deploy.env`** present (git-ignored). It exports the two secrets Kamal needs:
+- **Infisical CLI**, logged in against EU Cloud and linked to this repo:
   ```bash
-  export KAMAL_REGISTRY_PASSWORD="ghp_..."                 # GitHub PAT, `write:packages` scope
-  export CARNEVALE_BACKEND_DATABASE_PASSWORD="…"           # keep forever (see warning below)
+  brew install infisical
+  infisical login --domain https://eu.infisical.com
+  infisical init --domain https://eu.infisical.com   # writes .infisical.json (committed)
   ```
+  The Production environment of the `carnevale` project holds the three secrets Kamal
+  needs: `KAMAL_REGISTRY_PASSWORD` (GitHub PAT, `write:packages`), `RAILS_MASTER_KEY`,
+  and `CARNEVALE_BACKEND_DATABASE_PASSWORD`. `POSTGRES_PASSWORD` is not stored — it is
+  derived from the DB password in `.kamal/secrets`, since both must be the same value.
+
   > ⚠️ **The DB password must never change.** The Postgres data volume was initialized
   > with it on the first deploy. If you lose or change it, the app can no longer log in
   > to its own database.
+
+  > The `--domain` flag is required: the CLI defaults to the US instance
+  > (`app.infisical.com`) and this org lives on EU Cloud. `infisical init` records it in
+  > `.infisical.json` so you only pass it by hand for `login`.
 
 ### Redeploy (the normal case)
 After committing code changes:
 ```bash
 cd ~/Workspace/carnevale-backend
-source .kamal/deploy.env && bundle exec kamal deploy
+infisical run --env=prod -- bundle exec kamal deploy
 ```
 Kamal builds from your **committed** git HEAD (uncommitted changes are ignored), so
 **commit before deploying**.
 
 ### First-time setup (already done; for reference / rebuilds)
 ```bash
-source .kamal/deploy.env && bundle exec kamal setup
+infisical run --env=prod -- bundle exec kamal setup
 ```
 `setup` also installs Docker on the server and boots the Postgres accessory + proxy.
 Use it when provisioning a fresh server; use `deploy` for everyday updates.
@@ -148,8 +158,9 @@ bundle exec kamal app boot         # restart the app container
 | File | Purpose | Committed? |
 |---|---|---|
 | `config/deploy.yml` | The entire Kamal config (server, image, proxy, env, accessory, volumes) | ✅ yes |
-| `.kamal/secrets` | Secret *references* only (`$VAR` / `$(cat …)`) — no real values | ✅ yes |
-| `.kamal/deploy.env` | The real secret **values** | ❌ git-ignored |
+| `.kamal/secrets` | Secret *references* only (`$VAR`) — no real values | ✅ yes |
+| `.infisical.json` | Which Infisical project/environment this repo reads — no values | ✅ yes |
+| Infisical, `carnevale` → Production | The real secret **values** | — not in the repo |
 | `Dockerfile` | Production image build (Rails 8 default) | ✅ yes |
 
 ### A build-time gotcha to know about

@@ -109,13 +109,20 @@ UTC** and runs `/opt/carnevale/db-backup.sh` (source: `deploy/backup/db-backup.s
 `.../weekly/…`. R2 is off-Hetzner, so it survives the box — and the provider — dying.
 
 **Credentials.** An R2 API token scoped to the one bucket, written to `/root/.config/rclone/rclone.conf`
-(mode 600) by `bin/install-db-backups`, which reads them from the gitignored `.kamal/backup.env`. Two
+(mode 600) by `bin/install-db-backups`, which reads `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` /
+`R2_SECRET_ACCESS_KEY` / `R2_BUCKET` from the environment (Infisical, Production). Two
 rclone options matter for R2 and are set in that config: `no_check_bucket` (a bucket-scoped token
 can't do the account-level bucket check rclone runs before an upload) and `no_head` (R2 flaps 501 on
 the post-PUT HEAD; the PUT is integrity-checked via Content-MD5 anyway).
 
-**Install / update.** From a machine with SSH to the box: `bin/install-db-backups`. Idempotent —
-re-run it to push a script change or after rotating the R2 token.
+> ⚠️ **The R2 keys are not yet in Infisical.** `.kamal/backup.env` no longer exists on any
+> known machine, so the server's `rclone.conf` is the only copy of the secret access key —
+> and R2 shows it only once, at creation. Either read it off the box and store it in
+> Infisical, or issue a fresh bucket-scoped token and re-run the installer.
+
+**Install / update.** From a machine with SSH to the box:
+`infisical run --env=prod -- bin/install-db-backups`. Idempotent — re-run it to push a
+script change or after rotating the R2 token.
 
 **Check it is healthy.** On the box:
 

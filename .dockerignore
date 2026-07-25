@@ -43,6 +43,9 @@
 /config/deploy*.yml
 /.kamal
 
+# Ignore the Infisical project link (deploy-time only, never needed in the image).
+/.infisical.json
+
 # Ignore development files
 /.devcontainer
 
