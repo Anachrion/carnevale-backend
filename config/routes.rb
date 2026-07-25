@@ -14,6 +14,11 @@ Rails.application.routes.draw do
   # so it must resolve without any login and is served with its own self-contained layout.
   get "privacy", to: "pages#privacy"
 
+  # Public account-deletion instructions. Google Play requires a deletion URL on the store listing
+  # for any app with accounts (https://carnevale-app.com/account-deletion); like /privacy it must
+  # resolve without a login.
+  get "account-deletion", to: "pages#account_deletion"
+
   # Everything under /api answers in JSON, whatever the caller asked for. Without this, a client
   # that sends no Accept header (or */*) leaves request.format as */*, and Devise's failure app —
   # which cannot serialise that — answers a bad password in plain text rather than the JSON error

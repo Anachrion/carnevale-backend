@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Standalone public pages (privacy policy, and later terms). These are the only HTML the site
-# serves besides the Flutter web app at root and the Devise-gated backoffice — the Google Play
-# listing links here for the privacy policy, so the pages carry their own self-contained layout
-# rather than the application/backoffice chrome.
+# Standalone public pages (privacy policy, account-deletion instructions, and later terms). These
+# are the only HTML the site serves besides the Flutter web app at root and the Devise-gated
+# backoffice — the Google Play listing links here (privacy policy + account-deletion URL are both
+# required for publishing), so the pages carry their own self-contained layout rather than the
+# application/backoffice chrome.
 class PagesController < ApplicationController
   layout false
 
   def privacy
+  end
+
+  def account_deletion
   end
 end
