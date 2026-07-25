@@ -134,4 +134,5 @@ and cannot be fixed remotely — testers have to install a new build.
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
 | `docs/DEPLOYMENT.md` | Full backend deploy detail, rationale, and TODOs |
 | `docs/DATA_AND_BACKUPS.md` | Catalog snapshots & the backup gap |
+| `docs/AVAILABILITY.md` | Keeping the box up: timeouts, rate limits, DoS resilience |
 | `~/Workspace/carnevale` | The Flutter frontend repo (separate) |
