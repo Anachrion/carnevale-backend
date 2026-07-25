@@ -10,6 +10,10 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  # Public privacy policy. The Google Play listing points here (https://carnevale-app.com/privacy),
+  # so it must resolve without any login and is served with its own self-contained layout.
+  get "privacy", to: "pages#privacy"
+
   # Everything under /api answers in JSON, whatever the caller asked for. Without this, a client
   # that sends no Accept header (or */*) leaves request.format as */*, and Devise's failure app —
   # which cannot serialise that — answers a bad password in plain text rather than the JSON error
