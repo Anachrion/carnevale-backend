@@ -73,9 +73,11 @@ sideloading and the GitHub prerelease flow — an AAB cannot be installed direct
 
 ```sh
 cd ~/Workspace/carnevale
-flutter build appbundle --release \
-  --dart-define=API_HOST=carnevale-app.com \
-  --dart-define=API_USE_TLS=true
+infisical run --env=prod --projectId 5924d033-10b3-4a0a-abb0-bb6766ede058 -- \
+  flutter build appbundle --release \
+    --dart-define=API_HOST=carnevale-app.com \
+    --dart-define=API_USE_TLS=true \
+    --dart-define=API_KEY="$API_KEY"
 # → build/app/outputs/bundle/release/app-release.aab
 ```
 
@@ -83,6 +85,10 @@ flutter build appbundle --release \
 to `localhost:3000`; omit them and the store build cannot reach the backend at all.
 Store builds point at `carnevale-app.com`, never at the `sslip.io` address used for
 alpha APKs.
+
+`API_KEY` comes from Infisical (backend project, Production). Omit it and the build
+gets **401 on every request** — the backend requires `X-Api-Key` once `API_KEY` is set
+there. `--projectId` is needed because the frontend repo has no `.infisical.json`.
 
 After switching branches, run `flutter clean` first so no stale generated sources
 end up in a bundle that becomes permanent on upload.

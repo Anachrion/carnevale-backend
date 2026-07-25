@@ -72,6 +72,11 @@ env:
   secret:
     - RAILS_MASTER_KEY
     - CARNEVALE_BACKEND_DATABASE_PASSWORD
+    # Shared client key. Every API request must carry it as X-Api-Key; the check in
+    # AuthenticatesClient fails OPEN when this is blank, so the moment it is set here
+    # any client built without a matching --dart-define=API_KEY starts getting 401s.
+    # See docs/DEPLOYMENT.md "Rotating or enabling API_KEY" before changing it.
+    - API_KEY
 
 # Persist Active Storage uploads across deploys (config.active_storage.service = :local).
 volumes:

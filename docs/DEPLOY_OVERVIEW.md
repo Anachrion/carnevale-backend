@@ -102,13 +102,19 @@ the private `Anachrion/carnevale` repo:
 
 ```bash
 # from the carnevale frontend repo/
-flutter build apk \
-  --dart-define=API_HOST=62.238.30.155.sslip.io \
-  --dart-define=API_USE_TLS=true
+infisical run --env=prod --projectId 5924d033-10b3-4a0a-abb0-bb6766ede058 -- \
+  flutter build apk \
+    --dart-define=API_HOST=62.238.30.155.sslip.io \
+    --dart-define=API_USE_TLS=true \
+    --dart-define=API_KEY="$API_KEY"
 ```
 
 Both the web and APK builds point at the same production API — bumping the API host
 means updating it in `bin/release-web` **and** the APK build command.
+
+`API_KEY` must be baked in: the backend rejects requests without `X-Api-Key`. Any APK
+built before this was added stops working the moment `API_KEY` is live in production,
+and cannot be fixed remotely — testers have to install a new build.
 
 ---
 

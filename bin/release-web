@@ -5,10 +5,16 @@
 # build with the production API host baked in, then drops the output into public/app so the next
 # `kamal deploy` ships it inside the image. public/app is gitignored: it is a build artifact, always
 # regenerated here, never committed. Pass --deploy to run `kamal deploy` immediately afterwards.
+#
+# API_KEY is baked into the bundle at build time, so this must run under Infisical:
+#   infisical run --env=prod -- bin/release-web --deploy
 set -euo pipefail
 
 BACKEND_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND_DIR="${CARNEVALE_FRONTEND_DIR:-$BACKEND_DIR/../carnevale}"
+
+# shellcheck disable=SC1091
+source "$BACKEND_DIR/bin/_load-secrets"
 
 # The web bundle is served same-origin from Rails at carnevale-app.com/app/, so bake the SAME host
 # it's served from. That makes /api/v1 calls same-origin — no CORS, no ALLOWED_ORIGINS needed.
@@ -21,12 +27,18 @@ if [[ ! -d "$FRONTEND_DIR" ]]; then
   exit 1
 fi
 
+# Baked into the bundle so it can send X-Api-Key. A build without it produces a bundle the
+# production backend rejects with 401 once API_KEY is set there, so require it up front rather
+# than discovering it after a full Flutter build.
+require_secrets API_KEY
+
 echo "==> Building Flutter web (API_HOST=$API_HOST, base-href=/app/)"
 (
   cd "$FRONTEND_DIR"
   flutter build web \
     --dart-define=API_HOST="$API_HOST" \
     --dart-define=API_USE_TLS=true \
+    --dart-define=API_KEY="$API_KEY" \
     --base-href=/app/
 )
 

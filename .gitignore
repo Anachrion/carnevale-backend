@@ -53,3 +53,6 @@
 # on the deploy machine" model as the LFS card images. Not committed: the minified output makes
 # huge, noisy diffs and would drift from the frontend source it was built from.
 /public/app
+
+# macOS Finder artifacts.
+.DS_Store

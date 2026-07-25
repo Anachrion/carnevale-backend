@@ -165,6 +165,32 @@ bundle exec kamal app boot         # restart the app container
 | Infisical, `carnevale` → Production | The real secret **values** | — not in the repo |
 | `Dockerfile` | Production image build (Rails 8 default) | ✅ yes |
 
+### Rotating or enabling API_KEY
+
+`API_KEY` is a shared client key identifying a build as an official Carnevale frontend.
+It is **not** per-user auth (that's the JWT) — a key baked into a public client can't
+stay secret. It only raises the bar against casual scraping, alongside Rack::Attack
+throttling and CORS.
+
+The check in `app/controllers/concerns/authenticates_client.rb` **fails open**: blank
+`API_KEY` means no check at all. That makes enabling or rotating it a breaking change
+with a strict ordering, because clients bake the key in at build time:
+
+1. Set the new value in Infisical (Production).
+2. Rebuild **and ship** every client with the new key:
+   - Web — `infisical run --env=prod -- bin/release-web`
+   - Android — see [PLAY_STORE_PUBLISHING.md](PLAY_STORE_PUBLISHING.md)
+3. Only then `infisical run --env=prod -- kamal deploy`.
+
+Get the order wrong and every client gets `401 Unauthorized` until a new build reaches
+it. The web bundle ships inside the image, so it updates atomically with the backend —
+but **installed APKs cannot be fixed remotely**. Any alpha tester on an older build is
+locked out until they install a new one. Treat an `API_KEY` change as a coordinated
+release, never a config tweak.
+
+There is deliberately no transition mode that accepts both old and new keys. If you need
+one, that's a code change to `authenticates_client.rb`, not a deploy-time option.
+
 ### A build-time gotcha to know about
 The image build runs `assets:precompile` **without the master key** (using
 `SECRET_KEY_BASE_DUMMY=1`), so encrypted credentials can't be decrypted at build time.
