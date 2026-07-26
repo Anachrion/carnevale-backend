@@ -134,4 +134,13 @@ Rails.application.routes.draw do
   # lives under its own /backoffice namespace and is reached directly or via /users/sign_in, where
   # after_sign_in_path_for lands signed-in admins on it — so root no longer needs a per-user branch.
   root to: "web_app#index"
+
+  # Deep-link landing paths (password-reset email link, game-join link). These are absolute-path
+  # URLs the Flutter app is directed to from outside — the reset email links to
+  # "#{frontend_url}/reset-password?reset_password_token=…" and join links to "/join?code=…". On
+  # web the app reads them from window.location via app_links, so Rails just needs to serve the same
+  # SPA entry document here as at root; the app then routes to the right screen client-side. Without
+  # these, those URLs 404 before Flutter ever boots. (Native app opens them as OS deep links.)
+  get "reset-password", to: "web_app#index"
+  get "join", to: "web_app#index"
 end
