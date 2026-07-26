@@ -1,13 +1,19 @@
 require 'rails_helper'
 
 RSpec.describe "Api::V1::Passwords", type: :request do
+  include ActiveJob::TestHelper
+
   let(:headers) { { "Content-Type" => "application/json" } }
   let!(:user) { create(:user, email: "reset@example.com") }
 
   describe "POST /api/v1/password" do
+    # Devise now delivers the reset email via deliver_later, so the mail lands on the queue rather
+    # than in ActionMailer::Base.deliveries until the enqueued job runs.
     it "sends reset instructions for a known email" do
       expect {
-        post "/api/v1/password", params: { user: { email: user.email } }.to_json, headers: headers
+        perform_enqueued_jobs do
+          post "/api/v1/password", params: { user: { email: user.email } }.to_json, headers: headers
+        end
       }.to change { ActionMailer::Base.deliveries.size }.by(1)
 
       expect(response).to have_http_status(:ok)

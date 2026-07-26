@@ -33,6 +33,15 @@ class User < ApplicationRecord
     login = conditions[:email].to_s.strip.downcase
     where("lower(email) = :login OR lower(username) = :login", login: login).first
   end
+
+  private
+
+  # Enqueue Devise emails (reset-password instructions, password-change notices) as background jobs
+  # instead of blocking the request while SMTP delivers. This dispatches ActionMailer's built-in
+  # delivery job, which runs on Solid Queue in production.
+  def send_devise_notification(notification, *args)
+    devise_mailer.send(notification, self, *args).deliver_later
+  end
 end
 
 # == Schema Information

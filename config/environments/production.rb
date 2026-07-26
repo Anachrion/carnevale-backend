@@ -79,14 +79,24 @@ Rails.application.configure do
   # and rely on the ticket, which is the actual credential.
   config.action_cable.disable_request_forgery_protection = true
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Deliver mail (password-reset instructions, etc.) via Postmark's SMTP relay. Postmark uses the
+  # same Server API Token for both the SMTP username and password; it's injected as a Kamal secret
+  # from Infisical (see config/deploy.yml). Absent during the image build's assets:precompile boot
+  # (no runtime ENV then), which is harmless because nothing sends mail at build time.
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.perform_deliveries = true
+  # Deliveries run inside a Solid Queue job, so raising on failure lets the job record the error and
+  # retry instead of silently swallowing a bounce.
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.smtp_settings = {
+    address: "smtp.postmarkapp.com",
+    port: 587,
+    user_name: ENV["POSTMARK_API_TOKEN"],
+    password: ENV["POSTMARK_API_TOKEN"],
+    authentication: :plain,
+    enable_starttls_auto: true,
+    domain: "carnevale-app.com"
+  }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

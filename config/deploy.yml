@@ -81,6 +81,9 @@ env:
     # Kept in Infisical, not git; must match what is entered in the Play Console → App access.
     - PLAY_REVIEW_EMAIL
     - PLAY_REVIEW_PASSWORD
+    # Postmark Server API Token — used as both SMTP username and password for outgoing mail
+    # (password-reset instructions). See config/environments/production.rb smtp_settings.
+    - POSTMARK_API_TOKEN
 
 # Persist Active Storage uploads across deploys (config.active_storage.service = :local).
 volumes:
