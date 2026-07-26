@@ -35,6 +35,14 @@ require_secrets API_KEY
 echo "==> Building Flutter web (API_HOST=$API_HOST, base-href=/app/)"
 (
   cd "$FRONTEND_DIR"
+  # Always build from scratch. Flutter caches the generated web_plugin_registrant.dart per build
+  # configuration under .dart_tool/flutter_build/<hash>/ and does NOT regenerate it when a new
+  # plugin is added to pubspec.yaml — the hash is unchanged, so the stale registrant is reused and
+  # the new plugin is silently never registered. That shipped an /app bundle where
+  # PackageInfo.fromPlatform() threw MissingPluginException and the About dialog refused to open.
+  # A release build is infrequent; correctness is worth the extra couple of minutes.
+  flutter clean
+  flutter pub get
   flutter build web \
     --dart-define=API_HOST="$API_HOST" \
     --dart-define=API_USE_TLS=true \
