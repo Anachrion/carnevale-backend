@@ -94,6 +94,10 @@ Rails.application.routes.draw do
   # in Backoffice::BaseController (Devise login), which also lets the internal Grover render
   # request through via a render token — so it is NOT wrapped in an `authenticate :user` block.
   namespace :backoffice do
+    # Bare /backoffice/ lands on the profiles index. It sits behind authenticate_backoffice!,
+    # so an unauthenticated visitor is bounced to the Devise sign-in page rather than 404ing.
+    root to: "profiles#index"
+
     resources :profiles, only: %i[index new create edit update] do
       member do
         get   :card
