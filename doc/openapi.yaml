@@ -180,7 +180,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: "#/components/schemas/Account"
         "401":
           description: Not authenticated
         "422":
@@ -2072,6 +2072,24 @@ components:
             Long-lived, single-use credential used to obtain a fresh JWT once the short-lived one
             expires (see POST /token). Store it securely; it is only ever returned here and on
             refresh, and is rotated on every use.
+
+    Account:
+      type: object
+      # The current user's account details, with no credentials attached. Returned by PATCH /account:
+      # editing the username neither issues a JWT nor rotates the refresh token, so (unlike Session)
+      # there is no `refresh_token` here — the existing credentials stay valid and unchanged.
+      required: [user]
+      properties:
+        user:
+          type: object
+          required: [id, email, username]
+          properties:
+            id:
+              type: integer
+            email:
+              type: string
+            username:
+              type: string
 
     List:
       type: object
