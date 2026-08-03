@@ -13,9 +13,7 @@ licence.
 
 Note that the AGPL is a copyleft licence with a network clause: because this backend
 is reached over a network, anyone who modifies it and serves it to users must offer
-those users the source of their modified version. This is deliberate. The project
-was released under Apache 2.0 until 2026-08-03; that grant still covers the versions
-published before then.
+those users the source of their modified version. This is deliberate.
 
 ## Do not contribute third-party intellectual property
 

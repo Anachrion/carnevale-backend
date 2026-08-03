@@ -16,10 +16,6 @@ Note on section 13: this is a network-served application. If you modify it and
 make it available to users over a network, the AGPL requires you to offer those
 users the Corresponding Source of your modified version.
 
-Versions of this project published before 2026-08-03 were released under the
-Apache License, Version 2.0. That grant is not revoked for those versions; it
-simply does not extend to subsequent ones.
-
 ================================================================================
 THIRD-PARTY INTELLECTUAL PROPERTY — NOT LICENSED UNDER THE AGPL
 ================================================================================

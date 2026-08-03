@@ -124,7 +124,6 @@ The **source code** in this repository is licensed under the
 
 This is a network-served application, so §13 matters: if you modify it and let users interact
 with it over a network, you must offer those users the source of your modified version.
-(Versions published before 2026-08-03 were Apache 2.0; that grant still stands for them.)
 
 This project bundles artwork, card data, rules text, faction symbols, and other content that is
 the intellectual property of **TT Combat** ("Carnevale"). That content is **not** covered by the
