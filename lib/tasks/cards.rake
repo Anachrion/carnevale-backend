@@ -127,7 +127,7 @@ namespace :cards do
   #
   # Unlike cards:render this needs no running server and no Chrome — it assembles the faces already
   # in public/cards, so run it *after* publishing, not instead of it. The file name carries the day
-  # it was built; all but the last few generations of each faction are pruned.
+  # it was built, and the sheet it supersedes is deleted.
   desc "Build the printable faction card PDFs into public/cards/pdf"
   task :pdf, [ :faction ] => :environment do |_t, args|
     results = if args[:faction].present?

@@ -218,15 +218,20 @@ RSpec.describe FactionCardPdf do
     end
 
     describe ".prune!" do
-      it "keeps the most recent generations of each faction and deletes the rest" do
-        %w[2026-06-01 2026-07-01 2026-08-01 2026-08-03].each { |date| touch_sheet("guild", date) }
+      it "keeps each faction's newest sheet and deletes every superseded one" do
+        %w[2026-06-01 2026-07-01 2026-08-03].each { |date| touch_sheet("guild", date) }
         touch_sheet("vatican", "2026-06-01")
 
-        described_class.prune!(keep: 2)
+        described_class.prune!
 
         expect(described_class.existing.map { |s| [ s.faction, s.date.iso8601 ] })
-          .to contain_exactly([ "guild", "2026-08-01" ], [ "guild", "2026-08-03" ],
-            [ "vatican", "2026-06-01" ])
+          .to contain_exactly([ "guild", "2026-08-03" ], [ "vatican", "2026-06-01" ])
+      end
+
+      it "leaves a faction with a single sheet alone" do
+        touch_sheet("guild", "2026-08-03")
+
+        expect { described_class.prune! }.not_to change { described_class.existing.size }
       end
     end
   end

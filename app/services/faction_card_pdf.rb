@@ -64,10 +64,6 @@ class FactionCardPdf
   # model name is one accent away from (Cetean Upiór today, a typographic apostrophe tomorrow).
   FOOTER_FONT = Rails.root.join("public", "fonts", "EBGaramond-Regular.ttf").freeze
 
-  # Only ever the newest file per faction is linked, but the previous ones are kept so a link
-  # someone already shared does not 404 the moment the cards are regenerated.
-  KEEP_GENERATIONS = 3
-
   FILENAME_PATTERN = /\Acarnevale-(?<faction>[a-z]+)-cards-(?<date>\d{4}-\d{2}-\d{2})\.pdf\z/
 
   # The order the factions are offered in, matching the app's create-gang picker
@@ -121,8 +117,8 @@ class FactionCardPdf
     Result.new(faction: faction.to_s, missing: 0, error: e.message)
   end
 
-  # Build every faction, then drop all but the most recent KEEP_GENERATIONS of each. Returns one
-  # Result per faction, in DISPLAY_ORDER.
+  # Build every faction, then drop each one's superseded sheets. Returns one Result per faction, in
+  # DISPLAY_ORDER.
   def self.generate_all(date: Date.current)
     results = factions.map { |faction| generate(faction, date: date) }
     prune!
@@ -148,9 +144,13 @@ class FactionCardPdf
     end.sort_by(&:date)
   end
 
-  def self.prune!(keep: KEEP_GENERATIONS)
-    existing.group_by(&:faction).flat_map { |_faction, sheets| sheets.sort_by(&:date).reverse.drop(keep) }
-      .each { |sheet| sheet.path.delete }
+  # Delete every sheet a faction has apart from its newest. Nothing links the older ones — the page
+  # and the publish screen both show only the newest — and they are regenerable in seconds from the
+  # faces on disk, so keeping them buys nothing and costs ~165 MB of the cards volume per generation.
+  def self.prune!
+    existing.group_by(&:faction).each_value do |sheets|
+      sheets.sort_by(&:date)[0...-1].each { |sheet| sheet.path.delete }
+    end
   end
 
   # Leaders first, then Heroes, then everyone else — the same ranking the app's Cards and Hire

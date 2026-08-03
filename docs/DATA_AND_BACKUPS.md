@@ -58,8 +58,8 @@ backoffice, and from that moment production holds the newer copy.
   sit inside `public/cards` — same volume, same gitignore, same "publish on the server" caveat.
   Rebuild them from *Publish cards* → **Rebuild printable sheets** (a background job), or
   `kamal app exec "bin/rails cards:pdf"`. They only ever show what was last published, so rebuild
-  them **after** a render pass, never instead of one. Budget the disk: ~165 MB per generation across
-  the seven factions, and `FactionCardPdf::KEEP_GENERATIONS` keeps the last three (~500 MB).
+  them **after** a render pass, never instead of one. Budget ~165 MB of the cards volume: a rebuild
+  keeps only each faction's newest sheet and deletes the one it supersedes.
 - **`internal_version` and the staleness digests** — render bookkeeping. Rebuilt by publishing.
   `catalog:export` deliberately does not carry them.
 
