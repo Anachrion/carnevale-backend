@@ -3037,7 +3037,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - Trade
   abilities:
@@ -3080,7 +3079,6 @@
   life_points: 13
   size: 40
   keywords:
-  - The Guild
   - Hero
   - Unique
   - Discipline (Blood Rites, Wild Magic)
@@ -3118,7 +3116,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   - Trade
   abilities:
@@ -3153,7 +3150,6 @@
   life_points: 13
   size: 30
   keywords:
-  - The Guild
   - Hero
   abilities:
   - Expert Marksman (2)
@@ -3191,7 +3187,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Concealment (+2)
@@ -3235,7 +3230,6 @@
   life_points: 14
   size: 30
   keywords:
-  - The Guild
   - Hero
   - Unique
   - Trade
@@ -3273,7 +3267,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - House of Virtue
   abilities:
@@ -3310,7 +3303,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Mindless
@@ -3354,7 +3346,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   - Discipline (Blood Rites)
@@ -3392,7 +3383,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   abilities:
@@ -3429,7 +3419,6 @@
   life_points: 13
   size: 40
   keywords:
-  - The Guild
   - Hero
   - End of Days
   abilities:
@@ -3468,7 +3457,6 @@
   life_points: 14
   size: 40
   keywords:
-  - The Guild
   - Hero
   - End of Days
   abilities:
@@ -3504,7 +3492,6 @@
   life_points: 13
   size: 30
   keywords:
-  - The Guild
   - Hero
   - Trade
   abilities:
@@ -3539,7 +3526,6 @@
   life_points: 13
   size: 30
   keywords:
-  - The Guild
   - Leader
   - Trade
   abilities:
@@ -3577,7 +3563,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - Trade
   abilities:
@@ -3620,7 +3605,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   abilities:
@@ -3655,7 +3639,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   abilities:
@@ -3692,7 +3675,6 @@
   life_points: 6
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - Dog
   abilities:
@@ -3737,7 +3719,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Companion (Dog)
@@ -3772,7 +3753,6 @@
   life_points: 14
   size: 40
   keywords:
-  - The Guild
   - Hero
   - Trade
   - Unique
@@ -3814,7 +3794,6 @@
   life_points: 13
   size: 40
   keywords:
-  - The Guild
   - Henchman
   - House of Virtue
   abilities:
@@ -3849,7 +3828,6 @@
   life_points: 9
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - End of Days
   abilities:
@@ -3884,7 +3862,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Hero
   abilities:
   - Expert Offence (1)
@@ -3921,7 +3898,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - Trade
   abilities:
@@ -3966,7 +3942,6 @@
   life_points: 14
   size: 30
   keywords:
-  - The Guild
   - Leader
   abilities:
   - Fast Swimmer (2)
@@ -4003,7 +3978,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - House of Virtue
   abilities:
@@ -4047,7 +4021,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - First Strike (2)
@@ -4090,7 +4063,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Leader
   - End of Days
   abilities:
@@ -4128,7 +4100,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Leader
   - House of Virtue
   abilities:
@@ -4168,7 +4139,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Boat Crew
@@ -4211,7 +4181,6 @@
   life_points: 30
   size: 75
   keywords:
-  - The Guild
   - Hero
   - End of Days
   - Unique
@@ -4254,7 +4223,6 @@
   life_points: 15
   size: 40
   keywords:
-  - The Guild
   - Leader
   - End of Days
   abilities:
@@ -4295,7 +4263,6 @@
   life_points: 13
   size: 40
   keywords:
-  - The Guild
   - Henchman
   - End of Days
   abilities:
@@ -4334,7 +4301,6 @@
   life_points: 8
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Concealment (+1)
@@ -4377,7 +4343,6 @@
   life_points: 10
   size: 30
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Concealment (+1)
@@ -4421,7 +4386,6 @@
   life_points: 13
   size: 30
   keywords:
-  - The Guild
   - Leader
   - Hero
   - Unique
@@ -4463,7 +4427,6 @@
   life_points: 9
   size: 30
   keywords:
-  - The Guild
   - Henchman
   - End of Days
   abilities:
@@ -4507,7 +4470,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Hero
   - Trade
   abilities: []
@@ -4542,7 +4504,6 @@
   life_points: 13
   size: 30
   keywords:
-  - The Guild
   - Hero
   - Unique
   abilities:
@@ -4579,7 +4540,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   - Discipline (Divinity, Fateweaving)
@@ -4616,7 +4576,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   abilities:
@@ -4651,7 +4610,6 @@
   life_points: 13
   size: 40
   keywords:
-  - The Guild
   - Henchman
   abilities:
   - Expert Offence (2)
@@ -4684,7 +4642,6 @@
   life_points: 12
   size: 30
   keywords:
-  - The Guild
   - Hero
   abilities:
   - Boat Crew
@@ -4719,7 +4676,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   abilities:
   - Aerial Attack
@@ -4756,7 +4712,6 @@
   life_points: 14
   size: 40
   keywords:
-  - The Guild
   - Hero
   - End of Days
   abilities:
@@ -4797,7 +4752,6 @@
   life_points: 15
   size: 40
   keywords:
-  - The Guild
   - Hero
   abilities:
   - Boat Crew
@@ -4833,7 +4787,6 @@
   life_points: 11
   size: 30
   keywords:
-  - The Guild
   - Hero
   - House of Virtue
   - Discipline (Blood Rites, Runes of Sovereignty, Wild Magic)
