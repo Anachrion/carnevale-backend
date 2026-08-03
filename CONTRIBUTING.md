@@ -58,6 +58,56 @@ See the [README](README.md) for setup. Before opening a pull request:
 New source files should carry the standard AGPL license header (see any existing
 `.rb` file under `app/` for the exact text).
 
+## Adding a new language
+
+The backend serves English (the default and fallback) and French. The translated
+text is what the API sends back to the Flutter app — validation errors, Devise's
+auth messages — not the app's own UI strings, which live in the frontend repo. The
+locale is negotiated per request from the `Accept-Language` header the client sends
+(see `app/controllers/concerns/switches_locale.rb`); the backoffice is
+English-only.
+
+To add a language — Spanish (`es`) in the examples below:
+
+**1. Check the gems cover it.** Most of the user-facing text comes from
+[`rails-i18n`](https://github.com/svenfuchs/rails-i18n/tree/master/rails/locale)
+(ActiveModel/ActiveRecord validation messages, dates, number formats) and
+[`devise-i18n`](https://github.com/tigrish/devise-i18n/tree/master/rails/locales)
+(sign-in/sign-up/reset-password messages). If your language isn't in both, the
+missing pieces will silently fall back to English — still worth contributing, but
+say so in the pull request.
+
+**2. Register the locale** in `config/application.rb`:
+
+```ruby
+config.i18n.available_locales = %i[en fr es]
+```
+
+Use the bare language subtag. Locale negotiation matches on the primary subtag
+only, so a request asking for `es-MX` resolves to `es`; a regional locale such as
+`:"es-MX"` in `available_locales` would never be selected by a header.
+
+**3. Add `config/locales/es.yml`** with the keys the app itself defines under `en:`
+in `config/locales/en.yml`. Only app-specific keys belong here — framework and
+Devise strings come from the gems above. Anything you leave out falls back to
+English (`config.i18n.fallbacks`), so a partial translation is safe to merge.
+
+**4. Mirror any Devise overrides.** `config/locales/devise.en.yml` overrides some
+of devise-i18n's English wording (for example, the invalid-login message mentions
+usernames). Where our text differs from upstream, add the matching keys to
+`config/locales/devise.es.yml`; otherwise skip the file entirely and let
+devise-i18n handle it.
+
+**5. Add a spec.** `spec/requests/api/v1/locale_spec.rb` asserts that a request
+with `Accept-Language` gets messages in that language. Add a case for yours,
+following the French one.
+
+Two known gaps, so you don't go hunting for them: the overridden Devise mailer
+views in `app/views/devise/mailer/` are hardcoded English rather than translated,
+and the backoffice ERB templates have no `t()` calls. Making either translatable is
+a welcome contribution, but it's a separate change from adding a language — open
+an issue first.
+
 ---
 
 ## Developer Certificate of Origin 1.1
