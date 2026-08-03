@@ -18,4 +18,14 @@ RSpec.describe "Web app SPA", type: :request do
       expect(response.content_type).to start_with("text/html")
     end
   end
+
+  # Every file in the bundle keeps its URL across releases, so a cached copy must be revalidated or
+  # the browser goes on running an old build after a deploy — which is exactly what happened when
+  # public/'s far-future "immutable" header applied here (see WebAppCacheControl).
+  it "serves the bundle with a revalidating cache-control" do
+    get "/app/index.html"
+
+    expect(response).to have_http_status(:ok)
+    expect(response.headers["cache-control"]).to eq("no-cache")
+  end
 end

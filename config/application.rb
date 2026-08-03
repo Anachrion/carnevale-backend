@@ -2,6 +2,10 @@ require_relative "boot"
 
 require "rails/all"
 
+# Middleware is inserted while the app is still initializing, so it can't be autoloaded from lib
+# (Zeitwerk ignores the file below in return).
+require_relative "../lib/web_app_cache_control"
+
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
@@ -14,7 +18,12 @@ module CarnevaleBackend
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    config.autoload_lib(ignore: %w[assets tasks web_app_cache_control.rb])
+
+    # The Flutter web bundle under /app keeps the same filenames across releases, so it must not
+    # inherit the far-future immutable caching public/ gets. Top of the stack, so it has the last
+    # word over the header ActionDispatch::Static sets below it.
+    config.middleware.insert(0, WebAppCacheControl)
 
     # Configuration for the application, engines, and railties goes here.
     #

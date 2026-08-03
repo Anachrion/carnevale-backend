@@ -17,7 +17,8 @@ Rails.application.configure do
 
   # Cache assets for far-future expiry since they are all digest stamped. Card images under
   # /cards are immutable per internal_version (the manifest hands out ?v= busted URLs), so they
-  # can safely be marked immutable too.
+  # can safely be marked immutable too. The Flutter web bundle under /app is the one exception —
+  # its filenames are stable across releases — and WebAppCacheControl overrides this for it.
   config.public_file_server.headers = { "cache-control" => "public, max-age=#{1.year.to_i}, immutable" }
 
   # Enable serving of images, stylesheets, and JavaScripts from an asset server.
