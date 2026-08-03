@@ -40,6 +40,8 @@
 - Browse all profiles
 - Filter by faction
 - View full card (front/back)
+- Printable sheets: one PDF per faction at `/cards`, A4, front and back side by side at tarot size
+  (`FactionCardPdf`, rebuilt from the backoffice's publish page)
 
 ### Gangs
 - Create a gang (name, faction, point limit — default 100)

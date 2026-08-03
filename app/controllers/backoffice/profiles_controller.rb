@@ -325,6 +325,24 @@ module Backoffice
 
       queued = @scope == "all" ? refs : stale
       @profiles = queued.map(&:profile).uniq.sort_by { |p| [ p.faction.to_s, p.name.to_s ] }
+
+      # The printable PDFs on /cards are built from the faces this page renders, so their generation
+      # dates belong here: they are how an author sees that the public downloads have caught up.
+      @print_sheets = FactionCardPdf.latest
+    end
+
+    # POST /backoffice/profiles/print_sheets
+    #
+    # Rebuild the printable faction PDFs the public /cards page hands out, stamped with today's date.
+    # Handed to a job rather than done here — see FactionCardPdfJob for why. It prints the faces as
+    # they currently stand on disk, which is why it belongs *after* the render pass on this page
+    # rather than beside it.
+    def print_sheets
+      FactionCardPdfJob.perform_later
+
+      redirect_to publish_backoffice_profiles_path,
+        notice: "Rebuilding the printable sheets from the cards as they stand. It takes about a " \
+                "minute — reload this page and the dates below will have moved on."
     end
 
     # GET /backoffice/profiles/:id/illustration_editor

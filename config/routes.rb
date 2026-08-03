@@ -19,6 +19,12 @@ Rails.application.routes.draw do
   # resolve without a login.
   get "account-deletion", to: "pages#account_deletion"
 
+  # Public download page for the printable faction card sheets (FactionCardPdf). The PDFs
+  # themselves are static files under public/cards/pdf, served straight off the same volume as the
+  # card images — this route is only the page that links the newest one per faction. public/cards
+  # holds no index, so the static file server falls through to here for the bare path.
+  get "cards", to: "pages#cards"
+
   # Everything under /api answers in JSON, whatever the caller asked for. Without this, a client
   # that sends no Accept header (or */*) leaves request.format as */*, and Devise's failure app —
   # which cannot serialise that — answers a bad password in plain text rather than the JSON error
@@ -113,6 +119,9 @@ Rails.application.routes.draw do
         get  :export_pdf
         get  :export_png
         get  :publish
+        # Rebuild the printable per-faction PDFs the public /cards page links (FactionCardPdf).
+        # Driven from the publish page, since it is the step that follows rendering.
+        post :print_sheets
         # Live preview for a profile that does not exist yet (the new form has no id to post to).
         post :new_card_preview
       end

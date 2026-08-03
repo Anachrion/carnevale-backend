@@ -27,4 +27,11 @@ class PagesController < ApplicationController
 
   def account_deletion
   end
+
+  # The printable card sheets. Reads the generated files off disk rather than a table: the PDFs are
+  # derived data on the same volume as the card images, and their names carry everything the page
+  # shows (faction and generation date), so there is nothing to keep in sync.
+  def cards
+    @sheets = FactionCardPdf.latest
+  end
 end

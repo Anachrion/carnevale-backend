@@ -746,5 +746,72 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
       expect(response).to have_http_status(:forbidden)
     end
+
+    it "shows the generation date of each printable sheet the public page offers" do
+      FileUtils.mkdir_p(FactionCardPdf.output_dir)
+      FactionCardPdf.output_dir.join("carnevale-guild-cards-2026-08-03.pdf").write("%PDF-1.4")
+
+      get publish_backoffice_profiles_path
+
+      expect(response.body).to include("/cards/pdf/carnevale-guild-cards-2026-08-03.pdf")
+      expect(response.body).to include("2026-08-03")
+    end
+
+    it "says the public page has nothing when no sheet has been built" do
+      get publish_backoffice_profiles_path
+
+      expect(response.body).to include("No print sheet has been built yet")
+    end
+  end
+
+  describe "POST print_sheets" do
+    let(:images_dir) { Pathname(Dir.mktmpdir) }
+
+    before do
+      sign_in admin
+      stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+    end
+
+    after { FileUtils.remove_entry(images_dir) }
+
+    # A published card: a real (tiny) WebP on each face, which is all FactionCardPdf reads.
+    def publish!(reference)
+      image = Vips::Image.black(20, 34, bands: 3)
+      image.webpsave(reference.front_path.to_s)
+      image.webpsave(reference.back_path.to_s)
+    end
+
+    it "hands the rebuild to a job rather than doing it in the request" do
+      expect { post print_sheets_backoffice_profiles_path }
+        .to have_enqueued_job(FactionCardPdfJob)
+
+      expect(response).to redirect_to(publish_backoffice_profiles_path)
+      expect(flash[:notice]).to match(/Rebuilding the printable sheets/)
+    end
+
+    it "builds the sheets for the factions whose cards are published when the job runs" do
+      publish!(create(:card_reference, profile: profile, identifier: "guild-capodecina"))
+
+      perform_enqueued_jobs { post print_sheets_backoffice_profiles_path }
+
+      expect(FactionCardPdf.latest.map(&:faction)).to eq([ "guild" ])
+    end
+
+    it "leaves the other factions' sheets unbuilt rather than failing over them" do
+      publish!(create(:card_reference, profile: profile, identifier: "guild-capodecina"))
+      create(:card_reference, profile: create(:profile, faction: "vatican", name: "Priest"),
+        identifier: "vatican-priest")
+
+      expect { perform_enqueued_jobs { post print_sheets_backoffice_profiles_path } }.not_to raise_error
+
+      expect(FactionCardPdf.latest.map(&:faction)).to eq([ "guild" ])
+    end
+
+    it "is admin-only" do
+      sign_in create(:user)
+
+      expect { post print_sheets_backoffice_profiles_path }.not_to have_enqueued_job(FactionCardPdfJob)
+      expect(response).to have_http_status(:forbidden)
+    end
   end
 end

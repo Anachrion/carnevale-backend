@@ -183,3 +183,37 @@
     })();
   </script>
 <% end %>
+
+<%#
+  Step two, and deliberately its own block rather than part of the render button: the print sheets
+  are assembled from the faces on disk, so they only pick up a change once it has been published
+  above. Same reason the dates are shown — they are how an author tells whether /cards has caught up.
+%>
+<h2 style="font-size:16px;margin:32px 0 8px;">Printable sheets</h2>
+
+<div style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:16px;">
+  <p style="margin:0 0 12px;font-size:13px;color:#374151;">
+    The per-faction PDFs offered on <%= link_to "/cards", "/cards" %> — one A4 page per card, front and
+    back side by side at tarot size. They are built from the card pictures as they stand right now, so
+    rebuild them <strong>after</strong> publishing, and they will carry today's date. Rebuilding runs in
+    the background and takes about a minute; reload this page to see the dates move on.
+  </p>
+
+  <% if @print_sheets.any? %>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      <% @print_sheets.each do |sheet| %>
+        <a href="<%= sheet.url %>" class="pill" style="<%= faction_pill_style(sheet.faction) %>text-decoration:none;">
+          <%= sheet.faction.capitalize %> · <%= sheet.date.iso8601 %>
+        </a>
+      <% end %>
+    </div>
+  <% else %>
+    <p style="margin:0 0 14px;font-size:13px;color:#6b7280;">
+      No print sheet has been built yet, so <%= link_to "/cards", "/cards" %> currently offers nothing.
+    </p>
+  <% end %>
+
+  <%# No confirmation: rebuilding is idempotent — a second run the same day overwrites the same file. %>
+  <%= button_to "⎙ Rebuild printable sheets", print_sheets_backoffice_profiles_path,
+        class: "btn btn-indigo", form: { style: "display:inline;" } %>
+</div>

@@ -53,6 +53,13 @@ backoffice, and from that moment production holds the newer copy.
   (`carnevale_backend_cards`) that, after the first deploy, **masks the image's directory** — so
   from that point on a newer card in the image no longer reaches the server. Publish on the server
   instead.
+- **`public/cards/pdf/*`** — the printable per-faction sheets the public `/cards` page hands out
+  (`FactionCardPdf`). Built from the faces above, so they are derived data of derived data, and they
+  sit inside `public/cards` — same volume, same gitignore, same "publish on the server" caveat.
+  Rebuild them from *Publish cards* → **Rebuild printable sheets** (a background job), or
+  `kamal app exec "bin/rails cards:pdf"`. They only ever show what was last published, so rebuild
+  them **after** a render pass, never instead of one. Budget the disk: ~165 MB per generation across
+  the seven factions, and `FactionCardPdf::KEEP_GENERATIONS` keeps the last three (~500 MB).
 - **`internal_version` and the staleness digests** — render bookkeeping. Rebuilt by publishing.
   `catalog:export` deliberately does not carry them.
 

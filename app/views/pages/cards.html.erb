@@ -1,0 +1,128 @@
+<%#
+  Printable faction card sheets. Self-contained like the other public pages (privacy,
+  account-deletion): no application layout, no login. The rows come straight from the files
+  FactionCardPdf wrote into public/cards/pdf.
+%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="all">
+  <title>Printable Cards — Carnevale Companion</title>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.65;
+      color: #1a1a1a;
+      background: #f7f7f8;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+    h1 { font-size: 2rem; margin: 0 0 .25rem; }
+    h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; }
+    .meta { color: #666; font-size: .9rem; margin-bottom: 2rem; }
+    a { color: #2f6f4f; }
+    ul { padding-left: 1.25rem; }
+    li { margin: .3rem 0; }
+    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,.1); color: #666; font-size: .875rem; }
+
+    .sheets { list-style: none; margin: 1.5rem 0 0; padding: 0; }
+    .sheets li { margin: 0 0 .6rem; }
+    .sheet {
+      display: flex; align-items: center; gap: .9rem;
+      padding: .85rem 1.1rem;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .sheet:hover { border-color: #2f6f4f; }
+    .sheet .name { font-weight: 600; font-size: 1.05rem; }
+    .sheet .detail { color: #666; font-size: .85rem; }
+    .sheet .grow { flex: 1; }
+    .sheet .action { color: #2f6f4f; font-weight: 600; font-size: .9rem; white-space: nowrap; }
+    .swatch { width: 10px; height: 34px; border-radius: 3px; flex: none; }
+    .empty { padding: 1.1rem; background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 12px; color: #666; }
+
+    @media (prefers-color-scheme: dark) {
+      body { color: #e6e6e6; background: #17181a; }
+      .meta, footer, .sheet .detail, .empty { color: #9aa0a6; }
+      a { color: #6fbf95; }
+      footer { border-top-color: rgba(255,255,255,.12); }
+      .sheet, .empty { background: #202124; border-color: rgba(255,255,255,.12); }
+      .sheet:hover { border-color: #6fbf95; }
+      .sheet .action { color: #6fbf95; }
+    }
+    @media (max-width: 480px) {
+      .sheet { flex-wrap: wrap; }
+      .sheet .grow { flex-basis: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>Printable Cards</h1>
+    <p class="meta">Carnevale Companion &middot; one PDF per faction, ready to print and cut</p>
+
+    <p>
+      Every model in a faction, as a print-ready PDF. Each page holds one card &mdash; its front and
+      back side by side &mdash; at the exact tarot size of <strong>70 &times; 120&nbsp;mm</strong>, with
+      thin crop marks to cut against. Cards run in the same order as the app: Leaders first, then
+      Heroes, then Henchmen, alphabetical within each.
+    </p>
+
+    <% if @sheets.any? %>
+      <ul class="sheets">
+        <% @sheets.each do |sheet| %>
+          <li>
+            <a class="sheet" href="<%= sheet.url %>" download>
+              <span class="swatch" style="<%= faction_swatch_style(sheet.faction) %>"></span>
+              <span>
+                <span class="name"><%= sheet.faction.capitalize %></span><br>
+                <span class="detail">
+                  Cards as of <%= sheet.date.strftime("%-d %B %Y") %>
+                  &middot; <%= number_to_human_size(sheet.byte_size) %>
+                </span>
+              </span>
+              <span class="grow"></span>
+              <span class="action">Download PDF &darr;</span>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="empty">
+        The print sheets have not been generated yet. Please check back shortly.
+      </p>
+    <% end %>
+
+    <h2>Printing them</h2>
+    <ul>
+      <li>Print at <strong>100% / actual size</strong>. Any &ldquo;fit to page&rdquo; or
+        &ldquo;shrink oversized pages&rdquo; option will scale the cards off tarot size &mdash; turn it off.</li>
+      <li>Use A4 paper. Card stock of around 250&ndash;300&nbsp;g/m&sup2; holds up far better in play than
+        ordinary paper.</li>
+      <li>Cut along the crop marks: the four short lines around each card meet at its corners.</li>
+      <li>The front and back of a card sit next to each other on the same page, so nothing needs to be
+        printed double-sided &mdash; cut both out and glue or sleeve them back to back.</li>
+    </ul>
+
+    <h2>Keeping up to date</h2>
+    <p>
+      The date in each file name is the day those cards were generated. Corrections happen, so if you
+      printed a card a while ago it is worth comparing against the current sheet &mdash; or against the
+      card in the app, which always shows the latest version.
+    </p>
+
+    <footer>
+      Carnevale is a trademark of its respective owner. This companion app is an unofficial,
+      fan-made tool and is not affiliated with or endorsed by the publisher of the game.
+      See our <a href="/privacy">Privacy Policy</a>.
+    </footer>
+  </main>
+</body>
+</html>

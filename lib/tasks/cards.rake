@@ -119,4 +119,31 @@ namespace :cards do
     puts "cards:reversion — baselined #{tally[:baselined]}, bumped #{tally[:bumped]}, " \
          "unchanged #{tally[:unchanged]}, missing images #{tally[:missing]}"
   end
+
+  # Build the printable per-faction PDFs the public /cards page hands out (see FactionCardPdf).
+  #
+  #   bin/rails cards:pdf                 # every faction
+  #   bin/rails 'cards:pdf[doctors]'      # one faction
+  #
+  # Unlike cards:render this needs no running server and no Chrome — it assembles the faces already
+  # in public/cards, so run it *after* publishing, not instead of it. The file name carries the day
+  # it was built; all but the last few generations of each faction are pruned.
+  desc "Build the printable faction card PDFs into public/cards/pdf"
+  task :pdf, [ :faction ] => :environment do |_t, args|
+    results = if args[:faction].present?
+      [ FactionCardPdf.generate(args[:faction]) ].tap { FactionCardPdf.prune! }
+    else
+      FactionCardPdf.generate_all
+    end
+
+    results.each do |result|
+      if result.ok?
+        note = result.missing.positive? ? " (left out #{result.missing} unpublished card(s))" : ""
+        puts "cards:pdf — #{result.path.basename} · " \
+             "#{ActiveSupport::NumberHelper.number_to_human_size(result.path.size)}#{note}"
+      else
+        warn "cards:pdf — skipped #{result.faction}: #{result.error}"
+      end
+    end
+  end
 end
