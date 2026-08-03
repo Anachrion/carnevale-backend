@@ -1,17 +1,27 @@
 Carnevale Companion — Backend
-Copyright 2026 Anachrion (https://github.com/Anachrion)
+Copyright (C) 2026 Anachrion (https://github.com/Anachrion) and contributors
 
-This software is licensed under the Apache License, Version 2.0 (the
-"License"); see the LICENSE file. You may obtain a copy of the License at
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version. See the LICENSE file, or:
 
-    http://www.apache.org/licenses/LICENSE-2.0
+    https://www.gnu.org/licenses/agpl-3.0.html
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
+
+Note on section 13: this is a network-served application. If you modify it and
+make it available to users over a network, the AGPL requires you to offer those
+users the Corresponding Source of your modified version.
+
+Versions of this project published before 2026-08-03 were released under the
+Apache License, Version 2.0. That grant is not revoked for those versions; it
+simply does not extend to subsequent ones.
 
 ================================================================================
-THIRD-PARTY INTELLECTUAL PROPERTY — NOT LICENSED UNDER APACHE 2.0
+THIRD-PARTY INTELLECTUAL PROPERTY — NOT LICENSED UNDER THE AGPL
 ================================================================================
 
 This is an unofficial, fan-made project. It is not affiliated with, endorsed
@@ -25,17 +35,27 @@ licensors. All rights are reserved by their respective owners.
 
 TT Combat materials are included in this repository, including for example:
 
-  - Card face renders and illustrations
-      public/cards/**, app/assets/images/illustrations/**,
-      public/card-template/**, db/catalog/blobs/**
+  - Illustrations and card templates
+      app/assets/images/illustrations/**, public/card-template/**,
+      db/catalog/blobs/**
   - Card data, statistics, and rules text
       db/catalog/**
   - Faction symbols and in-game iconography
 
+(Rendered card faces under public/cards/** are generated from the above and are
+no longer committed to this repository, but the same reservation applies to them
+wherever they are produced or deployed.)
+
 These materials are reproduced and redistributed WITH THE PERMISSION of
 TT Combat. That permission is granted to this project. It does NOT extend to
-you: the Apache License covers only the source code in this repository and
-grants NO rights whatsoever in TT Combat's intellectual property.
+you: the GNU Affero General Public License covers only the source code in this
+repository and grants NO rights whatsoever in TT Combat's intellectual property.
+
+Accordingly, these materials are aggregated with, but are not part of, the
+program licensed under the AGPL. Nothing in the AGPL — including the obligation
+in section 13 to convey Corresponding Source to users interacting with the
+program over a network — grants, or can grant, any licence in TT Combat's
+intellectual property, and no such licence is offered here.
 
 If you fork, clone, or otherwise reuse this repository, you are solely
 responsible for obtaining your own permission from TT Combat before
@@ -43,9 +63,11 @@ reproducing, distributing, or making any use of their intellectual property.
 Absent such permission, you must remove all TT Combat materials from any copy
 you distribute or deploy.
 
-Apache License 2.0, Section 6 (Trademarks) applies: no rights are granted to
-use the "Carnevale" name, the TT Combat name, or any related names, logos, or
-trademarks, except as required for reasonable and customary description of the
-origin of the work.
+No rights are granted to use the "Carnevale" name, the TT Combat name, or any
+related names, logos, or trademarks, except as required for reasonable and
+customary description of the origin of the work. Pursuant to section 7(e) of the
+GNU Affero General Public License, this is declared as a supplementary term:
+the licence does not grant permission to use the trade names, trademarks,
+service marks, or product names of TT Combat Ltd. or of the licensors.
 
-TT Combat — Carnevale: https://ttcombat.com/pages/carnevale
+TT Combat — Carnevale: https://ttcombat.com/collections/carnevale

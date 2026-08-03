@@ -119,12 +119,17 @@ property, which is the rule that matters most here.
 
 ## License
 
-The **source code** in this repository is licensed under the [Apache License 2.0](LICENSE).
+The **source code** in this repository is licensed under the
+[GNU Affero General Public License v3.0](LICENSE).
+
+This is a network-served application, so §13 matters: if you modify it and let users interact
+with it over a network, you must offer those users the source of your modified version.
+(Versions published before 2026-08-03 were Apache 2.0; that grant still stands for them.)
 
 This project bundles artwork, card data, rules text, faction symbols, and other content that is
 the intellectual property of **TT Combat** ("Carnevale"). That content is **not** covered by the
-Apache License — it is included with TT Combat's permission and remains © TT Combat, all rights
-reserved. See [NOTICE](NOTICE) for the full carve-out. If you reuse this code, you are
-responsible for removing that content or obtaining your own permission from TT Combat.
+AGPL — it is included with TT Combat's permission and remains © TT Combat, all rights reserved.
+See [NOTICE](NOTICE) for the full carve-out. If you reuse this code, you are responsible for
+removing that content or obtaining your own permission from TT Combat.
 
 This is an unofficial fan project, not affiliated with or endorsed by TT Combat.
