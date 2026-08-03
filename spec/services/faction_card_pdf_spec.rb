@@ -188,7 +188,21 @@ RSpec.describe FactionCardPdf do
 
       expect(sheets.map(&:faction)).to eq(%w[guild vatican])
       expect(sheets.first.date).to eq(Date.new(2026, 8, 3))
-      expect(sheets.first.url).to eq("/cards/pdf/carnevale-guild-cards-2026-08-03.pdf")
+      expect(sheets.first.url)
+        .to eq("/cards/pdf/carnevale-guild-cards-2026-08-03.pdf?v=#{sheets.first.path.mtime.to_i}")
+    end
+
+    # public/ is served "immutable" for a year and a same-day rebuild reuses the file name, so
+    # without this a player who downloaded this morning's sheet would never see this afternoon's
+    # typo fix.
+    it "busts the URL when the file is rebuilt under the same name" do
+      touch_sheet("guild", "2026-08-03")
+      before = described_class.latest.first.url
+
+      later = (Time.current + 1.hour).to_time
+      described_class.output_dir.join("carnevale-guild-cards-2026-08-03.pdf").utime(later, later)
+
+      expect(described_class.latest.first.url).not_to eq(before)
     end
 
     it "ignores files that do not follow the naming convention" do

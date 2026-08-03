@@ -76,7 +76,15 @@ class FactionCardPdf
 
   # One generated file on disk, as the public page needs to describe it.
   Sheet = Struct.new(:faction, :date, :path, keyword_init: true) do
-    def url = "/cards/pdf/#{path.basename}"
+    # ?v= busted by the file's mtime, the same trick Catalog::CardReference#image_urls uses on the
+    # faces and for the same reason: public/ is served "max-age=1 year, immutable", and the date in
+    # the name only changes once a day. Rebuild after fixing a typo this afternoon and the URL is
+    # byte-for-byte the one someone loaded this morning — "immutable" means their browser would not
+    # even revalidate, so they would keep the typo for a year. mtime rather than a digest of the
+    # content because this is read on every page render and the files are ~25 MB each.
+    #
+    # The query does not reach the saved filename: <a download> takes that from the URL's path.
+    def url = "/cards/pdf/#{path.basename}?v=#{path.mtime.to_i}"
     def byte_size = path.size
   end
 

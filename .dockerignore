@@ -36,6 +36,17 @@
 !/app/assets/builds/.keep
 /public/assets
 
+# Ignore the printable card sheets (FactionCardPdf) — ~165 MB per generation that would be pure
+# dead weight in the image: the carnevale_backend_cards volume mounts over /rails/public/cards at
+# runtime, so a copy baked into the image is masked and never read, and the sheets are rebuilt on
+# the server anyway (`bin/rails cards:pdf`, or the publish page's button).
+#
+# The card faces alongside them are deliberately NOT excluded. They are masked by the same volume
+# on an existing server, but they are also what *seeds* that volume on a first deploy, and what
+# `docker volume rm carnevale_backend_cards` + redeploy re-seeds it from — see the volume comment
+# in config/deploy.yml. The PDFs have no such role: nothing recovers from them.
+/public/cards/pdf
+
 # Ignore CI service files.
 /.github
 
