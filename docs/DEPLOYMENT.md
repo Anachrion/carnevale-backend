@@ -173,7 +173,8 @@ with a strict ordering, because clients bake the key in at build time:
 1. Set the new value in Infisical (Production).
 2. Rebuild **and ship** every client with the new key:
    - Web — `infisical run --env=prod -- bin/release-web`
-   - Android — see [`PLAY_STORE_PUBLISHING.md`](./PLAY_STORE_PUBLISHING.md)
+   - Android — `infisical run --env=prod --recursive -- bin/publish-play` from the
+     frontend repo
 3. Only then `infisical run --env=prod -- kamal deploy`.
 
 Get the order wrong and every client gets `401 Unauthorized` until a new build reaches

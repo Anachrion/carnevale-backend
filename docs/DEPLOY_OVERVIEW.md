@@ -112,9 +112,8 @@ infisical run --env=prod --recursive -- bin/publish-play
 ```
 
 `--recursive` matters: the script needs both the `/android` secrets (keystore, Play
-service account) and the root `API_KEY`. See
-[`PLAY_STORE_PUBLISHING.md`](./PLAY_STORE_PUBLISHING.md) for the keystore, the store
-listing, and the release process around it.
+service account) and the root `API_KEY`. The upload keystore lives in Infisical under
+`/android`; `bin/android-signing` in the frontend repo materialises it on demand.
 
 Both the web and Android builds point at the same production API — bumping the API host
 means updating it in `bin/release-web` **and** in `bin/publish-play`.
@@ -138,5 +137,4 @@ resolving; it can be dropped once nobody is on one.
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
 | `docs/DEPLOYMENT.md` | Full backend deploy detail and rationale |
 | `docs/DATA_AND_BACKUPS.md` | Sources of truth, catalog snapshots, nightly backups & restore |
-| `docs/PLAY_STORE_PUBLISHING.md` | Getting the Android app onto Google Play |
 | `~/Workspace/carnevale` | The Flutter frontend repo (separate) |

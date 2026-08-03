@@ -73,7 +73,6 @@ deltas — which is what makes reconnecting from anywhere free.
 | [`DEPLOY_OVERVIEW.md`](docs/DEPLOY_OVERVIEW.md) | How the backend, web app and Android build ship — start here |
 | [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Backend deploy detail: Kamal, the hosting rationale, and the two procedures that are easy to get wrong |
 | [`DATA_AND_BACKUPS.md`](docs/DATA_AND_BACKUPS.md) | Which copy of a thing wins, catalog snapshots, nightly backups and restore |
-| [`PLAY_STORE_PUBLISHING.md`](docs/PLAY_STORE_PUBLISHING.md) | Getting the Android app onto Google Play |
 
 ---
 

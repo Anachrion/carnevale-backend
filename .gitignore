@@ -44,6 +44,10 @@
 # Accurate and worth keeping; just not something to publish alongside the code.
 /docs/HOSTING_NOTES.md
 /docs/AVAILABILITY.md
+# Internal release checklist (keystore handling, Play Console declarations, the
+# 14-day closed-testing clock) — operational rather than something a reader of
+# the source needs.
+/docs/PLAY_STORE_PUBLISHING.md
 .kamal/deploy.env
 # R2 credentials for the off-site DB backup (bin/install-db-backups).
 .kamal/backup.env
