@@ -4,9 +4,9 @@ A short, big-picture guide to how Carnevale ships to production — backend **an
 frontend. For the deep backend detail (hosting rationale, hardening, known
 limitations) see [`DEPLOYMENT.md`](./DEPLOYMENT.md).
 
-- **Live URL:** https://62.238.30.155.sslip.io
-- **API:** `…/api/v1/…` · **Web app:** `…/app/` · **Backoffice:** `…/backoffice`
-- **Host:** one Hetzner CX23 VM (`62.238.30.155`), everything as Docker containers.
+- **Live URL:** https://carnevale-app.com
+- **API:** `…/api/v1/…` · **Web app:** `/` (bundle under `/app/`) · **Backoffice:** `/backoffice`
+- **Host:** one small Hetzner VM, everything as Docker containers.
 
 ---
 
@@ -20,8 +20,8 @@ platform. On a deploy it:
 2. **Pushes** it to GitHub Container Registry (`ghcr.io/anachrion/carnevale_backend`).
 3. **SSHes** into the server, pulls the image, and swaps the running container with
    near-zero downtime.
-4. Runs **kamal-proxy**, which terminates TLS (free Let's Encrypt cert on the
-   `sslip.io` host) and routes `:443 → :80` into the app container.
+4. Runs **kamal-proxy**, which terminates TLS (a free Let's Encrypt cert per host in
+   `proxy.hosts`) and routes `:443 → :80` into the app container.
 
 The entire configuration is one file: [`config/deploy.yml`](../config/deploy.yml).
 
@@ -31,8 +31,11 @@ The entire configuration is one file: [`config/deploy.yml`](../config/deploy.yml
 |---|---|
 | `carnevale_backend-web` | Rails 8 app (Puma + Thruster) — the API, web app, backoffice |
 | `carnevale_backend-db` | PostgreSQL 17 accessory (data in a Docker volume) |
-| `carnevale_backend-redis` | Redis 7 accessory — Action Cable pub/sub only, no persistence |
 | `kamal-proxy` | TLS termination + routing |
+
+There is no Redis: Action Cable, the job queue and the cache all run on Postgres via
+`solid_cable` / `solid_queue` / `solid_cache`, and the Solid Queue worker runs inside
+Puma (`SOLID_QUEUE_IN_PUMA`) rather than as its own container.
 
 Persistent Docker volumes survive redeploys: `…_storage` (Active Storage uploads),
 `…_db_data` (Postgres), `…_cards` (rendered card images).
@@ -90,36 +93,37 @@ bin/release-web
 infisical run --env=prod -- kamal deploy
 ```
 
-It builds with `--dart-define=API_HOST=62.238.30.155.sslip.io
---dart-define=API_USE_TLS=true --base-href=/app/`, so the web app talks to the live
-API over HTTPS. Override the frontend location with `CARNEVALE_FRONTEND_DIR` if your
-checkout isn't at `../carnevale`.
+It builds with `--dart-define=API_HOST=carnevale-app.com --dart-define=API_USE_TLS=true
+--dart-define=API_KEY=… --base-href=/app/`, so the web app talks to the live API over
+HTTPS. Rails serves that bundle at the site root as well as at `/app/`, and at the
+deep-link paths (`/reset-password`, `/join`) so emailed links land in the SPA. Override
+the frontend location with `CARNEVALE_FRONTEND_DIR` if your checkout isn't at
+`../carnevale`.
 
-### Android APK → GitHub prereleases
+### Android → Google Play
 
-The mobile app is built from the frontend repo and published as **prereleases** on
-the private `Anachrion/carnevale` repo:
+The mobile app is built and published from the frontend repo, which has its own
+`bin/publish-play`: it signs a release App Bundle with the upload keystore and uploads
+it to a Play track (closed testing by default) through the Play Developer API.
 
 ```bash
-# from the carnevale frontend repo/
-infisical run --env=prod --projectId 5924d033-10b3-4a0a-abb0-bb6766ede058 -- \
-  flutter build apk --release \
-    --dart-define=API_HOST=carnevale-app.com \
-    --dart-define=API_USE_TLS=true \
-    --dart-define=API_KEY="$API_KEY"
+# from the carnevale frontend repo
+infisical run --env=prod --recursive -- bin/publish-play
 ```
 
-Both the web and APK builds point at the same production API — bumping the API host
-means updating it in `bin/release-web` **and** the APK build command.
+`--recursive` matters: the script needs both the `/android` secrets (keystore, Play
+service account) and the root `API_KEY`. See
+[`PLAY_STORE_PUBLISHING.md`](./PLAY_STORE_PUBLISHING.md) for the keystore, the store
+listing, and the release process around it.
 
-**Alphas moved from `62.238.30.155.sslip.io` to `carnevale-app.com` at alpha.26** (the
-`API_KEY` release, which already forced every tester to reinstall). The sslip.io host
-stays in `config/deploy.yml` `proxy.hosts` only to keep alpha.25-and-earlier builds
-resolving; it can be dropped once nobody is on one of those.
+Both the web and Android builds point at the same production API — bumping the API host
+means updating it in `bin/release-web` **and** in `bin/publish-play`.
 
-`API_KEY` must be baked in: the backend rejects requests without `X-Api-Key`. Any APK
-built before this was added stops working the moment `API_KEY` is live in production,
-and cannot be fixed remotely — testers have to install a new build.
+`API_KEY` must be baked in: the backend rejects requests without `X-Api-Key`. A build
+made without it gets 401 on every request, and an installed APK **cannot be fixed
+remotely** — testers have to install a new build. The older `sslip.io` host stays in
+`config/deploy.yml` `proxy.hosts` purely so pre-`carnevale-app.com` alpha builds keep
+resolving; it can be dropped once nobody is on one.
 
 ---
 
@@ -132,7 +136,7 @@ and cannot be fixed remotely — testers have to install a new build.
 | `.infisical.json` | Which Infisical project/environment this repo reads (committed) |
 | Infisical → `carnevale` → Production | The real secret **values** |
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
-| `docs/DEPLOYMENT.md` | Full backend deploy detail, rationale, and TODOs |
-| `docs/DATA_AND_BACKUPS.md` | Catalog snapshots & the backup gap |
-| `docs/AVAILABILITY.md` | Keeping the box up: timeouts, rate limits, DoS resilience |
+| `docs/DEPLOYMENT.md` | Full backend deploy detail and rationale |
+| `docs/DATA_AND_BACKUPS.md` | Sources of truth, catalog snapshots, nightly backups & restore |
+| `docs/PLAY_STORE_PUBLISHING.md` | Getting the Android app onto Google Play |
 | `~/Workspace/carnevale` | The Flutter frontend repo (separate) |

@@ -39,8 +39,11 @@
 
 .codex/
 
-# Personal research notes, not for the repo
+# Operational notes that describe the live box's posture — hosting research, the
+# concurrency/timeout/monitoring inventory, and the outstanding hardening list.
+# Accurate and worth keeping; just not something to publish alongside the code.
 /docs/HOSTING_NOTES.md
+/docs/AVAILABILITY.md
 .kamal/deploy.env
 # R2 credentials for the off-site DB backup (bin/install-db-backups).
 .kamal/backup.env

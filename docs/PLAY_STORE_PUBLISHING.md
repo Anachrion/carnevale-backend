@@ -5,7 +5,7 @@ The Flutter app lives in the sibling repo `~/Workspace/carnevale`; this doc is h
 because the release checklist touches the backend too (privacy policy hosting, a
 demo account for Google's reviewers, production readiness).
 
-- **Play Console:** app `Carnevale`, developer account `6427498619610644613`
+- **Play Console:** app `Carnevale` (the developer account ID is in Infisical, not here)
 - **Package name:** `app.carnevale.mobile` — **permanent** once the first bundle is
   uploaded. It cannot be changed afterwards; a different package name means a new
   listing with zero installs and zero reviews.
@@ -49,7 +49,6 @@ key. Our upload key only proves to Play that an upload is genuinely from us.
 - Keystore + passwords live in **Infisical** (project `carnevale`, Production, `/android`
   folder): `ANDROID_UPLOAD_KEYSTORE_B64` (base64 of the .jks), `ANDROID_UPLOAD_STORE_PASSWORD`,
   `ANDROID_UPLOAD_KEY_ALIAS`. Alias `upload`.
-- Certificate: `CN=Carnevale, OU=Anachrion, O=Carnevale, C=FR`
 - `~/Workspace/carnevale/bin/android-signing` materializes `android/key.properties`
   and `android/upload-keystore.jks` (both git-ignored) from those secrets. Gradle reads
   `key.properties` from there. Run before a release build:
@@ -75,38 +74,42 @@ laptop no longer loses the key. Even if it were lost, it's recoverable — Googl
 supports an upload-key reset precisely because they hold the real signing key — but
 that costs days of support turnaround, so Infisical is the fast path.
 
-## 2. Building the bundle
+## 2. Building and uploading the bundle
 
 Play requires an **AAB** (App Bundle), not an APK. An AAB is a publishing format:
 Play generates a per-device APK from it at install time, shipping only the ABI,
 screen density and languages that device needs. APKs remain the format for
-sideloading and the GitHub prerelease flow — an AAB cannot be installed directly.
+sideloading — an AAB cannot be installed directly.
+
+`bin/publish-play` in the frontend repo does the whole trip: it materializes the
+keystore, builds a signed release bundle pointed at production, and uploads it to a
+Play track via the Play Developer API.
 
 ```sh
 cd ~/Workspace/carnevale
-infisical run --env=prod --projectId 5924d033-10b3-4a0a-abb0-bb6766ede058 -- \
-  flutter build appbundle --release \
-    --dart-define=API_HOST=carnevale-app.com \
-    --dart-define=API_USE_TLS=true \
-    --dart-define=API_KEY="$API_KEY"
-# → build/app/outputs/bundle/release/app-release.aab
+infisical run --env=prod --recursive -- bin/publish-play
+# --track NAME    Play track (default: alpha = closed testing)
+# --status STATUS completed | draft | inProgress | halted
+# --dry-run       build + sign only, no upload
 ```
 
-**The `--dart-define` flags are mandatory.** `lib/services/api_client.dart` defaults
-to `localhost:3000`; omit them and the store build cannot reach the backend at all.
-Store builds point at `carnevale-app.com`, never at the `sslip.io` address used for
-alpha APKs.
+**`--recursive` is required.** The script needs the `/android` secrets (upload keystore,
+Play service account JSON) *and* the root `API_KEY` from the backend project, which live
+at different paths in Infisical.
 
-`API_KEY` comes from Infisical (backend project, Production). Omit it and the build
-gets **401 on every request** — the backend requires `X-Api-Key` once `API_KEY` is set
-there. `--projectId` is needed because the frontend repo has no `.infisical.json`.
+**The build-time defines are mandatory** and the script supplies them. The Flutter client
+defaults to `localhost:3000`, so a bundle built without `API_HOST` cannot reach the
+backend at all; one built without `API_KEY` gets **401 on every request**, because the
+backend requires `X-Api-Key`. Store builds point at `carnevale-app.com`
+(override with `PLAY_API_HOST` / `PLAY_API_USE_TLS` if you ever need to).
+
+**Version codes** are handled for you: `versionName` comes from `pubspec.yaml`, and
+`versionCode` is the git commit count — strictly increasing and gap-free, with no manual
+bookkeeping. Play rejects any upload whose code is not greater than the previous one, so
+this matters even for a re-upload to the same track; just make a commit.
 
 After switching branches, run `flutter clean` first so no stale generated sources
 end up in a bundle that becomes permanent on upload.
-
-**Version codes:** `pubspec.yaml` carries `version: <name>+<code>`. Play rejects any
-upload whose code is not strictly greater than the previous one. Bump the `+N` on
-every single upload, including re-uploads to the same track.
 
 ## 3. Store listing assets
 
@@ -169,17 +172,19 @@ Then production review: days to a couple of weeks for a first-time developer.
 
 ## Backend readiness
 
-A public listing points strangers at a single Hetzner CX23. Before the closed test
-widens, worth confirming:
+A public listing points strangers at a single small VM. Before the closed test widens,
+worth confirming:
 
-- **Rate limiting** on the API, particularly auth endpoints.
+- **Rate limiting** on the API, particularly auth endpoints. (Rack::Attack is in place;
+  the limits are environment variables.)
 - **Graceful degradation** in the app when the backend is down or slow — a store
   reviewer hitting a hung request will fail the review.
 - **Demo account** exists on production and survives data resets (see §4.6).
-- **Catalog backups** — see [`DATA_AND_BACKUPS.md`](./DATA_AND_BACKUPS.md); the
-  catalog is DB-authored in production with no automated blob backup.
+- **Backups** — see [`DATA_AND_BACKUPS.md`](./DATA_AND_BACKUPS.md). Player data is backed
+  up nightly off-site; the catalog is DB-authored in production and snapshotted to git by
+  hand, so run `bin/catalog-snapshot` before a release if you've been authoring.
 
 ## Related
 
 - [`DEPLOY_OVERVIEW.md`](./DEPLOY_OVERVIEW.md) — how backend and web app ship
-- [`DATA_AND_BACKUPS.md`](./DATA_AND_BACKUPS.md) — catalog snapshot/restore
+- [`DATA_AND_BACKUPS.md`](./DATA_AND_BACKUPS.md) — sources of truth, snapshots, restore

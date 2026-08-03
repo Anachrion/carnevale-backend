@@ -3,10 +3,13 @@
 ## Tech Stack
 
 ### Backend (Rails)
-- **Rails API mode** — REST API, no views
-- **Devise + devise-jwt** — authentication, JWT token delivered on login and sent automatically with every request
-- **Action Cable** — WebSocket server for live game sessions
-- **PostgreSQL** (dev and prod)
+- **Full Rails** — a JSON REST API under `/api/v1` for the clients, plus server-rendered
+  views for the Devise-gated `/backoffice` where the card catalog is authored
+- **Devise + devise-jwt** — authentication. Login returns a short-lived access JWT (1h)
+  and a rotating refresh token (30d); the client sends the access token with every request
+  and exchanges the refresh token at `POST /api/v1/token` when it expires
+- **Action Cable** — WebSocket server for live game sessions (`solid_cable` in production)
+- **PostgreSQL** (dev and prod), also backing Solid Queue / Cache / Cable
 
 ### Frontend (Flutter)
 - **dio** — HTTP client for all REST calls; JWT interceptor attaches the token automatically
