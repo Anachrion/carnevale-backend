@@ -52,10 +52,17 @@
 !/app/assets/builds/.keep
 
 # Compiled Flutter web bundle, served at /app. Materialised locally by bin/release-web (which
-# builds it from the sibling carnevale/ repo) right before `kamal deploy`, the same "build fresh
-# on the deploy machine" model as the LFS card images. Not committed: the minified output makes
-# huge, noisy diffs and would drift from the frontend source it was built from.
+# builds it from the sibling carnevale/ repo) right before `kamal deploy`. Not committed: the
+# minified output makes huge, noisy diffs and would drift from the frontend source it was built
+# from.
 /public/app
+
+# Rendered card faces — derived data, regenerable from the catalog and the illustrations by
+# "Publish cards". They were committed via LFS until 2026-08-03, which cost ~67 MB in every
+# clone and grew LFS storage by a fresh generation on each re-render. Deploys are unaffected:
+# Kamal builds from the working tree, not `git archive`, and .dockerignore does not exclude
+# this path — so the files still ship in the image as long as they exist on the deploy machine.
+/public/cards
 
 # macOS Finder artifacts.
 .DS_Store

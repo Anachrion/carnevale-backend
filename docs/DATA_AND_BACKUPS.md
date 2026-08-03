@@ -45,10 +45,14 @@ backoffice, and from that moment production holds the newer copy.
 
 ### 3. Derived → nobody, regenerate it
 
-- **`public/cards/*.png`** — the rendered card faces. Produced by *Publish cards*, from the catalog
-  and the art. In production these live on a Docker volume (`carnevale_backend_cards`) that, after
-  the first deploy, **masks the image's directory** — so a card image committed to git no longer
-  reaches the server on deploy. Publish it on the server instead.
+- **`public/cards/*`** — the rendered card faces. Produced by *Publish cards*, from the catalog
+  and the art. **Not in git** (gitignored since 2026-08-03): they are derived, they cost ~67 MB in
+  every clone, and each re-render added another generation to LFS storage. They still reach a new
+  server, because Kamal builds the image from the *working tree* — so whatever is in `public/cards`
+  on the deploy machine ships inside the image. In production they then live on a Docker volume
+  (`carnevale_backend_cards`) that, after the first deploy, **masks the image's directory** — so
+  from that point on a newer card in the image no longer reaches the server. Publish on the server
+  instead.
 - **`internal_version` and the staleness digests** — render bookkeeping. Rebuilt by publishing.
   `catalog:export` deliberately does not carry them.
 
@@ -63,7 +67,7 @@ Losing derived data costs time, not information. Everything above can be rebuilt
 | Catalog records | Postgres | **Yes** — `db/catalog/*.yml` in git, by hand |
 | Uploaded art | `carnevale_backend_storage` volume | **Yes** — `db/catalog/blobs/` in git LFS, by hand (none uploaded yet) |
 | Committed art | in the image, from git | **Yes** — it *is* git |
-| Rendered cards | `carnevale_backend_cards` volume | **No** — but regenerable by publishing |
+| Rendered cards | `carnevale_backend_cards` volume | **No** — not in git either; regenerable by publishing |
 | **Users, lists, games** | Postgres | **Yes** — nightly `pg_dump` to Cloudflare R2 (see below) |
 
 ### The catalog snapshot
@@ -138,8 +142,10 @@ Or list what actually made it off-box from a dev machine: `bin/db-restore --list
 3. `kamal app exec "bin/rails db:seed"` — rulebook data (abilities, spells, scenarios…).
 4. `kamal app exec "bin/rails catalog:import"` — the catalog, from `db/catalog/`. Additive and
    idempotent: it matches on natural keys, never deletes, and is safe to re-run.
-5. Card images arrive from git: the first deploy seeds the cards volume from the image. Anything
-   still out of date, publish from the backoffice.
+5. Card images ride in the image from whatever is in `public/cards` on the deploy machine, and the
+   first deploy seeds the cards volume from it. They are **not** in git, so on a machine that never
+   had them — a fresh clone — the directory is empty and the volume is seeded empty. That is
+   recoverable: publish from the backoffice once the catalog and illustrations are in place.
 6. **Player data:** restore the latest nightly dump over the fresh database — see below. (Steps 3–4
    become redundant once you do this: the dump already contains the seeded rulebook and the catalog.
    Run them only if you deliberately want day-one data instead of the last backup.)
