@@ -1,95 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="robots" content="all">
-  <title>Account & Data Deletion — Carnevale Companion</title>
-  <style>
-    :root { color-scheme: light dark; }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.65;
-      color: #1a1a1a;
-      background: #f7f7f8;
-    }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
-    h1 { font-size: 2rem; margin: 0 0 .25rem; }
-    h2 { font-size: 1.25rem; margin: 2.25rem 0 .5rem; }
-    .meta { color: #666; font-size: .9rem; margin-bottom: 2rem; }
-    a { color: #2f6f4f; }
-    ul, ol { padding-left: 1.25rem; }
-    li { margin: .3rem 0; }
-    .callout {
-      background: rgba(47,111,79,.08);
-      border: 1px solid rgba(47,111,79,.25);
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      margin: 1.25rem 0;
-    }
-    code { background: rgba(0,0,0,.06); padding: .1rem .35rem; border-radius: 4px; font-size: .9em; }
-    footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(0,0,0,.1); color: #666; font-size: .875rem; }
-    @media (prefers-color-scheme: dark) {
-      body { color: #e6e6e6; background: #17181a; }
-      .meta, footer { color: #9aa0a6; }
-      a { color: #6fbf95; }
-      code { background: rgba(255,255,255,.1); }
-      .callout { background: rgba(111,191,149,.1); border-color: rgba(111,191,149,.35); }
-      footer { border-top-color: rgba(255,255,255,.12); }
-    }
-  </style>
-</head>
-<body>
-  <main class="wrap">
-    <h1>Account &amp; Data Deletion</h1>
-    <p class="meta">Carnevale Companion app &middot; operated by Anachrion &middot; Last updated 25 July 2026</p>
+<%# The Contact section already links the privacy policy, so this page adds no footer link. %>
+<% content_for :title, "Account & Data Deletion" %>
 
-    <p>
-      This page explains how to request deletion of your <strong>Carnevale Companion</strong> account
-      and the data associated with it. Carnevale Companion is an unofficial companion app for the
-      Carnevale tabletop miniatures game, operated by <strong>Anachrion</strong>.
-    </p>
+<h1>Account &amp; Data Deletion</h1>
+<p class="meta">Carnevale Companion app &middot; operated by Anachrion &middot; Last updated 25 July 2026</p>
 
-    <h2>How to request deletion</h2>
-    <p>To delete your account and its data, send an email to:</p>
-    <div class="callout">
-      <strong><a href="mailto:contact@carnevale-app.com?subject=Account%20deletion%20request">contact@carnevale-app.com</a></strong>
-      <br>with the subject line <em>&ldquo;Account deletion request&rdquo;</em>.
-    </div>
-    <p>So we can locate and verify your account, please send the request <strong>from the email address
-      you registered with</strong>, and include your <strong>username</strong> if you know it. We do not
-      ask for your password. Once we have confirmed the request comes from the account owner, your data
-      is deleted within <strong>30 days</strong>, and we email you to confirm once it is done.</p>
+<p>
+  This page explains how to request deletion of your <strong>Carnevale Companion</strong> account
+  and the data associated with it. Carnevale Companion is an unofficial companion app for the
+  Carnevale tabletop miniatures game, operated by <strong>Anachrion</strong>.
+</p>
 
-    <h2>What gets deleted</h2>
-    <p>When your account is deleted, we permanently remove:</p>
-    <ul>
-      <li>your account details — email address, username, and the stored (hashed) password;</li>
-      <li>all content you created — your gang lists, rosters, and game/encounter data;</li>
-      <li>your authentication and session tokens.</li>
-    </ul>
+<h2>How to request deletion</h2>
+<p>To delete your account and its data, send an email to:</p>
+<div class="callout">
+  <strong><a href="mailto:contact@carnevale-app.com?subject=Account%20deletion%20request">contact@carnevale-app.com</a></strong>
+  <br>with the subject line <em>&ldquo;Account deletion request&rdquo;</em>.
+</div>
+<p>So we can locate and verify your account, please send the request <strong>from the email address
+  you registered with</strong>, and include your <strong>username</strong> if you know it. We do not
+  ask for your password. Once we have confirmed the request comes from the account owner, your data
+  is deleted within <strong>30 days</strong>, and we email you to confirm once it is done.</p>
 
-    <h2>What may be retained, and for how long</h2>
-    <ul>
-      <li><strong>Short-term technical logs</strong> (e.g. server request/error logs that may include an
-        IP address) are kept only for a brief period for security and troubleshooting, and are then
-        purged automatically. They are not used to re-identify you after deletion.</li>
-      <li>We retain no other personal data once deletion is complete. We do not sell or share your data
-        with third parties, and the app uses no advertising or analytics.</li>
-    </ul>
+<h2>What gets deleted</h2>
+<p>When your account is deleted, we permanently remove:</p>
+<ul>
+  <li>your account details — email address, username, and the stored (hashed) password;</li>
+  <li>all content you created — your gang lists, rosters, and game/encounter data;</li>
+  <li>your authentication and session tokens.</li>
+</ul>
 
-    <h2>Contact</h2>
-    <p>
-      Questions about deletion or your data: <a href="mailto:contact@carnevale-app.com">contact@carnevale-app.com</a>.
-      See also our <a href="/privacy">Privacy Policy</a>.
-    </p>
+<h2>What may be retained, and for how long</h2>
+<ul>
+  <li><strong>Short-term technical logs</strong> (e.g. server request/error logs that may include an
+    IP address) are kept only for a brief period for security and troubleshooting, and are then
+    purged automatically. They are not used to re-identify you after deletion.</li>
+  <li>We retain no other personal data once deletion is complete. We do not sell or share your data
+    with third parties, and the app uses no advertising or analytics.</li>
+</ul>
 
-    <footer>
-      Carnevale is a trademark of its respective owner. This companion app is an unofficial,
-      fan-made tool and is not affiliated with or endorsed by the publisher of the game.
-    </footer>
-  </main>
-</body>
-</html>
+<h2>Contact</h2>
+<p>
+  Questions about deletion or your data: <a href="mailto:contact@carnevale-app.com">contact@carnevale-app.com</a>.
+  See also our <a href="/privacy">Privacy Policy</a>.
+</p>

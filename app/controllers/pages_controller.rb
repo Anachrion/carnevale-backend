@@ -17,10 +17,10 @@
 # Standalone public pages (privacy policy, account-deletion instructions, and later terms). These
 # are the only HTML the site serves besides the Flutter web app at root and the Devise-gated
 # backoffice — the Google Play listing links here (privacy policy + account-deletion URL are both
-# required for publishing), so the pages carry their own self-contained layout rather than the
-# application/backoffice chrome.
+# required for publishing), so the pages share a self-contained layout of their own rather than the
+# application/backoffice chrome. See layouts/public_page for what it inlines and why.
 class PagesController < ApplicationController
-  layout false
+  layout "public_page"
 
   def privacy
   end
