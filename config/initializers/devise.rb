@@ -336,12 +336,16 @@ Devise.setup do |config|
       else
         Rails.application.credentials.devise_jwt_secret_key!
       end
-    # A fresh JWT is dispatched both on login and on refresh: /token signs the user back in off a
-    # valid refresh token, and warden-jwt only attaches the header when the request path is listed
-    # here.
+    # A fresh JWT is dispatched on login, on refresh, and on completing a password reset: /token
+    # signs the user back in off a valid refresh token, a reset proves ownership of the account's
+    # inbox just as a login proves knowledge of its password, and warden-jwt only attaches the
+    # header when the request path is listed here. Without the reset path the client finished a
+    # successful reset holding no credentials, so it could not honour the documented Session
+    # response and landed the user on a signed-out account screen.
     jwt.dispatch_requests = [
       [ "POST", %r{^/api/v1/login$} ],
-      [ "POST", %r{^/api/v1/token$} ]
+      [ "POST", %r{^/api/v1/token$} ],
+      [ "PATCH", %r{^/api/v1/password$} ]
     ]
     jwt.revocation_requests = [
       [ "DELETE", %r{^/api/v1/logout$} ]

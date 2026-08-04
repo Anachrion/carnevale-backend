@@ -43,6 +43,69 @@ RSpec.describe "Api::V1::Passwords", type: :request do
       expect(user.reload.valid_password?("NewSecret123!")).to be true
     end
 
+    # The response must be a full Session (JWT header + refresh_token + user), the shape
+    # doc/openapi.yaml has always declared for this endpoint and the generated client deserializes
+    # into. It previously returned `user` alone, so every *successful* reset blew up in the client
+    # on a missing non-nullable `refresh_token` and surfaced as a generic failure — the user then
+    # retried and hit "token is invalid", because the first attempt had in fact worked.
+    it "signs the user in, returning a JWT and a refresh token" do
+      raw_token = user.send_reset_password_instructions
+
+      patch "/api/v1/password",
+            params: { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,
+            headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Authorization"]).to match(/\ABearer /)
+
+      body = JSON.parse(response.body)
+      expect(body["refresh_token"]).to be_present
+      expect(body.dig("user", "id")).to eq(user.id)
+    end
+
+    # The refresh token handed out here has to be a working one, or the client would be signed in
+    # for exactly one hour and then be unable to renew.
+    it "returns a refresh token that can be exchanged for a fresh JWT" do
+      raw_token = user.send_reset_password_instructions
+
+      patch "/api/v1/password",
+            params: { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,
+            headers: headers
+      refresh = JSON.parse(response.body)["refresh_token"]
+
+      post "/api/v1/token", params: { refresh_token: refresh }.to_json, headers: headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Authorization"]).to match(/\ABearer /)
+    end
+
+    # Signing in must not also open a Devise session: a cookie here would be replayed by a
+    # browser-based client onto HTML requests and sign the app user into the backoffice scope.
+    it "does not set a session cookie" do
+      raw_token = user.send_reset_password_instructions
+
+      patch "/api/v1/password",
+            params: { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,
+            headers: headers
+
+      expect(response.headers["Set-Cookie"]).to be_blank
+    end
+
+    # Single-use: the replay that produced the confusing "token is invalid" report must keep
+    # answering 422 rather than minting a second session off a spent token.
+    it "rejects a token that has already been used" do
+      raw_token = user.send_reset_password_instructions
+      params = { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json
+
+      patch "/api/v1/password", params: params, headers: headers
+      expect(response).to have_http_status(:ok)
+
+      patch "/api/v1/password", params: params, headers: headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(JSON.parse(response.body)["errors"]).to have_key("reset_password_token")
+    end
+
     it "returns 422 for an invalid token" do
       patch "/api/v1/password",
             params: { user: { reset_password_token: "bogus", password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,

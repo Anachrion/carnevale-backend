@@ -139,6 +139,11 @@ paths:
     patch:
       operationId: resetPassword
       summary: Set a new password using a reset token
+      description: >
+        Completing a reset signs the user in: the caller proved control of the account's inbox and
+        has just chosen the password, so a short-lived JWT is returned in the `Authorization`
+        response header and a long-lived `refresh_token` in the body, exactly as POST /login does.
+        The reset token is single-use — replaying it answers 422.
       tags: [Session]
       requestBody:
         required: true
@@ -149,6 +154,11 @@ paths:
       responses:
         "200":
           description: OK
+          headers:
+            Authorization:
+              schema:
+                type: string
+              description: "Bearer JWT, e.g. `Bearer eyJhbGciOi...`"
           content:
             application/json:
               schema:
