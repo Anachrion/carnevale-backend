@@ -39,10 +39,38 @@ module Api
         }, status: :ok
       end
 
+      # Signs this device out, and only this device. Denylisting the JWT (done for us by
+      # warden-jwt, since the path is listed in jwt.revocation_requests) kills the access half;
+      # revoking the presented refresh token kills the durable half, or the client could silently
+      # refresh its way back in.
+      #
+      # A client that sends no refresh_token falls back to revoking all of them. That is the old
+      # behaviour, kept deliberately for builds already in the wild: they clear their local
+      # credentials on logout but have no way to name the token they were holding, and leaving it
+      # live for the rest of its 30 days would quietly weaken logout for every existing install.
+      # Current clients always send it and get the precise behaviour.
       def destroy
-        # Read the user before signing out, then drop every refresh token they hold: an explicit
-        # logout should revoke the durable credential too, not just denylist the current JWT, or
-        # the app could silently refresh its way back in.
+        # Read the user before signing out — afterwards there is no current_user to scope by.
+        if current_user
+          if params[:refresh_token].present?
+            RefreshToken.revoke(current_user, params[:refresh_token])
+          else
+            RefreshToken.revoke_all_for(current_user)
+          end
+        end
+        Devise.sign_out_all_scopes ? sign_out : sign_out(resource_name)
+        head :no_content
+      end
+
+      # Signs the user out on every device at once. Separate from #destroy on purpose: revoking
+      # every session is destructive enough that it should be something a client asks for by name,
+      # not something it triggers by omitting a parameter.
+      #
+      # Note this drops the durable credentials but cannot denylist the *other* devices' access
+      # JWTs — we only ever see the caller's. Those keep working until they expire (an hour at
+      # most) and then fail to refresh. Closing that window needs a per-user invalidation
+      # timestamp checked at JWT verification; it is not what this endpoint does today.
+      def destroy_all
         RefreshToken.revoke_all_for(current_user) if current_user
         Devise.sign_out_all_scopes ? sign_out : sign_out(resource_name)
         head :no_content

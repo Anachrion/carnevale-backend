@@ -65,8 +65,24 @@ class RefreshToken < ApplicationRecord
     end
   end
 
-  # Revokes every refresh token a user holds — used on logout, which signs the user out everywhere
-  # rather than leaving other devices' tokens live.
+  # Revokes exactly one device's token: the one presented. This is the ordinary sign-out — the
+  # phone in your pocket keeps its session when you log out of the browser on your desk.
+  #
+  # Scoped to `user` as well as the digest so a token that leaked can only ever delete its own
+  # row, never another account's.
+  def self.revoke(user, raw_token)
+    return 0 if raw_token.blank?
+
+    where(user: user, token_digest: digest(raw_token)).delete_all
+  end
+
+  # Revokes every refresh token a user holds, signing them out on every device at once. Reserved
+  # for the cases where that is the *point* — an explicit "log out everywhere", and a password
+  # change, after which credentials handed out under the old password must not survive.
+  #
+  # Deliberately not what a plain logout does: it used to be, and one browser sign-out silently
+  # killed the session on every other device hours later, once that device's access JWT expired
+  # and its refresh token turned out to have been deleted underneath it.
   def self.revoke_all_for(user)
     where(user: user).delete_all
   end

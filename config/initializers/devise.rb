@@ -347,8 +347,12 @@ Devise.setup do |config|
       [ "POST", %r{^/api/v1/token$} ],
       [ "PATCH", %r{^/api/v1/password$} ]
     ]
+    # Both sign-out paths must denylist the caller's own JWT. Omitting /logout_all here would let
+    # it drop every refresh token while leaving the JWT that made the request valid for the rest
+    # of its hour — the one session the caller most clearly meant to end.
     jwt.revocation_requests = [
-      [ "DELETE", %r{^/api/v1/logout$} ]
+      [ "DELETE", %r{^/api/v1/logout$} ],
+      [ "DELETE", %r{^/api/v1/logout_all$} ]
     ]
     # Short-lived on purpose: the client renews it silently via a refresh token (RefreshToken), so
     # a leaked JWT is only useful for an hour rather than a full day.

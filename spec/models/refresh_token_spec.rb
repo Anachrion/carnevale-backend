@@ -59,6 +59,34 @@ RSpec.describe RefreshToken, type: :model do
     end
   end
 
+  describe ".revoke" do
+    it "drops only the presented token, leaving the user's other devices signed in" do
+      phone = described_class.issue!(user)
+      laptop = described_class.issue!(user)
+
+      described_class.revoke(user, laptop)
+
+      expect(described_class.rotate(laptop)).to be_nil
+      expect(described_class.rotate(phone)).to be_present
+    end
+
+    it "will not delete a token belonging to another user" do
+      other = create(:user)
+      raw = described_class.issue!(other)
+
+      expect { described_class.revoke(user, raw) }.not_to change(described_class, :count)
+      expect(described_class.rotate(raw)).to be_present
+    end
+
+    it "is a no-op for a blank or unknown token" do
+      described_class.issue!(user)
+
+      expect { described_class.revoke(user, nil) }.not_to change(described_class, :count)
+      expect { described_class.revoke(user, "") }.not_to change(described_class, :count)
+      expect { described_class.revoke(user, "nope") }.not_to change(described_class, :count)
+    end
+  end
+
   describe ".revoke_all_for" do
     it "drops every token the user holds but leaves other users' tokens" do
       other = create(:user)

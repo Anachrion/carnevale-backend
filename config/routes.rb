@@ -33,7 +33,10 @@ Rails.application.routes.draw do
     namespace :v1 do
       devise_scope :user do
         post "login", to: "sessions#create"
+        # Two deliberately separate paths: /logout ends this device's session, /logout_all ends
+        # every device's. See Api::V1::SessionsController.
         delete "logout", to: "sessions#destroy"
+        delete "logout_all", to: "sessions#destroy_all"
         post "token", to: "tokens#create"
         post "signup", to: "registrations#create"
         post "password", to: "passwords#create"

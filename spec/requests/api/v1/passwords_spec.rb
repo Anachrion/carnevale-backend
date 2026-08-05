@@ -79,6 +79,35 @@ RSpec.describe "Api::V1::Passwords", type: :request do
       expect(response.headers["Authorization"]).to match(/\ABearer /)
     end
 
+    # A reset is how you lock someone out who knew your old password. If the refresh tokens issued
+    # under it survived, they would not be locked out at all — they'd keep renewing for 30 days.
+    it "revokes refresh tokens issued before the reset" do
+      old_token = RefreshToken.issue!(user)
+      raw_token = user.send_reset_password_instructions
+
+      patch "/api/v1/password",
+            params: { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,
+            headers: headers
+      expect(response).to have_http_status(:ok)
+
+      post "/api/v1/token", params: { refresh_token: old_token }.to_json, headers: headers
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    # ...but the token handed to the caller who just completed the reset must survive it, or they
+    # would be signed out by their own password change.
+    it "keeps the refresh token it hands back" do
+      raw_token = user.send_reset_password_instructions
+
+      patch "/api/v1/password",
+            params: { user: { reset_password_token: raw_token, password: "NewSecret123!", password_confirmation: "NewSecret123!" } }.to_json,
+            headers: headers
+      refresh = JSON.parse(response.body)["refresh_token"]
+
+      post "/api/v1/token", params: { refresh_token: refresh }.to_json, headers: headers
+      expect(response).to have_http_status(:ok)
+    end
+
     # Signing in must not also open a Devise session: a cookie here would be replayed by a
     # browser-based client onto HTML requests and sign the app user into the backoffice scope.
     it "does not set a session cookie" do

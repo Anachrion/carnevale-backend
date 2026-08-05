@@ -71,5 +71,40 @@ RSpec.describe "Api::V1::Tokens", type: :request do
       post "/api/v1/token", params: { refresh_token: refresh }.to_json, headers: json_headers
       expect(response).to have_http_status(:unauthorized)
     end
+
+    it "signs out only the device that presented its token" do
+      phone = log_in["refresh_token"]
+      laptop = log_in["refresh_token"]
+      laptop_jwt = response.headers["Authorization"]
+
+      delete "/api/v1/logout",
+             params: { refresh_token: laptop }.to_json,
+             headers: json_headers.merge("Authorization" => laptop_jwt)
+      expect(response).to have_http_status(:no_content)
+
+      post "/api/v1/token", params: { refresh_token: laptop }.to_json, headers: json_headers
+      expect(response).to have_http_status(:unauthorized)
+
+      # The regression this guards: the phone had nothing to do with the laptop's logout, and used
+      # to be signed out by it — silently, hours later, when its own access JWT expired.
+      post "/api/v1/token", params: { refresh_token: phone }.to_json, headers: json_headers
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe "DELETE /api/v1/logout_all" do
+    it "revokes every device's refresh token" do
+      phone = log_in["refresh_token"]
+      laptop = log_in["refresh_token"]
+      laptop_jwt = response.headers["Authorization"]
+
+      delete "/api/v1/logout_all", headers: json_headers.merge("Authorization" => laptop_jwt)
+      expect(response).to have_http_status(:no_content)
+
+      [ phone, laptop ].each do |raw|
+        post "/api/v1/token", params: { refresh_token: raw }.to_json, headers: json_headers
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
   end
 end

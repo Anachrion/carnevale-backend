@@ -48,6 +48,13 @@ module Api
           # would set a cookie that a browser-based client replays onto HTML requests, signing the
           # app user into the backoffice scope. The JWT still ships, because warden-jwt hangs off
           # `after_set_user`, which runs either way.
+          # Credentials handed out under the old password must not outlive it. Without this, every
+          # refresh token issued before the reset stayed valid for the rest of its 30 days — so
+          # resetting your password because someone else knew it did not actually lock them out.
+          # Revoke first, then issue: the new token below belongs to the caller who just proved
+          # control of the account's inbox, and must survive.
+          RefreshToken.revoke_all_for(resource)
+
           sign_in(resource_name, resource, store: false)
 
           render json: {

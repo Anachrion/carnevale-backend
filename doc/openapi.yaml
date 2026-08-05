@@ -74,8 +74,39 @@ paths:
   /logout:
     delete:
       operationId: logout
-      summary: Revoke the current JWT and all refresh tokens
-      description: Denylists the current JWT and revokes every refresh token the user holds (signs out everywhere).
+      summary: Sign out this device
+      description: >
+        Denylists the current JWT and revokes the refresh token supplied in the body — this device
+        only. Other devices keep their sessions. Clients should always send `refresh_token`; when it
+        is omitted the endpoint falls back to revoking every refresh token the user holds, which is
+        the pre-existing behaviour retained for older builds that cannot name their token.
+        To sign out everywhere on purpose, use `/logout_all`.
+      tags: [Session]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: The refresh token held by this device, so only its session is ended.
+      responses:
+        "204":
+          description: No content (idempotent — returns 204 even if the token was already absent or invalid)
+
+  /logout_all:
+    delete:
+      operationId: logoutAll
+      summary: Sign out every device
+      description: >
+        Denylists the current JWT and revokes every refresh token the user holds. Other devices lose
+        the ability to renew immediately, but their existing access JWTs remain valid until they
+        expire (at most one hour), after which the refresh they attempt fails.
       tags: [Session]
       security:
         - ApiKeyAuth: []
