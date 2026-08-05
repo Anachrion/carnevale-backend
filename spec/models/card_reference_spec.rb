@@ -153,6 +153,71 @@ RSpec.describe Catalog::CardReference do
     end
   end
 
+  # The digest is what makes a template edit a catalog-wide event, so what it chooses to ignore
+  # matters as much as what it catches: every false positive costs a full pass through headless
+  # Chrome to re-render 375 byte-identical faces.
+  describe ".template_digest" do
+    let(:dir) { Pathname(Dir.mktmpdir) }
+
+    # A fresh path each time: template_digest memoises against the files' mtimes, and a rewrite
+    # within the same second would otherwise be served from that cache rather than re-hashed.
+    def digest_for(name, body)
+      path = dir.join(name)
+      path.write(body)
+      allow(described_class).to receive(:template_files).and_return([ path ])
+      described_class.template_digest
+    end
+
+    after { FileUtils.remove_entry(dir) }
+
+    it "ignores a licence header added to a helper" do
+      bare = digest_for("a.rb", "def draw\n  42\nend\n")
+      headed = digest_for("b.rb", "# Copyright 2026 Anachrion\n#\n# Licensed under the AGPL.\n\ndef draw\n  42\nend\n")
+
+      expect(headed).to eq(bare)
+    end
+
+    it "ignores comments and blank lines in an ERB template" do
+      bare = digest_for("a.erb", "<span>x</span>\n")
+      commented = digest_for("b.erb", "<%# the name banner %>\n<!-- top row: ducats -->\n\n<span>x</span>\n")
+
+      expect(commented).to eq(bare)
+    end
+
+    # "#" opens a comment in the helper but a CSS id selector in the template. Applying the Ruby
+    # rule to the ERB would hash away #front-card and friends, and a restyle of the card frame
+    # would then never mark anything stale.
+    it "keeps CSS id selectors in an ERB template" do
+      without = digest_for("a.erb", "<style>\n  .card { color: red; }\n</style>\n")
+      with_id = digest_for("b.erb", "<style>\n  #front-card { color: red; }\n  .card { color: red; }\n</style>\n")
+
+      expect(with_id).not_to eq(without)
+    end
+
+    it "still catches a change to what the template draws" do
+      before_change = digest_for("a.erb", "<span>ducats</span>\n")
+      after_change = digest_for("b.erb", "<span>ducats!</span>\n")
+
+      expect(after_change).not_to eq(before_change)
+    end
+
+    it "still catches a change to a helper's code" do
+      before_change = digest_for("a.rb", "# unchanged prose\ndef draw\n  42\nend\n")
+      after_change = digest_for("b.rb", "# unchanged prose\ndef draw\n  43\nend\n")
+
+      expect(after_change).not_to eq(before_change)
+    end
+
+    # Card-template assets have no comment syntax to strip, so they are hashed whole — a motif
+    # whose bytes change has to move the digest.
+    it "hashes non-source template assets by their bytes" do
+      before_change = digest_for("motif-v1.png", "v1")
+      after_change = digest_for("motif-v2.png", "v2")
+
+      expect(after_change).not_to eq(before_change)
+    end
+  end
+
   describe "#source_fingerprint" do
     it "is stable across calls when nothing changes" do
       expect(reference.source_fingerprint).to eq(reference.source_fingerprint)

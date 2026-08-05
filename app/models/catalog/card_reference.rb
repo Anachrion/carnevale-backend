@@ -173,7 +173,7 @@ module Catalog
       return @template_digest if @template_stamp == stamp
 
       @template_stamp  = stamp
-      @template_digest = Digest::SHA256.hexdigest(files.map { |f| Digest::SHA256.file(f).hexdigest }.join)
+      @template_digest = Digest::SHA256.hexdigest(files.map { |f| template_file_digest(f) }.join)
     end
 
     def self.template_files
@@ -182,6 +182,36 @@ module Catalog
         Rails.root.join("app", "helpers", "backoffice", "profiles_helper.rb"),
         *Rails.root.glob("public/card-template/*")
       ].select(&:file?).sort
+    end
+
+    # What counts as a comment, per file type — and note that "#" means opposite things in the two
+    # source files. In the helper it opens a comment; in the template it opens a CSS id selector
+    # (#front-card, #card-pdf-btn), so applying the Ruby rule there would hash away real styling and
+    # stop detecting genuine layout changes.
+    #
+    # Only a comment occupying its whole line is recognised. A trailing one cannot be told from
+    # `color:#2a7a3a` or a "#{}" interpolation without parsing, and hashing slightly too much is the
+    # safe direction: the cost is a spurious re-render, not a card that silently keeps stale stats.
+    COMMENT_LINE = {
+      ".rb"  => /\A\s*#/,
+      ".erb" => /\A\s*(?:<%#.*%>|<!--.*-->)\s*\z/
+    }.freeze
+
+    # One template file's contribution to the digest. Source files are hashed by what they *draw*:
+    # comment-only and blank lines are dropped first, so editing prose above the code is not a
+    # catalog-wide event. The AGPL relicensing (2026-08-03) rewrote nothing but the licence header
+    # in profiles_helper.rb and marked all 375 cards out of date — a full pass through headless
+    # Chrome to reproduce byte-identical faces. Blank lines go too because a header arrives with one
+    # under it, and leaving that behind would defeat the whole exercise.
+    #
+    # Everything else — the card-template assets — is hashed whole: no comments to strip, and they
+    # are multi-megabyte, so they stream from disk rather than through String#lines.
+    def self.template_file_digest(path)
+      pattern = COMMENT_LINE[path.extname]
+      return Digest::SHA256.file(path).hexdigest if pattern.nil?
+
+      body = path.read.lines.reject { |line| line.blank? || line.match?(pattern) }.join
+      Digest::SHA256.hexdigest(body)
     end
 
     # Versioned public URLs for the app to download. The ?v= cache-buster changes with the
