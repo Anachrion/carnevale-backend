@@ -480,5 +480,71 @@ RSpec.describe ListValidationService, type: :service do
       expect(result[:success]).to be false
       expect(result[:errors].size).to eq(2)
     end
+
+    # B-38: this service is the after_commit that runs on every single list edit, so its cost must
+    # not scale with gang size. #list_entries loads the whole set once with profiles and spell pools
+    # preloaded, and every check reads that one in-memory set; the moment a check reaches for
+    # `entry.profile` outside it — or re-queries the entries with its own `includes` — the count
+    # starts growing per model again. Comparing two gangs of very different sizes is what catches
+    # that regression; a bare ceiling on its own would not.
+    context "query count" do
+      def mage_entry(list)
+        profile = create(:profile, faction: :guild, ducats: 20, abilities: ["Mage (2)"],
+                          keywords: ["Discipline (Blood Rites, Divinity)"])
+        entry = add_entry(list, create(:card_reference, profile: profile))
+        pool = entry.profile.profile_spell_pools.first
+        entry.entry_pool_disciplines.create!(pool: pool, discipline: "blood_rites")
+        create_list(:spell, 2, discipline: :blood_rites).each do |spell|
+          Gang::EntrySpell.create!(list_entry: entry, spell: spell, pool: pool)
+        end
+        entry
+      end
+
+      # An Apprentice Doctor and her mentor: her pool is mentor_derived, so resolving it reads the
+      # *mentor's* profile and pools too — the second hop that has to be preloaded as well.
+      def mentored_pair(list)
+        mentor_profile = create(:profile, faction: :guild, ducats: 20, keywords: ["Hero", "Doctor"],
+                                 abilities: ["Mage (2)"])
+        mentor = add_entry(list, create(:card_reference, profile: mentor_profile))
+        apprentice_profile = create(:profile, faction: :guild, ducats: 10, keywords: ["Henchman", "Doctor"])
+        apprentice_profile.replace_spell_pools!([ { of: 1, slot_count: 0, mentor_derived: true, grants_cantrip: true, disciplines: [] } ])
+        add_entry(list, create(:card_reference, profile: apprentice_profile)).update!(mentored_by_entry: mentor)
+      end
+
+      # A gang exercising every check that reads a profile — a Leader, a Mage with committed spells,
+      # an Apprentice/mentor pair, a piece of equipment — plus `henchmen` plain models to scale it.
+      # Each model gets its own profile, so a per-model lookup can't hide behind a shared row.
+      def gang_of(henchmen)
+        list = create(:list, faction: :guild, points: 1_000)
+        add_entry(list, guild_ref(cost: 10, keywords: ["Leader"]))
+        mage_entry(list)
+        mentored_pair(list)
+        add_entry(list, create(:equipment, cost: 5))
+        henchmen.times { add_entry(list, guild_ref(cost: 5, keywords: ["Henchman"])) }
+        list
+      end
+
+      # reload outside the block: building the gang leaves the entries association loaded, which
+      # would hide exactly the queries this is here to count.
+      def validation_queries(list)
+        list.reload
+        count_queries { described_class.call(list) }
+      end
+
+      it "costs the same number of queries for a small gang as for a large one" do
+        small = validation_queries(gang_of(2))
+        large = validation_queries(gang_of(20))
+
+        expect(large).to eq(small)
+      end
+
+      # Pinned rather than capped, so adding a load has to be a deliberate edit here. The 11 are one
+      # batched round-trip each: the entries; their two polymorphic entry types (card_references,
+      # equipment); entry_pool_disciplines; entry_spells; the mentor entries and *their* card
+      # references; the known spells; then profiles, their spell pools, and those pools' disciplines.
+      it "validates a full gang in a fixed number of batched queries" do
+        expect(validation_queries(gang_of(20))).to eq(11)
+      end
+    end
   end
 end
