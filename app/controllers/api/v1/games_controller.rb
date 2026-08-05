@@ -358,6 +358,10 @@ module Api
         Encounter::GameBroadcaster.new(game).broadcast_state!
       end
 
+      def broadcast_entry_state!(state)
+        Encounter::GameBroadcaster.new(@game).broadcast_entry_state!(state, owner: @game_player)
+      end
+
       def ensure_roles_resolved!
         return unless @game.scenario.asymmetric?
         return if @game.game_players.all? { |p| p.role.present? }
@@ -369,7 +373,7 @@ module Api
         ActiveModel::Type::Boolean.new.cast(params[:recycle])
       end
 
-      # Shared body for the two entry-state PATCH endpoints: gate on status, resolve one of the
+      # Shared body for the entry-state PATCH endpoints: gate on status, resolve one of the
       # current player's own models (the opponent's entries 404, since the list is scoped to the
       # requesting player), apply the caller's mutation, then persist and broadcast.
       def update_entry_state!
@@ -388,11 +392,14 @@ module Api
           saved = state.save
         end
         if saved
-          broadcast_state!(@game)
-          # Returns just the mutated entry state, not the whole game: the full state reaches both
-          # players via broadcast_state!, and the client applies this slim payload as an optimistic
-          # update on the tapped model (see the Flutter _applyEntryState path). Intentional deviation
-          # from the game-returning actions — keep it in sync with the client if it ever changes.
+          # An `entry_state` event, not `game_state`: nothing in the game payload is derived from an
+          # entry state, so broadcasting the game here told the clients only "something changed" and
+          # made them re-fetch both player lists to find out what (B-37).
+          broadcast_entry_state!(state)
+          # Returns just the mutated entry state, not the whole game: the client applies this slim
+          # payload as an optimistic update on the tapped model, rather than waiting for its own echo
+          # broadcast (see the Flutter _applyEntryState path). Intentional deviation from the
+          # game-returning actions — keep it in sync with the client if it ever changes.
           render json: EntryStateSerializer.new(state, turn: @game_player.current_turn).as_json
         else
           render_error(state.errors)

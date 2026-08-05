@@ -63,4 +63,38 @@ RSpec.describe EntrySerializer do
     expect(granted.first[:id]).to be_nil
     expect(granted.first[:discipline]).to be_nil
   end
+
+  # B-37: an entry_state broadcast carries these instead of the full entry, so they have to agree
+  # with the `cast` flags the same entry's as_json would have produced.
+  describe "#spell_cast_flags" do
+    it "maps every known and granted spell's key to the cast flag as_json would report" do
+      cast = create(:spell, discipline: :runes_of_sovereignty)
+      uncast = create(:spell, discipline: :runes_of_sovereignty)
+      profile = create(:profile)
+      profile.replace_granted_spells!([
+        { grant_kind: "named_spell", consumes_slot: false, resets_each_round: true, spell_id: cast.id },
+        { grant_kind: "named_spell", consumes_slot: false, resets_each_round: true, spell_id: uncast.id }
+      ])
+      entry = create(:list_entry, entry: create(:card_reference, profile: profile))
+      create(:entry_state, list_entry: entry, spell_casts: { "spell:#{cast.id}" => 2 })
+
+      serializer = EntrySerializer.new(entry.reload, cantrips: cantrips, turn: 2)
+
+      expect(serializer.spell_cast_flags).to eq("spell:#{cast.id}" => true, "spell:#{uncast.id}" => false)
+      expect(serializer.spell_cast_flags)
+        .to eq(serializer.as_json[:granted_spells].to_h { |g| [ g[:key], g[:cast] ] })
+    end
+
+    it "reports a resets_each_round spell cast on an earlier turn as no longer cast" do
+      spell = create(:spell, discipline: :runes_of_sovereignty)
+      profile = create(:profile)
+      profile.replace_granted_spells!([ { grant_kind: "named_spell", consumes_slot: false, resets_each_round: true, spell_id: spell.id } ])
+      entry = create(:list_entry, entry: create(:card_reference, profile: profile))
+      create(:entry_state, list_entry: entry, spell_casts: { "spell:#{spell.id}" => 1 })
+
+      flags = EntrySerializer.new(entry.reload, cantrips: cantrips, turn: 2).spell_cast_flags
+
+      expect(flags).to eq("spell:#{spell.id}" => false)
+    end
+  end
 end

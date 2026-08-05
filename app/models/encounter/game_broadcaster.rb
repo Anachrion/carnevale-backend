@@ -41,5 +41,32 @@ module Encounter
         GameChannel.broadcast_to(game_player, { event: "game_state", game: game })
       end
     end
+
+    # Pushes one model's changed state (counters, stats, tokens, spell casts) rather than the whole
+    # game. `game_state` carries nothing entry-derived, so a counter toggle used to broadcast a
+    # payload identical to the last one and the client had no choice but to re-fetch the full player
+    # list to find what changed — four HTTP round-trips across the table per tap (B-37). This event
+    # carries the change itself, so nobody re-fetches anything.
+    #
+    # Unscoped by viewer: a gang and its models are open information (both players can already GET
+    # either player's list), so both get the same payload. `turn` is the *owner's* cursor, since
+    # `activated` and `cast` resolve against the turn of whoever controls the model.
+    def broadcast_entry_state!(entry_state, owner:)
+      entry = entry_state.list_entry
+      payload = {
+        event: "entry_state",
+        player_id: owner.id,
+        list_entry_id: entry.id,
+        state: EntryStateSerializer.new(entry_state, turn: owner.current_turn).as_json,
+        spell_casts: EntrySerializer.new(entry, cantrips: cantrips, turn: owner.current_turn).spell_cast_flags
+      }
+      @game.game_players.reload.each { |game_player| GameChannel.broadcast_to(game_player, payload) }
+    end
+
+    private
+
+    def cantrips
+      Catalog::Spell.cantrips.index_by(&:discipline)
+    end
   end
 end

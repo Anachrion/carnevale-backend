@@ -39,14 +39,7 @@ class EntrySerializer
     # needs the identifier and faces to render it and to highlight the pick among the profile's
     # alternatives. Nil for non-card entries (e.g. Equipment), which have no card face.
     card = entry.entry if entry.entry.is_a?(Catalog::CardReference)
-    pools = entry.resolved_pools.map { |resolved| pool_json(resolved) }
-    # A granted spell that duplicates a spell/cantrip already shown through a pool (Blood Crone's
-    # Major Arcana grants all 5 Cantrips outright, one of which is also the Cantrip her own pool
-    # grants once she's picked that Discipline) is the *same* spell on the wire — same key, same
-    # cast state — so it's dropped from granted_spells rather than shown twice.
-    known_keys = pools.flat_map { |p| p[:cantrips] + p[:spells] }.map { |s| s[:key] }.to_set
-    granted_spells = profile ? profile.profile_granted_spells.flat_map { |grant| granted_spell_json(grant) } : []
-    granted_spells = granted_spells.reject { |g| known_keys.include?(g[:key]) }
+    spells = spell_payload
     {
       id: entry.id,
       position: entry.position,
@@ -100,12 +93,36 @@ class EntrySerializer
       # different Discipline — lets the picker grey out a sibling's already-chosen Discipline
       # without the client needing to know which profiles carry this rule.
       distinct_discipline_per_copy: profile&.distinct_discipline_per_copy? || false,
-      pools: pools,
-      granted_spells: granted_spells
+      pools: spells[:pools],
+      granted_spells: spells[:granted_spells]
     }
   end
 
+  # Every spell this entry knows, keyed exactly as the `pools`/`granted_spells` payload keys it (see
+  # #spell_key), mapped to its current `cast` flag. Broadcast alongside an entry state so a
+  # spell-cast toggle reaches the other player without a full player-list re-fetch (B-37). It can't
+  # live in EntryStateSerializer: deriving `cast` needs each spell's `resets_each_round`, which is a
+  # property of the pool/grant it came from rather than of the stored state.
+  def spell_cast_flags
+    spells = spell_payload
+    pooled = spells[:pools].flat_map { |pool| pool[:cantrips] + pool[:spells] }
+    (pooled + spells[:granted_spells]).to_h { |spell| [ spell[:key], spell[:cast] ] }
+  end
+
   private
+
+  # The entry's two spell collections, built together because the second depends on the first.
+  def spell_payload
+    pools = @entry.resolved_pools.map { |resolved| pool_json(resolved) }
+    # A granted spell that duplicates a spell/cantrip already shown through a pool (Blood Crone's
+    # Major Arcana grants all 5 Cantrips outright, one of which is also the Cantrip her own pool
+    # grants once she's picked that Discipline) is the *same* spell on the wire — same key, same
+    # cast state — so it's dropped from granted_spells rather than shown twice.
+    known_keys = pools.flat_map { |p| p[:cantrips] + p[:spells] }.map { |s| s[:key] }.to_set
+    profile = @entry.profile
+    granted_spells = profile ? profile.profile_granted_spells.flat_map { |grant| granted_spell_json(grant) } : []
+    { pools: pools, granted_spells: granted_spells.reject { |g| known_keys.include?(g[:key]) } }
+  end
 
   def pool_json(resolved)
     pool = resolved[:pool]
