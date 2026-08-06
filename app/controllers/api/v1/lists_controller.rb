@@ -18,7 +18,7 @@ module Api
   module V1
     class ListsController < BaseController
       before_action :authenticate_user!
-      before_action :set_list, only: %i[show update destroy]
+      before_action :set_list, only: %i[show update destroy export]
 
       def index
         # No eager loading here: ListSerializer loads each list's entries with exactly the
@@ -53,6 +53,21 @@ module Api
       def destroy
         @list.destroy
         head :no_content
+      end
+
+      # The gang as shareable plain text (CARNEVALEB-74) — see Gang::TextFormat for the format and
+      # why illustrations are left out of it. Wrapped in JSON rather than served as text/plain so
+      # every endpoint here answers the same way and the generated client needs no special case.
+      def export
+        render json: { text: Gang::TextFormat.dump(@list) }
+      end
+
+      # Builds a *new* gang from that text. Never edits an existing list, so a bad paste costs
+      # nothing. `warnings` names what could not be resolved — an unknown model, a spell this build
+      # does not have — which is reported rather than fatal, so one typo cannot lose a whole gang.
+      def import
+        result = Gang::TextImport.call(params.require(:text), owner: current_user)
+        render json: { list: ListSerializer.new(result.list).as_json, warnings: result.warnings }, status: :created
       end
 
       private
