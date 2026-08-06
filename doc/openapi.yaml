@@ -3,6 +3,24 @@ openapi: 3.0.3
 info:
   title: Carnevale API
   version: "1"
+  description: |
+    Alongside these REST endpoints, a live game pushes updates over an ActionCable WebSocket at
+    `/cable` (`GameChannel`, subscribed with the `game_id`). Two event shapes travel on it:
+
+    - `{ "event": "game_state", "game": Game }` — the whole game, scoped to the receiving player's
+      view (their own drawn agendas). Sent on subscribe and whenever something outside the models
+      changes: a player joining, picking a gang, drawing/scoring/discarding an agenda, advancing or
+      rewinding their turn, summoning or dismissing a model, or ending the game.
+    - `{ "event": "entry_state", "player_id": integer, "list_entry_id": integer, "state": EntryState,
+      "spell_casts": { "<spell key>": boolean } }` — one model's changed state, sent by the five
+      entry endpoints below (counters, stats, tokens, spell casts). Nothing in the `Game` payload is
+      derived from a model's state, so these deliberately don't broadcast `game_state`: the change
+      travels in the event itself and the client applies it to that one model rather than re-fetching
+      both player lists to find what moved. `spell_casts` keys match the `key` on the entry's
+      `pools[].spells`/`pools[].cantrips`/`granted_spells`; it rides alongside `state` because
+      deriving `cast` needs each spell's `resets_each_round`, which the entry state alone doesn't
+      carry. Both turn-derived flags (`state.activated` and `spell_casts`) resolve against the
+      *owning* player's turn cursor, since each player advances turns independently.
 
 servers:
   - url: http://localhost:3000/api/v1
@@ -1223,8 +1241,8 @@ paths:
       description: |
         Only available while the game is in_progress, and only for entries in the requesting
         player's own gang — the opponent's models 404. Send just the counters to change;
-        omitted ones keep their current values. The change is broadcast to both players as a
-        `game_state` event (re-fetch the player list to see the new counters).
+        omitted ones keep their current values. The change is broadcast to both players as an
+        `entry_state` event carrying the new counters — no re-fetch needed.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1271,7 +1289,7 @@ paths:
         in_progress, and only for the requesting player's own models — the opponent's 404. Each token
         is keyed by a client-generated `id`: sending the same id again updates that token (edit it /
         flip its `active`) instead of adding a duplicate, so a retried request is safe. Broadcast to
-        both players as a `game_state` event.
+        both players as an `entry_state` event.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1319,7 +1337,8 @@ paths:
       summary: Remove a player token from one of the current player's own models
       description: |
         Removes the token with this client-generated id. Only available while the game is
-        in_progress, and only for the requesting player's own models. Broadcast to both players.
+        in_progress, and only for the requesting player's own models. Broadcast to both players as an
+        `entry_state` event.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1358,7 +1377,7 @@ paths:
         Only available while the game is in_progress, and only for entries in the requesting
         player's own gang — the opponent's models 404. Send just the stats to change (absolute
         values, not deltas); omitted ones keep their current values and none may go below 0.
-        The change is broadcast to both players as a `game_state` event.
+        The change is broadcast to both players as an `entry_state` event.
       tags: [Games]
       security:
         - ApiKeyAuth: []
@@ -1407,8 +1426,8 @@ paths:
         resets_each_round true (almost every one), the mark clears automatically once that player
         advances to a new turn; for the rare resets_each_round: false case (Adventuring Noble's
         Arcane Totem pool), it persists for the rest of the game but stays manually toggleable, so a
-        misclick is always correctable. The change is broadcast to both players as a `game_state`
-        event (re-fetch the player list to see each spell's updated `cast` flag).
+        misclick is always correctable. The change is broadcast to both players as an `entry_state`
+        event, whose `spell_casts` map carries every known spell's updated `cast` flag.
       tags: [Games]
       security:
         - ApiKeyAuth: []
