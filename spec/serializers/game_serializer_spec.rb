@@ -28,4 +28,16 @@ RSpec.describe GameSerializer do
 
     expect(large_queries).to eq(small_queries)
   end
+
+  # A-3: the version has to ride on every Game the API returns, not just on broadcasts. The widest
+  # ordering hazard is a mutation response — serialized before the opponent's change committed —
+  # landing after the broadcast that carried it, and the client can only order the two if both
+  # carry a version. Every REST response goes through this serializer, so covering it here covers
+  # all of them.
+  it "stamps the game's state_version" do
+    game = create(:game, state_version: 7)
+    gp = create(:game_player, game: game)
+
+    expect(described_class.new(game, viewer: gp).as_json[:state_version]).to eq(7)
+  end
 end

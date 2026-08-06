@@ -28,6 +28,12 @@ class GameSerializer
     list_costs = Gang::List.total_costs_for(players.filter_map { |p| p.list&.id })
     {
       id: game.id,
+      # Monotonic per game, bumped by GameBroadcaster (A-3). Emitted here rather than only in the
+      # broadcast envelope so it rides on *every* Game the client receives — mutation responses and
+      # GET /games/:id included. That matters: the widest ordering hazard isn't two broadcasts
+      # racing but a mutation response, serialized before the opponent's change committed, landing
+      # after the broadcast that carried it. Only a version on both can order them.
+      state_version: game.state_version,
       name: game.name,
       join_code: game.join_code,
       status: game.status,

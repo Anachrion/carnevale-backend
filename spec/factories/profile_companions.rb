@@ -19,3 +19,14 @@ end
 #  companion_profile_id :bigint           not null
 #  profile_id           :bigint           not null
 #
+# Indexes
+#
+#  index_profile_companions_on_companion_profile_id   (companion_profile_id)
+#  index_profile_companions_on_profile_and_companion  (profile_id,companion_profile_id) UNIQUE
+#  index_profile_companions_on_profile_id             (profile_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (companion_profile_id => profiles.id)
+#  fk_rails_...  (profile_id => profiles.id)
+#

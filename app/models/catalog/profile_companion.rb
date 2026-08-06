@@ -41,9 +41,9 @@ end
 #
 # Indexes
 #
-#  index_profile_companions_on_companion_profile_id            (companion_profile_id)
-#  index_profile_companions_on_profile_and_companion          (profile_id,companion_profile_id) UNIQUE
-#  index_profile_companions_on_profile_id                      (profile_id)
+#  index_profile_companions_on_companion_profile_id   (companion_profile_id)
+#  index_profile_companions_on_profile_and_companion  (profile_id,companion_profile_id) UNIQUE
+#  index_profile_companions_on_profile_id             (profile_id)
 #
 # Foreign Keys
 #
