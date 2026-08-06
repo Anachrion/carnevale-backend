@@ -20,6 +20,15 @@ paths:
     post:
       operationId: signup
       summary: Register a new user
+      description: |
+        Creates the account and returns it. Registering does **not** sign the new user in: no JWT
+        is issued and no `refresh_token` is returned, so the client follows this with POST /login
+        to obtain a session.
+
+        This used to be documented as returning a `Session`, which the controller never did
+        (CARNEVALEB-73). The generated client took the document at its word and failed to
+        deserialize every *successful* registration — reporting the account creation as an error
+        while the account was in fact created.
       tags: [Session]
       requestBody:
         required: true
@@ -29,11 +38,11 @@ paths:
               $ref: "#/components/schemas/RegistrationInput"
       responses:
         "201":
-          description: Created
+          description: The account that was created. Carries no credentials — see the description.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Session"
+                $ref: "#/components/schemas/Account"
         "422":
           description: Validation failed
           content:
@@ -2116,9 +2125,10 @@ components:
 
     Account:
       type: object
-      # The current user's account details, with no credentials attached. Returned by PATCH /account:
-      # editing the username neither issues a JWT nor rotates the refresh token, so (unlike Session)
-      # there is no `refresh_token` here — the existing credentials stay valid and unchanged.
+      # A user's account details, with no credentials attached. Returned by the two endpoints that
+      # touch an account without minting or rotating a session: PATCH /account (editing the username
+      # leaves the existing credentials valid and unchanged) and POST /signup (registering does not
+      # sign the new user in). Unlike Session, there is deliberately no `refresh_token` here.
       required: [user]
       properties:
         user:
