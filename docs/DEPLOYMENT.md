@@ -221,7 +221,13 @@ The one value that has to be supplied by hand:
 
    To also open links on a locally-built APK, append the upload fingerprint after a comma.
 
-2. Set it in Infisical (Production) as `ANDROID_CERT_FINGERPRINTS`, then redeploy.
+2. Put it in `config/deploy.yml` under `env.clear` as `ANDROID_CERT_FINGERPRINTS`, then redeploy.
+
+   It goes in git, not Infisical, on purpose: a certificate fingerprint is public — this endpoint
+   hands it to anyone who asks — so there is nothing to protect, and keeping it in `deploy.yml`
+   makes it reviewable and greppable instead of invisible. `env.clear` values are literals baked
+   into the deploy; a name listed under `env.secret` is what gets pulled from Infisical, so putting
+   it there would mean it never arrives.
 
 3. Check what production serves:
 
