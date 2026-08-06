@@ -61,7 +61,7 @@ RSpec.describe Encounter::GameBroadcaster, type: :channel do
   end
 
   describe "#broadcast_entry_state!" do
-    # B-37: the whole point is that the change travels in the payload, so neither client has to
+    # CARNEVALEB-37: the whole point is that the change travels in the payload, so neither client has to
     # re-fetch the player list to discover what moved.
     it "sends both players the changed model's state" do
       expect { described_class.new(game).broadcast_entry_state!(entry_state, owner: host) }

@@ -394,7 +394,7 @@ module Api
         if saved
           # An `entry_state` event, not `game_state`: nothing in the game payload is derived from an
           # entry state, so broadcasting the game here told the clients only "something changed" and
-          # made them re-fetch both player lists to find out what (B-37).
+          # made them re-fetch both player lists to find out what (CARNEVALEB-37).
           broadcast_entry_state!(state)
           # Returns just the mutated entry state, not the whole game: the client applies this slim
           # payload as an optimistic update on the tapped model, rather than waiting for its own echo

@@ -45,7 +45,7 @@ module Encounter
     # Pushes one model's changed state (counters, stats, tokens, spell casts) rather than the whole
     # game. `game_state` carries nothing entry-derived, so a counter toggle used to broadcast a
     # payload identical to the last one and the client had no choice but to re-fetch the full player
-    # list to find what changed — four HTTP round-trips across the table per tap (B-37). This event
+    # list to find what changed — four HTTP round-trips across the table per tap (CARNEVALEB-37). This event
     # carries the change itself, so nobody re-fetches anything.
     #
     # Unscoped by viewer: a gang and its models are open information (both players can already GET

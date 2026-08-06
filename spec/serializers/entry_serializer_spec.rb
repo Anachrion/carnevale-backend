@@ -64,7 +64,7 @@ RSpec.describe EntrySerializer do
     expect(granted.first[:discipline]).to be_nil
   end
 
-  # B-37: an entry_state broadcast carries these instead of the full entry, so they have to agree
+  # CARNEVALEB-37: an entry_state broadcast carries these instead of the full entry, so they have to agree
   # with the `cast` flags the same entry's as_json would have produced.
   describe "#spell_cast_flags" do
     it "maps every known and granted spell's key to the cast flag as_json would report" do

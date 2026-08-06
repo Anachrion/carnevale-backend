@@ -100,7 +100,7 @@ class EntrySerializer
 
   # Every spell this entry knows, keyed exactly as the `pools`/`granted_spells` payload keys it (see
   # #spell_key), mapped to its current `cast` flag. Broadcast alongside an entry state so a
-  # spell-cast toggle reaches the other player without a full player-list re-fetch (B-37). It can't
+  # spell-cast toggle reaches the other player without a full player-list re-fetch (CARNEVALEB-37). It can't
   # live in EntryStateSerializer: deriving `cast` needs each spell's `resets_each_round`, which is a
   # property of the pool/grant it came from rather than of the stored state.
   def spell_cast_flags
