@@ -47,7 +47,12 @@ Rails.application.routes.draw do
       # Short-lived, single-use credential for opening the ActionCable WebSocket (see CableTicket).
       post "cable_tickets", to: "cable_tickets#create"
 
-      resources :lists, only: %i[index show create update destroy]
+      resources :lists, only: %i[index show create update destroy] do
+        # Plain-text gang exchange (CARNEVALEB-74). `import` is on the collection: it creates a new
+        # list rather than editing one, so there is no id to hang it off.
+        member { get :export }
+        collection { post :import }
+      end
       resources :list_entries, only: %i[create update destroy] do
         member do
           patch :spells
