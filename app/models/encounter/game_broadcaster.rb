@@ -24,9 +24,21 @@ module Encounter
       @game = game
     end
 
+    # Bumps the game's `state_version` and serializes each player's payload *under the same lock*,
+    # so the version a payload carries orders it against every other payload of this game (A-3).
+    # Doing the two separately would only move the race: two workers could serialize in one order
+    # and stamp in the other, which is the thing the version exists to rule out.
+    #
+    # Delivery is deliberately outside the lock — pushing onto Action Cable is I/O and shouldn't
+    # hold a row lock. It also doesn't need to: the client orders by version, not by arrival, so
+    # broadcasts may reach it in any order.
     def broadcast_state!
-      @game.game_players.reload.each do |game_player|
-        GameChannel.broadcast_to(game_player, { event: "game_state", game: GameSerializer.new(@game, viewer: game_player).as_json })
+      payloads = @game.with_lock do
+        @game.increment!(:state_version)
+        @game.game_players.reload.map { |gp| [ gp, GameSerializer.new(@game, viewer: gp).as_json ] }
+      end
+      payloads.each do |game_player, game|
+        GameChannel.broadcast_to(game_player, { event: "game_state", game: game })
       end
     end
   end
