@@ -201,6 +201,50 @@ apply the same guard.
 
 ---
 
+## Enabling Android App Links
+
+The backend already serves `/join?code=…` and `/reset-password?...` as entry points to the Flutter
+app, and the Android build claims both paths on `carnevale-app.com` (see the `autoVerify`
+intent-filter in `AndroidManifest.xml`). Android only honours that claim if
+`/.well-known/assetlinks.json` names the certificate the installed app was signed with — until then
+those links keep opening the phone's browser.
+
+The one value that has to be supplied by hand:
+
+1. In the **Play Console** → *Setup* → *App integrity* → **App signing key certificate**, copy the
+   `SHA-256 certificate fingerprint`.
+
+   Take it from *App signing*, **not** *Upload key certificate*. Releases are uploaded as an `.aab`,
+   so Google re-signs them and the app on a user's phone carries Google's certificate. Using the
+   upload fingerprint is the usual mistake here and fails silently — the file serves, verification
+   just never matches.
+
+   To also open links on a locally-built APK, append the upload fingerprint after a comma.
+
+2. Set it in Infisical (Production) as `ANDROID_CERT_FINGERPRINTS`, then redeploy.
+
+3. Check what production serves:
+
+   ```bash
+   curl -s https://carnevale-app.com/.well-known/assetlinks.json
+   ```
+
+   It must answer `200 application/json`, with no redirect — Android's verifier follows none.
+
+4. On a device with the release build installed:
+
+   ```bash
+   adb shell pm get-app-links app.carnevale.mobile
+   ```
+
+   Each host should read `verified`. Re-verification only runs on install, so reinstall after
+   changing the file rather than expecting an existing install to notice.
+
+Verification is all-or-nothing across the hosts in one intent-filter: adding a host that does not
+serve this file breaks App Links for the others too. That is why the `sslip.io` alias is left out.
+
+---
+
 ## What's running
 
 - HTTPS JSON API (Devise + JWT for the Flutter clients, with rotating refresh tokens)
