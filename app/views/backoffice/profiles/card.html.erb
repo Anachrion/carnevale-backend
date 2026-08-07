@@ -550,7 +550,8 @@
           </div>
 
           <!-- special rules section -->
-          <% special_rule_chars = @profile.special_rules.sum { |r| r.name.to_s.length + r.description.to_s.length + r.spell_name.to_s.length + r.spell_description.to_s.length }
+          <%# a newline breaks the line early, so charge it for the half line it leaves empty. %>
+          <% special_rule_chars = @profile.special_rules.sum { |r| r.name.to_s.length + r.description.to_s.length + r.spell_name.to_s.length + r.spell_description.to_s.length + 25 * (r.description.to_s.count("\n") + r.spell_description.to_s.count("\n")) }
              compact_rules = special_rule_chars > 774 %>
 
           <% @profile.special_rules.each do |rule| %>
@@ -559,7 +560,7 @@
             <div style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '18px' : '21px' %>;color:#000;letter-spacing:.5px;margin-bottom:4px;"><%= rule.name %></div>
             <% end %>
             <% if rule.description.present? %>
-            <p style="margin:0 0 6px;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '14px' : '16px' %>;line-height:1.35;color:#000;text-wrap:pretty;"><%= kw.(rule.description) %></p>
+            <p style="margin:0 0 6px;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '14px' : '16px' %>;line-height:1.35;color:#000;text-wrap:pretty;white-space:pre-line;"><%= kw.(rule.description) %></p>
             <% end %>
             <% if rule.spell_name.present? %>
             <div style="border:2px solid #c86820;border-radius:6px;overflow:hidden;margin-top:4px;">
@@ -571,7 +572,7 @@
                 <span style="font-family:'Buckingham',system-ui;font-size:<%= compact_rules ? '13px' : '14px' %>;color:#000;">Difficulty: <%= rule.spell_difficulty %></span>
               </div>
               <div style="background:#fff;padding:5px 8px;">
-                <p style="margin:0;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '13px' : '15px' %>;line-height:1.35;color:#000;text-wrap:pretty;"><%= kw.(rule.spell_description) %></p>
+                <p style="margin:0;font-family:'EB Garamond',serif;font-size:<%= compact_rules ? '13px' : '15px' %>;line-height:1.35;color:#000;text-wrap:pretty;white-space:pre-line;"><%= kw.(rule.spell_description) %></p>
               </div>
             </div>
             <% end %>
