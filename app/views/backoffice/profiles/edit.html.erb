@@ -42,7 +42,14 @@
         </div>
       <% end %>
 
-      <%= form_with url: illustration_image_backoffice_profile_path(@profile), method: :patch do |f| %>
+      <%#
+        multipart: true is not optional here. form_with only infers the enctype from a file field
+        built by the *form builder*; file_field_tag is a standalone helper the builder never sees,
+        so without this the form posts urlencoded and `image` arrives as the bare filename string —
+        which attach() then reads as a signed blob id and rejects with InvalidSignature (B-38).
+      %>
+      <%= form_with url: illustration_image_backoffice_profile_path(@profile), method: :patch,
+            multipart: true do |f| %>
         <%= hidden_field_tag :number, number %>
         <%= file_field_tag :image, accept: "image/png,image/jpeg,image/webp", required: true,
               style: "font-size:12px;width:100%;margin-bottom:8px;" %>

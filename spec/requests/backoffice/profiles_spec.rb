@@ -223,6 +223,26 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(flash[:alert]).to include("Choose an image")
     end
 
+    # B-38. The specs above post through Rails' test helper, which encodes an UploadedFile as
+    # multipart whatever the real form does — so they passed while every browser upload 500'd.
+    # These two cover the part they structurally cannot: the enctype the page actually emits, and
+    # what the action does with the filename string that arrives when it is missing.
+    it "renders the upload form as multipart, so the browser sends the file and not its name" do
+      get edit_backoffice_profile_path(profile)
+
+      form = response.body[/<form[^>]*illustration_image[^>]*>/]
+      expect(form).to include('enctype="multipart/form-data"')
+    end
+
+    it "reports a non-multipart post instead of reading the filename as a signed blob id" do
+      patch illustration_image_backoffice_profile_path(profile),
+        params: { number: 1, image: "mira-oshea.png" }
+
+      expect(response).to redirect_to(edit_backoffice_profile_path(profile))
+      expect(flash[:alert]).to include("Choose an image")
+      expect(profile.illustrations).to be_empty
+    end
+
     it "is admin-only" do
       sign_out admin
       sign_in create(:user)

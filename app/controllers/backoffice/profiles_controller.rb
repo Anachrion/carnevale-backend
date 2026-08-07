@@ -384,11 +384,17 @@ module Backoffice
       # asset. A seeded illustration being re-arted keeps its path as a fallback.
       illustration.path ||= ""
 
-      if params[:image].present? && illustration.tap { |i| i.image.attach(params[:image]) }.save
+      # Insist on a real multipart upload. attach() reads a String as a *signed blob id*, so a form
+      # that lost its enctype hands it a filename and blows up in MessageVerifier instead of
+      # reporting itself — which is exactly how B-38 presented: a 500 on a perfectly good PNG.
+      upload = params[:image]
+      upload = nil unless upload.respond_to?(:read)
+
+      if upload && illustration.tap { |i| i.image.attach(upload) }.save
         redirect_to edit_backoffice_profile_path(@profile),
           notice: "Uploaded the art for illustration #{number}. The card is now out of date — render it to publish."
       else
-        message = params[:image].blank? ? "Choose an image to upload." : illustration.errors.full_messages.to_sentence
+        message = upload.nil? ? "Choose an image to upload." : illustration.errors.full_messages.to_sentence
         redirect_to edit_backoffice_profile_path(@profile), alert: "Could not upload the illustration. #{message}"
       end
     end
