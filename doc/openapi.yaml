@@ -360,11 +360,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required: [text]
-                properties:
-                  text:
-                    type: string
+                $ref: "#/components/schemas/GangText"
         "401":
           description: Not authenticated
         "404":
@@ -392,26 +388,14 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [text]
-              properties:
-                text:
-                  type: string
+              $ref: "#/components/schemas/GangText"
       responses:
         "201":
           description: The gang that was created, and anything that could not be resolved
           content:
             application/json:
               schema:
-                type: object
-                required: [list, warnings]
-                properties:
-                  list:
-                    $ref: "#/components/schemas/List"
-                  warnings:
-                    type: array
-                    items:
-                      type: string
+                $ref: "#/components/schemas/GangImportResult"
         "401":
           description: Not authenticated
 
@@ -2223,6 +2207,31 @@ components:
             Long-lived, single-use credential used to obtain a fresh JWT once the short-lived one
             expires (see POST /token). Store it securely; it is only ever returned here and on
             refresh, and is rotated on every use.
+
+    GangText:
+      type: object
+      # The plain-text exchange format, in both directions: what GET /lists/{id}/export returns and
+      # what POST /lists/import accepts. One schema rather than two identical ones, so the generated
+      # clients name it once.
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    GangImportResult:
+      type: object
+      required: [list, warnings]
+      properties:
+        list:
+          $ref: "#/components/schemas/List"
+        warnings:
+          type: array
+          description: |
+            What could not be resolved and was skipped — an unknown model, a renamed spell. Import
+            succeeds partially by design, so a client that drops these leaves the user with a
+            quietly incomplete gang.
+          items:
+            type: string
 
     Account:
       type: object
