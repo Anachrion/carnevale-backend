@@ -43,6 +43,22 @@ module Catalog
     def self.known_names(category)
       where(category: category).pluck(:name).to_set
     end
+
+    # Matches any glossary ability named in rule prose, plus the "(X)" rating that may trail it, so
+    # the card can bold the whole "Acrobatic (2)". Built from the table rather than a hand-kept list
+    # so an ability added to the catalog starts bolding without a matching code change — the two
+    # drifted once already, and "Aerobatic" sat in the list unmatched for as long as it took someone
+    # to notice a keyword printing plain.
+    #
+    # Longest name first: an alternation stops at its first hit, so a shorter name that prefixes a
+    # longer one ("Expert" against "Expert Offence") would otherwise bold only its own half.
+    def self.keyword_pattern
+      names = pluck(:name).uniq.reject(&:blank?).sort_by { |name| [ -name.length, name ] }
+      # An empty alternation matches the empty string everywhere; match nothing instead.
+      return /(?!)/ if names.empty?
+
+      /\b(#{names.map { |name| Regexp.escape(name) }.join("|")})(?!\w)(\s*\([^)]+\))?/
+    end
   end
 end
 

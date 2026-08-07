@@ -35,6 +35,39 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  # The back prints special rule prose, and the keywords inside it are bolded against the
+  # Catalog::Ability glossary. That list used to be hand-kept in the template and drifted from the
+  # catalog, so a keyword could print plain with nothing failing.
+  describe "GET card (the back's rule prose)" do
+    before { sign_in admin }
+
+    def render_back(rule)
+      Catalog::ProfileSpecialRule.create!(profile: profile, special_rule: rule, position: 1)
+      get card_backoffice_profile_path(profile), params: { side: "back" }
+      response.body
+    end
+
+    it "bolds a glossary ability named in a rule, together with its rating" do
+      Catalog::Ability.find_or_create_by!(category: "character", name: "Acrobatic")
+      rule = Catalog::SpecialRule.create!(name: "Sure Footed", description: "Gain Acrobatic (2).")
+
+      expect(render_back(rule)).to include('<span style="font-weight:700;">Acrobatic (2)</span>')
+    end
+
+    it "bolds an ability added to the glossary, with no template change" do
+      Catalog::Ability.find_or_create_by!(category: "character", name: "Tide Walker")
+      rule = Catalog::SpecialRule.create!(name: "Lagoon Born", description: "Gain Tide Walker (1).")
+
+      expect(render_back(rule)).to include('<span style="font-weight:700;">Tide Walker (1)</span>')
+    end
+
+    it "keeps the line breaks an author typed into a description" do
+      rule = Catalog::SpecialRule.create!(name: "Spoils", description: "Choose one:\n• More coin\n• More speed")
+
+      expect(render_back(rule)).to match(/white-space:pre-line[^>]*>Choose one:\n• More coin\n• More speed/)
+    end
+  end
+
   describe "GET index (the sticky filter)" do
     let!(:capodecina) { profile }
     let!(:bombardier) { create(:profile, faction: "guild", name: "Bombardier") }
