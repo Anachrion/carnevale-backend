@@ -18,6 +18,19 @@
   spell_difficulty: 6
   spell_description: Total up every Ace rolled then pick one enemy character in line
     of sight within 3". That character loses that many Life Points plus 1.
+- key: a-bounty-worth-taking
+  name: A Bounty Worth Taking
+  description: "Whenever a friendly character in line of sight kills an enemy character,
+    add 1 coin to your coin pile. At the start of any friendly character's turn, you
+    may spend any number of coins from your pile to give that character the following
+    benefits for that character's turn, at the cost of 1 coin per benefit (each may
+    only be chosen once per turn): \r\n• Gain Aerial Attack \r\n• Gain Acrobatic (2)
+    \r\n• Gain Fast Swimmer (2) \r\n• Gain First Strike (1) \r\n• Replenish 1 Will
+    Point or 1 Command Point"
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
 - key: a-choice-cut
   name: A Choice Cut
   description: When this character kills a character with the Monster keyword, it
@@ -124,6 +137,14 @@
   spell_cost:
   spell_difficulty:
   spell_description:
+- key: ancient-horror
+  name: Ancient Horror
+  description: PULSE Command Ability Until the end of the round, other friendly characters
+    within 6" and line of sight gain Fear (2) and First Strike (1)
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
 - key: annoying-tune
   name: Annoying Tune
   description: All enemy characters have -1 DEXTERITY while within 3" of Coviello.
@@ -165,6 +186,15 @@
     if the attack deals at least 1 Damage, increase the damage caused by 1 (before
     any PROTECTION rolls). A character can only be given a single Mask. Unique characters
     without Faction (Gifted) and Mindless characters cannot be given a Mask.'
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: a-stately-ransom
+  name: A Stately Ransom
+  description: PULSE Command Ability Until the end of the round, enemy characters
+    grant 1 coin when killed out of line of sight, or 2 coins when killed in line
+    of sight (instead of 1).
   spell_name:
   spell_cost:
   spell_difficulty:
@@ -723,6 +753,17 @@
   name: Deathwish
   description: This character may not make Unarmed Combat actions. Additionally, any
     failed Combat actions with Bombs always count as fumbles.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: decapitation
+  name: Decapitation
+  description: When this character makes a Combat action with Beheader against a character
+    with a Size of 50mm or less and rolls more Aces than that character's current
+    Life Points, that character is cut down! Instead of calculating damage and making
+    PROTECTION rolls as normal, that target character's Life Points are reduced to
+    0, counting as Life Points lost.
   spell_name:
   spell_cost:
   spell_difficulty:
@@ -1726,6 +1767,15 @@
   spell_cost:
   spell_difficulty:
   spell_description:
+- key: martial-coup
+  name: Martial Coup
+  description: Friendly characters with the Soldier keyword in 6" and line of sight
+    of this character gain Penetration -1 when making Combat actions against characters
+    with 0 Will Points remaining.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
 - key: martial-elite
   name: Martial Elite
   description: Friendly characters with the Ottoman keyword within 6" may use their
@@ -1951,6 +2001,14 @@
 - key: piercing-wail
   name: Piercing Wail
   description: Any enemy characters within 6" of this character have -1 DEXTERITY.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: pirate-s-retinue
+  name: Pirate's Retinue
+  description: 'All friendly characters gain Companion (Mira O''Shea) but lose all
+    of the following keywords: Trade, End of Days, House of Virtue.'
   spell_name:
   spell_cost:
   spell_difficulty:

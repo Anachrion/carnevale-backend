@@ -144,6 +144,16 @@
   penetration: -1
   range: 0
   abilities: []
+- key: beheader
+  name: Beheader
+  damage: 2
+  evasion: 1
+  penetration: 0
+  range: 2
+  abilities:
+  - Knockback
+  - Stun
+  - Two-handed
 - key: big-club
   name: Big Club
   damage: 1

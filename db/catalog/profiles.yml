@@ -4166,6 +4166,46 @@
     offset_y: 0
     zoom: 100
     flipped: false
+- name: Mira O'Shea
+  faction: guild
+  version: 2.2.0
+  ducats: 21
+  movement: 4
+  attack: 4
+  dexterity: 5
+  protection: 3
+  mind: 4
+  action_points: 3
+  will_points: 3
+  command_points: 4
+  life_points: 12
+  size: 30
+  keywords:
+  - Leader
+  - Unique
+  abilities:
+  - Boat Crew
+  - Expert Offence (2)
+  - First Strike (1)
+  weapons:
+  - naval-cutlass
+  - duelling-pistol
+  special_rules:
+  - a-bounty-worth-taking
+  - a-stately-ransom
+  - pirate-s-retinue
+  card_references:
+  - identifier: guild-mira-o-shea
+    name: Mira O'Shea
+    illustration_number: 1
+  illustrations:
+  - number: 1
+    path: ''
+    offset_x: 32
+    offset_y: -2
+    zoom: 85
+    flipped: false
+    image: guild-mira-o-shea-illus1.png
 - name: Ostrich Chariot?!
   faction: guild
   version: 2.2.1
@@ -9043,6 +9083,47 @@
     offset_y: 25
     zoom: 85
     flipped: false
+- name: Radu Basarab
+  faction: strigoi
+  version: 2.2.0
+  ducats: 25
+  movement: 5
+  attack: 4
+  dexterity: 5
+  protection: 4
+  mind: 4
+  action_points: 3
+  will_points: 0
+  command_points: 4
+  life_points: 14
+  size: 30
+  keywords:
+  - Leader
+  - Vampire
+  - Unique
+  abilities:
+  - Expert Offence (2)
+  - Frenzied
+  - First Strike (1)
+  - Vampiric Attack (2)
+  weapons:
+  - beheader
+  special_rules:
+  - ancient-horror
+  - martial-coup
+  - decapitation
+  card_references:
+  - identifier: strigoi-radu-basarab
+    name: Radu Basarab
+    illustration_number: 1
+  illustrations:
+  - number: 1
+    path: ''
+    offset_x: 19
+    offset_y: 2
+    zoom: 75
+    flipped: false
+    image: strigoi-radu-basarab-illus1.png
 - name: Reaper
   faction: strigoi
   version: 2.4.0
