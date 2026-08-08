@@ -209,17 +209,30 @@ intent-filter in `AndroidManifest.xml`). Android only honours that claim if
 `/.well-known/assetlinks.json` names the certificate the installed app was signed with — until then
 those links keep opening the phone's browser.
 
-The one value that has to be supplied by hand:
+This is configured; the steps below are what to repeat if a signing key is ever rotated.
 
-1. In the **Play Console** → *Setup* → *App integrity* → **App signing key certificate**, copy the
-   `SHA-256 certificate fingerprint`.
+1. In the **Play Console** → *Protected by Play* → *Play Store protection* → **Manage Play app
+   signing**, copy the `SHA-256 certificate fingerprint` of the **App signing key certificate**.
 
-   Take it from *App signing*, **not** *Upload key certificate*. Releases are uploaded as an `.aab`,
-   so Google re-signs them and the app on a user's phone carries Google's certificate. Using the
-   upload fingerprint is the usual mistake here and fails silently — the file serves, verification
-   just never matches.
+   The console moves this page around — it has also lived under *Setup → App integrity* and *Test
+   and release → App integrity*. The `…/app/<app-id>/app-signing` URL has outlasted all of them.
 
-   To also open links on a locally-built APK, append the upload fingerprint after a comma.
+   Take it from *App signing key certificate*, **not** *Upload key certificate* directly below it.
+   Releases are uploaded as an `.aab`, so Google re-signs them and the app on a user's phone carries
+   Google's certificate. Using the upload fingerprint is the usual mistake here and fails silently —
+   the file serves, verification just never matches. To check you took the right one, print the
+   upload key's own fingerprint and confirm it *differs*:
+
+   ```bash
+   cd ../carnevale && infisical run --env=prod --path=/android -- sh -c \
+     'printf "%s" "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 -d > /tmp/u.jks && \
+      keytool -list -v -keystore /tmp/u.jks -alias "$ANDROID_UPLOAD_KEY_ALIAS" \
+        -storepass "$ANDROID_UPLOAD_STORE_PASSWORD" | grep -i SHA256; rm -f /tmp/u.jks'
+   ```
+
+   That upload fingerprint is worth listing too, after a comma: it is what a locally-built APK is
+   signed with, so without it deep links work on Play Store installs but not on a sideloaded test
+   build. Both are configured here.
 
 2. Put it in `config/deploy.yml` under `env.clear` as `ANDROID_CERT_FINGERPRINTS`, then redeploy.
 
