@@ -9704,6 +9704,44 @@
     offset_y: -16
     zoom: 95
     flipped: false
+- name: The Beast Within
+  faction: strigoi
+  version: 2.2.1
+  ducats: 0
+  movement: 6
+  attack: 4
+  dexterity: 4
+  protection: 2
+  mind: 2
+  action_points: 3
+  will_points: 3
+  command_points: 1
+  life_points: 19
+  size: 50
+  keywords:
+  - Hero
+  - Unique
+  abilities:
+  - Brave
+  - Bulky
+  - Fear (-2)
+  weapons:
+  - lupine-claws
+  special_rules:
+  - violent-transformation-2
+  - moonliege
+  card_references:
+  - identifier: strigoi-the-beast-within
+    name: The Beast Within
+    illustration_number: 1
+  illustrations:
+  - number: 1
+    path: ''
+    offset_x: 15
+    offset_y: 5
+    zoom: 85
+    flipped: false
+    image: strigoi-the-beast-within-illus1.png
 - name: Thrall
   faction: strigoi
   version: 2.3.0
@@ -9897,6 +9935,46 @@
     offset_y: 0
     zoom: 100
     flipped: false
+- name: Yune Lobravym
+  faction: strigoi
+  version: 2.2.1
+  ducats: 23
+  movement: 4
+  attack: 4
+  dexterity: 5
+  protection: 4
+  mind: 3
+  action_points: 2
+  will_points: 3
+  command_points: 1
+  life_points: 19
+  size: 30
+  keywords:
+  - Hero
+  - Unique
+  - Discipline (Blood Rites, Wild Magic)
+  abilities:
+  - Expert Offence (2)
+  - First Strike (1)
+  - Mage (2)
+  weapons:
+  - kriegsmesser
+  special_rules:
+  - runic-blood
+  - moonliege
+  - violent-transformation
+  card_references:
+  - identifier: strigoi-yune-lobravym
+    name: Yune Lobravym
+    illustration_number: 1
+  illustrations:
+  - number: 1
+    path: ''
+    offset_x: 39
+    offset_y: -16
+    zoom: 70
+    flipped: true
+    image: strigoi-yune-lobravym-illus1.png
 - name: Zoryi
   faction: strigoi
   version: 2.3.0

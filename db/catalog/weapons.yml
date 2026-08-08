@@ -1128,6 +1128,13 @@
   penetration: 0
   range: 0
   abilities: []
+- key: kriegsmesser
+  name: Kriegsmesser
+  damage: 0
+  evasion: -1
+  penetration: -2
+  range: 0
+  abilities: []
 - key: lashing-swipe
   name: Lashing Swipe
   damage: 0
@@ -1152,6 +1159,13 @@
   evasion: 0
   penetration: -1
   range: 0
+  abilities: []
+- key: lupine-claws
+  name: Lupine Claws
+  damage: 2
+  evasion: 0
+  penetration: 0
+  range: 1
   abilities: []
 - key: mace
   name: Mace

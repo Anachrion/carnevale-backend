@@ -1872,6 +1872,16 @@
   spell_cost:
   spell_difficulty:
   spell_description:
+- key: moonliege
+  name: Moonliege
+  description: During deployment let your opponent know when the moon will be brightest.
+    Choose either the first 3 rounds, or the remaining rounds. When the moon is brightest,
+    every time a friendly character kills an enemy character when either are within
+    line of sight, this character replenishes 1 Will Point.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
 - key: mucus
   name: Mucus
   description: This character gains +4 DEXTERITY for any Combat actions (including
@@ -2285,6 +2295,13 @@
   description: 2AP. Pick a point on a piece of vertical terrain within 12" at least
     1" below this character. Move the character to that point as if moving down a
     zipline.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: runic-blood
+  name: Runic Blood
+  description: This character may use the Cast Spell action for its Attacks of Opportunity.
   spell_name:
   spell_cost:
   spell_difficulty:
@@ -2911,6 +2928,27 @@
   description: If an enemy character causes damage to Mezzetino (before Protection
     Rolls), he may re-roll any failed dice rolls for Combat actions against that character
     for the rest of the game, including the Destiny Dice.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: violent-transformation
+  name: Violent Transformation
+  description: At the start of this character's turn, you may choose to either stay
+    as Yune or transform into The Beast Within. Place The Beast Within as close to
+    Yune's position as possible. The two characters share their Life Points, Will
+    Points and Command Points (including any that have been lost), but The Beast Within
+    cannot use Will Points or Command Points.
+  spell_name:
+  spell_cost:
+  spell_difficulty:
+  spell_description:
+- key: violent-transformation-2
+  name: Violent Transformation
+  description: |-
+    At the start of this character's turn, you may choose to either stay as The Beast Within or transform into Yune. Place Yune as close to The Beast Within's position as possible. The two characters share their Life Points, Will Points and Command Points (including any that have been lost), but The Beast Within cannot use Will Points or Command Points.
+
+    This character cannot be included as part of your gang and has no magic disciplines.
   spell_name:
   spell_cost:
   spell_difficulty:
