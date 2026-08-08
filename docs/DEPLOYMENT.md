@@ -201,6 +201,69 @@ apply the same guard.
 
 ---
 
+## Enabling Android App Links
+
+The backend already serves `/join?code=…` and `/reset-password?...` as entry points to the Flutter
+app, and the Android build claims both paths on `carnevale-app.com` (see the `autoVerify`
+intent-filter in `AndroidManifest.xml`). Android only honours that claim if
+`/.well-known/assetlinks.json` names the certificate the installed app was signed with — until then
+those links keep opening the phone's browser.
+
+This is configured; the steps below are what to repeat if a signing key is ever rotated.
+
+1. In the **Play Console** → *Protected by Play* → *Play Store protection* → **Manage Play app
+   signing**, copy the `SHA-256 certificate fingerprint` of the **App signing key certificate**.
+
+   The console moves this page around — it has also lived under *Setup → App integrity* and *Test
+   and release → App integrity*. The `…/app/<app-id>/app-signing` URL has outlasted all of them.
+
+   Take it from *App signing key certificate*, **not** *Upload key certificate* directly below it.
+   Releases are uploaded as an `.aab`, so Google re-signs them and the app on a user's phone carries
+   Google's certificate. Using the upload fingerprint is the usual mistake here and fails silently —
+   the file serves, verification just never matches. To check you took the right one, print the
+   upload key's own fingerprint and confirm it *differs*:
+
+   ```bash
+   cd ../carnevale && infisical run --env=prod --path=/android -- sh -c \
+     'printf "%s" "$ANDROID_UPLOAD_KEYSTORE_B64" | base64 -d > /tmp/u.jks && \
+      keytool -list -v -keystore /tmp/u.jks -alias "$ANDROID_UPLOAD_KEY_ALIAS" \
+        -storepass "$ANDROID_UPLOAD_STORE_PASSWORD" | grep -i SHA256; rm -f /tmp/u.jks'
+   ```
+
+   That upload fingerprint is worth listing too, after a comma: it is what a locally-built APK is
+   signed with, so without it deep links work on Play Store installs but not on a sideloaded test
+   build. Both are configured here.
+
+2. Put it in `config/deploy.yml` under `env.clear` as `ANDROID_CERT_FINGERPRINTS`, then redeploy.
+
+   It goes in git, not Infisical, on purpose: a certificate fingerprint is public — this endpoint
+   hands it to anyone who asks — so there is nothing to protect, and keeping it in `deploy.yml`
+   makes it reviewable and greppable instead of invisible. `env.clear` values are literals baked
+   into the deploy; a name listed under `env.secret` is what gets pulled from Infisical, so putting
+   it there would mean it never arrives.
+
+3. Check what production serves:
+
+   ```bash
+   curl -s https://carnevale-app.com/.well-known/assetlinks.json
+   ```
+
+   It must answer `200 application/json`, with no redirect — Android's verifier follows none.
+
+4. On a device with the release build installed:
+
+   ```bash
+   adb shell pm get-app-links app.carnevale.mobile
+   ```
+
+   Each host should read `verified`. Re-verification only runs on install, so reinstall after
+   changing the file rather than expecting an existing install to notice.
+
+Verification is all-or-nothing across the hosts in one intent-filter: adding a host that does not
+serve this file breaks App Links for the others too. That is why the `sslip.io` alias is left out.
+
+---
+
 ## What's running
 
 - HTTPS JSON API (Devise + JWT for the Flutter clients, with rotating refresh tokens)

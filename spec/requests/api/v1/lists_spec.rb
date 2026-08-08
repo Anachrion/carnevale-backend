@@ -174,4 +174,76 @@ RSpec.describe "Api::V1::Lists", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+  describe "the plain-text gang exchange (CARNEVALEB-74)" do
+    def model!(name)
+      profile = create(:profile, name: name, faction: "guild")
+      create(:card_reference, profile: profile, identifier: "guild-#{name.parameterize}-a")
+      profile
+    end
+
+    describe "GET /api/v1/lists/:id/export" do
+      it "returns the gang as text" do
+        model!("Bravo")
+        list = create(:list, owner: user, name: "Blood of the Lamb", faction: "guild", points: 150)
+        create(:list_entry, list: list, entry: Catalog::Profile.find_by(name: "Bravo").card_references.first, position: 1)
+
+        get "/api/v1/lists/#{list.id}/export", headers: auth_headers
+
+        expect(response).to have_http_status(:ok)
+        text = JSON.parse(response.body)["text"]
+        expect(text).to include("Carnevale gang: Blood of the Lamb", "Faction: guild", "- Bravo")
+      end
+
+      # Lists are scoped to their owner everywhere else; export must not become the one way to read
+      # somebody else's gang.
+      it "404s on another user's list" do
+        get "/api/v1/lists/#{create(:list).id}/export", headers: auth_headers
+
+        expect(response).to have_http_status(:not_found)
+      end
+
+      it "401s without a session" do
+        get "/api/v1/lists/#{create(:list, owner: user).id}/export", headers: json_headers
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    describe "POST /api/v1/lists/import" do
+      let(:text) { "Carnevale gang: Imported\nFaction: guild\nDucats: 150\n\nModels\n- Bravo\n" }
+
+      it "creates a new list owned by the caller" do
+        model!("Bravo")
+
+        expect {
+          post "/api/v1/lists/import", params: { text: text }.to_json, headers: auth_headers
+        }.to change(user.lists, :count).by(1)
+
+        expect(response).to have_http_status(:created)
+        body = JSON.parse(response.body)
+        expect(body["list"]).to include("name" => "Imported", "faction" => "guild")
+        expect(body["list"]["entries"].map { |e| e["profile_name"] }).to eq([ "Bravo" ])
+        expect(body["warnings"]).to eq([])
+      end
+
+      # The contract that keeps one typo from costing a whole gang: partial success, reported.
+      it "reports what it could not resolve and still creates the rest" do
+        model!("Bravo")
+
+        post "/api/v1/lists/import",
+             params: { text: text.sub("- Bravo", "- Bravo\n- Nonesuch") }.to_json,
+             headers: auth_headers
+
+        body = JSON.parse(response.body)
+        expect(body["list"]["entries"].size).to eq(1)
+        expect(body["warnings"]).to include(a_string_matching(/Nonesuch/))
+      end
+
+      it "401s without a session" do
+        post "/api/v1/lists/import", params: { text: text }.to_json, headers: json_headers
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+  end
 end

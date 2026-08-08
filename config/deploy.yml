@@ -69,6 +69,16 @@ env:
     # Point at the container-internal Thruster (:80) so it never hair-pins out to the public
     # host. Must stay reachable from inside the app container.
     CARD_RENDER_BASE_URL: http://localhost
+    # SHA-256 of the certificate the Android app is signed with, served in
+    # /.well-known/assetlinks.json so https links to this domain open the app instead of the browser
+    # (CARNEVALEB-74). Two of them, in this order: first the *app signing* certificate, which is
+    # Google's — releases are uploaded as an .aab and Play re-signs them, so the local upload key is
+    # the wrong one and would silently fail verification; second the upload certificate, which is
+    # what a locally-built APK sideloaded for testing is signed with. The literal values live here
+    # rather than in Infisical because they are public — the endpoint serves them to anyone — so
+    # there is nothing to protect and this keeps them reviewable. See docs/DEPLOYMENT.md "Enabling
+    # Android App Links" for where in the Play Console to find them.
+    ANDROID_CERT_FINGERPRINTS: "87:1C:E0:B0:FB:BA:8E:A0:31:27:1C:BE:26:CD:64:A4:7E:44:21:4D:8E:D8:D7:14:D2:FE:CD:F3:EF:92:53:24,97:DB:C2:99:2E:8A:CD:69:EE:A1:BA:53:39:95:21:CC:92:B5:DD:6C:6B:63:06:67:8C:C2:1C:1D:5E:BE:D4:EE"
   secret:
     - RAILS_MASTER_KEY
     - CARNEVALE_BACKEND_DATABASE_PASSWORD

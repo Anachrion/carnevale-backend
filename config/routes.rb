@@ -47,7 +47,12 @@ Rails.application.routes.draw do
       # Short-lived, single-use credential for opening the ActionCable WebSocket (see CableTicket).
       post "cable_tickets", to: "cable_tickets#create"
 
-      resources :lists, only: %i[index show create update destroy]
+      resources :lists, only: %i[index show create update destroy] do
+        # Plain-text gang exchange (CARNEVALEB-74). `import` is on the collection: it creates a new
+        # list rather than editing one, so there is no id to hang it off.
+        member { get :export }
+        collection { post :import }
+      end
       resources :list_entries, only: %i[create update destroy] do
         member do
           patch :spells
@@ -155,4 +160,10 @@ Rails.application.routes.draw do
   # these, those URLs 404 before Flutter ever boots. (Native app opens them as OS deep links.)
   get "reset-password", to: "web_app#index"
   get "join", to: "web_app#index"
+
+  # What turns the two paths above into *App Links* on Android: the OS fetches this at install time
+  # for each host the app manifest claims, and only routes those URLs to the app if the certificate
+  # matches. Without it they keep opening the phone's browser (CARNEVALEB-74). The dot-prefixed
+  # segment needs an explicit path — Rails would otherwise read it as a format separator.
+  get "/.well-known/assetlinks.json", to: "well_known#assetlinks"
 end

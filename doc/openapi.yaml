@@ -333,6 +333,72 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /lists/{id}/export:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+
+    get:
+      operationId: exportList
+      summary: Export a gang as shareable plain text
+      description: |
+        The gang written in the plain-text exchange format, ready to paste into a chat message or
+        render as a QR code. Returns 404 if the list doesn't belong to the current user.
+
+        Illustrations are deliberately not carried: a gang list is what you took, not which artwork
+        you picked. Neither are auto-included companions or a model's derived spells (cantrips,
+        granted spells) — POST /lists/import regenerates all of those from the catalog.
+
+        Wrapped in JSON rather than served as `text/plain` so every endpoint here answers the same
+        way. See CARNEVALEB-74.
+      tags: [Lists]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: The gang as text
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GangText"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found
+
+  /lists/import:
+    post:
+      operationId: importList
+      summary: Build a new gang from exported text
+      description: |
+        Parses the plain-text format produced by GET /lists/{id}/export and creates a **new** gang
+        from it. Never edits an existing list, so a bad paste costs nothing.
+
+        Anything that cannot be resolved — a model this build's catalog doesn't know, a spell that
+        has been renamed — is reported in `warnings` and skipped, rather than failing the whole
+        import: one typo should not cost a whole gang. Roster legality is *not* judged here, so an
+        imported gang that breaks a rule or busts its Ducat limit arrives flagged `selection_valid:
+        false` exactly as a hand-built one would.
+      tags: [Lists]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GangText"
+      responses:
+        "201":
+          description: The gang that was created, and anything that could not be resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GangImportResult"
+        "401":
+          description: Not authenticated
+
   /lists/{id}:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -2141,6 +2207,31 @@ components:
             Long-lived, single-use credential used to obtain a fresh JWT once the short-lived one
             expires (see POST /token). Store it securely; it is only ever returned here and on
             refresh, and is rotated on every use.
+
+    GangText:
+      type: object
+      # The plain-text exchange format, in both directions: what GET /lists/{id}/export returns and
+      # what POST /lists/import accepts. One schema rather than two identical ones, so the generated
+      # clients name it once.
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    GangImportResult:
+      type: object
+      required: [list, warnings]
+      properties:
+        list:
+          $ref: "#/components/schemas/List"
+        warnings:
+          type: array
+          description: |
+            What could not be resolved and was skipped — an unknown model, a renamed spell. Import
+            succeeds partially by design, so a client that drops these leaves the user with a
+            quietly incomplete gang.
+          items:
+            type: string
 
     Account:
       type: object
