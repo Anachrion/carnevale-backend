@@ -68,6 +68,37 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  # Grover fetches this page over plain HTTP from CARD_RENDER_BASE_URL (http://localhost), but
+  # config.assume_ssl makes every request look like HTTPS — so Active Storage's *redirect* route
+  # bounced headless Chrome to https://localhost, where nothing listens (Thruster binds :80;
+  # kamal-proxy terminates TLS outside the container). The portrait failed to load with no error
+  # anywhere, and the published card came out with an empty circle. The proxy route streams the
+  # bytes on the connection Chrome already has, so no absolute URL is ever generated.
+  describe "GET card (how the portrait is fetched)" do
+    let!(:reference) { create(:card_reference, profile: profile, identifier: "guild-capodecina", illustration_number: 1) }
+
+    before { sign_in admin }
+
+    it "serves uploaded art through the proxy route, never the redirecting one" do
+      patch illustration_image_backoffice_profile_path(profile),
+        params: { number: 1, image: fixture_file_upload("art.png", "image/png") }
+      expect(profile.illustrations.find_by(number: 1).image).to be_attached
+
+      get card_backoffice_profile_path(profile), params: { side: "front" }
+
+      expect(response.body).to include("/rails/active_storage/blobs/proxy/")
+      expect(response.body).not_to include("/rails/active_storage/blobs/redirect/")
+    end
+
+    it "still points a seeded illustration at its committed asset" do
+      profile.illustrations.create!(number: 1, path: "p02.png")
+
+      get card_backoffice_profile_path(profile), params: { side: "front" }
+
+      expect(response.body).to include("/assets/illustrations/guild/p02")
+    end
+  end
+
   describe "GET index (the sticky filter)" do
     let!(:capodecina) { profile }
     let!(:bombardier) { create(:profile, faction: "guild", name: "Bombardier") }

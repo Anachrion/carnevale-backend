@@ -40,9 +40,17 @@ module Backoffice
     # otherwise the committed asset shipped with the app. Both come back as root-relative URLs, so
     # the card renders the same whether its art was uploaded or seeded — and Grover, fetching the
     # page over HTTP, can load either.
+    #
+    # Proxy, not redirect, for the uploaded case. The redirect route bounces to an absolute URL that
+    # Active Storage rebuilds from the current request, and with config.assume_ssl every request —
+    # including Grover's internal one to CARD_RENDER_BASE_URL (http://localhost) — looks like HTTPS.
+    # That sent the renderer to https://localhost, where nothing listens: Thruster binds :80 and
+    # kamal-proxy terminates TLS outside the container. The portrait silently failed to load and the
+    # published card came out with an empty circle. The proxy route streams the bytes on the
+    # connection Chrome already has, so no absolute URL is ever generated.
     def illustration_src(illustration, faction)
       if illustration.image_attached?
-        rails_blob_path(illustration.image, only_path: true)
+        rails_storage_proxy_path(illustration.image, only_path: true)
       else
         asset_path("illustrations/#{faction}/#{illustration.path}")
       end
