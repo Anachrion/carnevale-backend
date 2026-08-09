@@ -19,7 +19,15 @@ namespace :companions do
 
   # Every profile that can only ever arrive as another model's companion — hidden from the hire
   # search and the summon picker, and rejected by the hire/summon endpoints.
-  NON_RECRUITABLE = [ "Dagger Tentacle", "Lash Tentacle", "Maw Tentacle", "Thorn Tentacle" ].freeze
+  #
+  # The Beast Within is not a companion but reaches the table the same way: it is Yune Lobravym's
+  # transformed form, placed by her Violent Transformation rule, and its card says outright that it
+  # cannot be included in a gang. Left off this list it imports as recruitable — which, at 0 Ducats
+  # with 19 Life, means any gang can take it for free, as briefly happened in production.
+  NON_RECRUITABLE = [
+    "Dagger Tentacle", "Lash Tentacle", "Maw Tentacle", "Thorn Tentacle",
+    "The Beast Within"
+  ].freeze
 
   desc "Flag non-recruitable models and wire up auto-included companions (CARNEVALEB-23)"
   task configure_exceptions: :environment do
