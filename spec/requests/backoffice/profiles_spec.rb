@@ -68,6 +68,52 @@ RSpec.describe "Backoffice::Profiles", type: :request do
     end
   end
 
+  # Some models pick one of their weapons rather than carrying both — the Fisherman's Pole Spear &
+  # Net or Harpoon Gun. The rulebook prints an OR band between the two rows; exclusive_weapons is
+  # what puts it there.
+  describe "GET card (the weapons grid)" do
+    before { sign_in admin }
+
+    let!(:spear)   { Catalog::Weapon.create!(name: "Pole Spear & Net", damage: 1, evasion: -1) }
+    let!(:harpoon) { Catalog::Weapon.create!(name: "Harpoon Gun", damage: 1, evasion: 1, range: 12) }
+
+    def render_back(weapons)
+      weapons.each_with_index { |w, i| Catalog::ProfileWeapon.create!(profile: profile, weapon: w, position: i + 1) }
+      get card_backoffice_profile_path(profile), params: { side: "back" }
+      response.body
+    end
+
+    it "prints an OR band between weapons the model chooses between" do
+      profile.update!(exclusive_weapons: true)
+      body = render_back([ spear, harpoon ])
+
+      expect(body).to include(">OR</div>")
+      # Between the two, not before the first: the band belongs after the row it separates from.
+      expect(body.index(">OR</div>")).to be_between(body.index("Pole Spear &amp; Net"), body.index("Harpoon Gun"))
+    end
+
+    it "prints no band for a model that carries all of them" do
+      expect(render_back([ spear, harpoon ])).not_to include(">OR</div>")
+    end
+
+    it "prints no band when there is nothing to choose between" do
+      profile.update!(exclusive_weapons: true)
+
+      expect(render_back([ spear ])).not_to include(">OR</div>")
+    end
+
+    it "draws the band in an unsaved preview, so the editor shows it as the box is ticked" do
+      post card_preview_backoffice_profile_path(profile), params: {
+        side: "back",
+        profile: { name: profile.name, faction: profile.faction, version: profile.version,
+                   exclusive_weapons: "1", weapon_ids: [ "", spear.id, harpoon.id ] }
+      }
+
+      expect(response.body).to include(">OR</div>")
+      expect(profile.reload.exclusive_weapons).to be(false)
+    end
+  end
+
   # Grover fetches this page over plain HTTP from CARD_RENDER_BASE_URL (http://localhost), but
   # config.assume_ssl makes every request look like HTTPS — so Active Storage's *redirect* route
   # bounced headless Chrome to https://localhost, where nothing listens (Thruster binds :80;
@@ -527,6 +573,17 @@ RSpec.describe "Backoffice::Profiles", type: :request do
         expect(stiletto.reload.damage).to eq(2)
         expect(other.reload.weapons).to eq([ stiletto ])
         expect(Catalog::ProfileWeapon.exists?(other_claim.id)).to be(true)
+      end
+
+      it "records that the model chooses between its weapons, and that it stops doing so" do
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { exclusive_weapons: "1", weapon_ids: [ "", pistol.id, stiletto.id ] })
+        expect(profile.reload.exclusive_weapons).to be(true)
+
+        # The checkbox's paired hidden field is what lets it be turned back off.
+        patch backoffice_profile_path(profile),
+          params: valid_params.deep_merge(profile: { exclusive_weapons: "0" })
+        expect(profile.reload.exclusive_weapons).to be(false)
       end
 
       it "attaches special rules too" do

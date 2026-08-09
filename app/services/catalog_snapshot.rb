@@ -34,7 +34,7 @@ class CatalogSnapshot
   DEFAULT_DIR = Rails.root.join("db", "catalog").freeze
   BLOBS_SUBDIR = "blobs".freeze
 
-  PROFILE_COLUMNS = %w[name faction version].concat(Catalog::Profile::STATS.map(&:to_s)).freeze
+  PROFILE_COLUMNS = %w[name faction version exclusive_weapons].concat(Catalog::Profile::STATS.map(&:to_s)).freeze
   WEAPON_COLUMNS = %w[name damage evasion penetration range abilities].freeze
   RULE_COLUMNS = %w[name description spell_name spell_cost spell_difficulty spell_description].freeze
 

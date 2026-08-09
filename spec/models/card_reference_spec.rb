@@ -101,6 +101,15 @@ RSpec.describe Catalog::CardReference do
       expect(reference.reload).to be_stale
     end
 
+    # The OR band between the weapon rows is drawn from this, so it moves the printed face even
+    # though the weapons themselves are untouched.
+    it "is stale when the weapons become a choice" do
+      render!
+      profile.update!(exclusive_weapons: true)
+
+      expect(reference.reload).to be_stale
+    end
+
     it "is stale when the illustration is repositioned" do
       render!
       illustration.update!(zoom: 150, offset_x: 20)

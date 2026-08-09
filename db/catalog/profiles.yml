@@ -3850,6 +3850,7 @@
 - name: Fisherman
   faction: guild
   version: 2.2.1
+  exclusive_weapons: true
   ducats: 14
   movement: 4
   attack: 4
@@ -5081,6 +5082,7 @@
 - name: City Guard
   faction: patricians
   version: 2.2.0
+  exclusive_weapons: true
   ducats: 10
   movement: 4
   attack: 3
@@ -5995,6 +5997,7 @@
 - name: Ottoman Janissary
   faction: patricians
   version: 2.2.0
+  exclusive_weapons: true
   ducats: 17
   movement: 4
   attack: 4
@@ -9745,6 +9748,7 @@
 - name: Thrall
   faction: strigoi
   version: 2.3.0
+  exclusive_weapons: true
   ducats: 9
   movement: 4
   attack: 3

@@ -23,6 +23,9 @@ module Catalog
 
     has_many :illustrations, -> { order(:number) }, class_name: "Catalog::Illustration"
 
+    # `exclusive_weapons` says the model picks *one* of these rather than carrying them all — the
+    # Fisherman's Pole Spear & Net or Harpoon Gun, chosen when it is deployed. The card prints an OR
+    # band between the rows; see the weapons grid in backoffice/profiles/card.html.erb.
     has_many :profile_weapons, -> { order(:position) }, class_name: "Catalog::ProfileWeapon"
     has_many :weapons, through: :profile_weapons
 
@@ -183,6 +186,7 @@ end
 #  dexterity                    :integer          default(0), not null
 #  distinct_discipline_per_copy :boolean          default(FALSE), not null
 #  ducats                       :integer          default(0), not null
+#  exclusive_weapons            :boolean          default(FALSE), not null
 #  faction                      :string           not null
 #  flexible_leader              :boolean          default(FALSE), not null
 #  keywords                     :json             not null

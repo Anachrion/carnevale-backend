@@ -541,7 +541,12 @@
             <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">DMG</div>
             <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;border-right:1px solid rgba(255,255,255,0.22);">PEN</div>
             <div style="background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:12px;text-align:center;padding:6px 2px;">Abilities</div>
-            <% @profile.weapons.each do |w| %>
+            <% @profile.weapons.each_with_index do |w, index| %>
+            <%# The model carries one of these, not all — the band reads as "or" between the rows it
+                separates, and spans the whole grid rather than sitting in the Weapon column. %>
+            <% if @profile.exclusive_weapons? && index > 0 %>
+            <div style="grid-column:1 / -1;background:linear-gradient(<%= t[:accent_mid] %>,<%= t[:accent_dark] %>);color:#fdeee2;font-family:'Buckingham',system-ui;font-size:13px;letter-spacing:1px;text-align:center;padding:4px 2px;border-top:1px solid <%= t[:accent] %>;">OR</div>
+            <% end %>
             <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:14px;text-align:center;padding:11px 4px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= w.name %></div>
             <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= w.range %>"</div>
             <div style="background:<%= t[:cell_bg] %>;color:#000;font-family:'EB Garamond',serif;font-weight:600;font-size:15px;text-align:center;padding:11px 2px;border-top:1px solid <%= t[:accent] %>;border-right:1px solid <%= t[:cell_border_a] %>;"><%= stat_val.(w.evasion) %></div>

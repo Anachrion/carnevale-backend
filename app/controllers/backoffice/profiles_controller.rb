@@ -446,7 +446,8 @@ module Backoffice
     # form's only concession to their shape, and cheaper to use than a row of nested fields.
     def profile_params
       permitted = params.expect(profile: [
-        :name, :faction, :version, :abilities_text, :keywords_text, *Catalog::Profile::STATS,
+        :name, :faction, :version, :abilities_text, :keywords_text, :exclusive_weapons,
+        *Catalog::Profile::STATS,
         { weapon_ids: [], special_rule_ids: [] }
       ])
 

@@ -52,6 +52,7 @@ end
 #  dexterity                    :integer          default(0), not null
 #  distinct_discipline_per_copy :boolean          default(FALSE), not null
 #  ducats                       :integer          default(0), not null
+#  exclusive_weapons            :boolean          default(FALSE), not null
 #  faction                      :string           not null
 #  flexible_leader              :boolean          default(FALSE), not null
 #  keywords                     :json             not null

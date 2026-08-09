@@ -67,6 +67,23 @@ RSpec.describe CatalogSnapshot do
     expect(Catalog::Profile.find_by(name: "Duellist").weapons.count).to eq(1)
   end
 
+  # Which weapon a model carries is a choice the player makes, so it is catalog, not render
+  # bookkeeping — losing it on a rebuild would silently reprint the card as "carries both".
+  it "carries the weapon choice across the round trip" do
+    spear   = Catalog::Weapon.create!(name: "Pole Spear & Net", damage: 1)
+    harpoon = Catalog::Weapon.create!(name: "Harpoon Gun", damage: 1, range: 12)
+    fisherman = create(:card_reference, identifier: "guild-fisherman").profile
+    fisherman.update!(exclusive_weapons: true)
+    Catalog::ProfileWeapon.create!(profile: fisherman, weapon: spear, position: 1)
+    Catalog::ProfileWeapon.create!(profile: fisherman, weapon: harpoon, position: 2)
+
+    described_class.export(dir: dir)
+    [ Catalog::ProfileWeapon, Catalog::CardReference, Catalog::Profile, Catalog::Weapon ].each(&:delete_all)
+    described_class.import(dir: dir)
+
+    expect(Catalog::Profile.find_by!(name: fisherman.name).exclusive_weapons).to be(true)
+  end
+
   it "collapses identical shared records but keeps same-named distinct ones" do
     # Two weapons share a name but differ in stats: both must survive the round trip as two rows.
     w1 = Catalog::Weapon.create!(name: "Pistol", damage: 3)
