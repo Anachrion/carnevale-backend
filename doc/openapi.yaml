@@ -1533,7 +1533,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/ValidationErrors"
 
   /games/{id}/entries/{list_entry_id}/spell_casts:
     parameters:
