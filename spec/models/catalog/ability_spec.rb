@@ -82,3 +82,19 @@ RSpec.describe Catalog::Ability do
     end
   end
 end
+
+# == Schema Information
+#
+# Table name: abilities
+#
+#  id          :bigint           not null, primary key
+#  category    :string           not null
+#  description :text             default(""), not null
+#  name        :string           not null
+#  created_at  :datetime         not null
+#  updated_at  :datetime         not null
+#
+# Indexes
+#
+#  index_abilities_on_category_and_name  (category,name) UNIQUE
+#

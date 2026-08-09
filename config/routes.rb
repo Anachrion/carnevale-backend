@@ -94,6 +94,10 @@ Rails.application.routes.draw do
           patch "entries/:list_entry_id/counters", action: :update_counters
           patch "entries/:list_entry_id/stats", action: :update_stats
           patch "entries/:list_entry_id/spell_casts", action: :update_spell_cast
+          # Violent Transformation: swap one of the player's own models between its two printed
+          # cards. Changes the roster's presentation rather than an entry state, so it goes out as
+          # a full game broadcast like summon/dismiss do.
+          patch "entries/:list_entry_id/transform", action: :transform_entry
           patch "entries/:list_entry_id/tokens", action: :update_token
           delete "entries/:list_entry_id/tokens/:token_id", action: :remove_token
           patch :archive

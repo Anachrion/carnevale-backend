@@ -1331,4 +1331,85 @@ RSpec.describe "Api::V1::Games", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  # Violent Transformation (Yune Lobravym ⇄ The Beast Within).
+  describe "PATCH /api/v1/games/:id/entries/:list_entry_id/transform" do
+    # Re-key the host's model as Yune and give the catalog her Beast, so the pairing resolves.
+    def make_transformable(host_entry_id)
+      Gang::Entry.find(host_entry_id).entry.update!(identifier: "strigoi-yune-lobravym", name: "Yune Lobravym")
+      beast = create(:profile, name: "The Beast Within", faction: "strigoi", ducats: 0, recruitable: false,
+                               life_points: 10, will_points: 3, command_points: 1)
+      create(:card_reference, profile: beast, identifier: "strigoi-the-beast-within", name: "The Beast Within")
+    end
+
+    it "swaps the model to its other card and carries its lost points across" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+      make_transformable(host_entry_id)
+
+      # Take some damage and spend a Will Point first: the rule has both forms share their points
+      # "including any that have been lost", so these must survive the transformation untouched.
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/stats",
+                 params: { stats: { life_points: 4, will_points: 1 } }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                 params: { transformed: true }.to_json, headers: h
+      expect(host.response).to have_http_status(:ok)
+
+      entry = json(host)["entries"].find { |e| e["id"] == host_entry_id }
+      expect(entry["transformed"]).to be(true)
+      expect(entry["identifier"]).to eq("strigoi-the-beast-within")
+      expect(entry["name"]).to eq("The Beast Within")
+      expect(entry["state"]).to include(
+        "life_points" => { "current" => 4, "starting" => 10 },
+        "will_points" => { "current" => 1, "starting" => 3 }
+      )
+
+      # And back again, still carrying the same points.
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                 params: { transformed: false }.to_json, headers: h
+      entry = json(host)["entries"].find { |e| e["id"] == host_entry_id }
+      expect(entry["transformed"]).to be(false)
+      expect(entry["identifier"]).to eq("strigoi-yune-lobravym")
+      expect(entry["state"]).to include(
+        "life_points" => { "current" => 4, "starting" => 10 },
+        "will_points" => { "current" => 1, "starting" => 3 }
+      )
+    end
+
+    it "refuses a model that has no other form" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                 params: { transformed: true }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "refuses a non-boolean" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models
+      make_transformable(host_entry_id)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                 params: { transformed: "yes" }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 404 for the opponent's models" do
+      _host, guest, _h, g, game_id, host_entry_id, = start_game_with_models
+      make_transformable(host_entry_id)
+
+      guest.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                  params: { transformed: true }.to_json, headers: g
+      expect(guest.response).to have_http_status(:not_found)
+    end
+
+    it "rejects a transform while the game isn't in progress" do
+      host, _guest, h, _g, game_id, host_entry_id, = start_game_with_models(start: false)
+      make_transformable(host_entry_id)
+
+      host.patch "/api/v1/games/#{game_id}/entries/#{host_entry_id}/transform",
+                 params: { transformed: true }.to_json, headers: h
+      expect(host.response).to have_http_status(:unprocessable_entity)
+    end
+  end
 end

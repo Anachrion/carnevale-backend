@@ -268,6 +268,34 @@ module Api
         end
       end
 
+      # Violent Transformation (Yune Lobravym ⇄ The Beast Within): swaps one of the player's own
+      # models between its two printed cards. `transformed` is the desired state rather than a blind
+      # toggle, so a retried request from a flaky connection can't flip the model back — the same
+      # reasoning as update_spell_cast's `cast`.
+      #
+      # The rule says this happens "at the start of this character's turn", which is not enforced:
+      # the app tracks what the players do rather than adjudicating it, and the turn cursor is
+      # rewindable, so there is no single moment to check against.
+      #
+      # One entry changes form; it does not become a second model. The two cards share their Life,
+      # Will and Command Points "including any that have been lost", and with one entry there is one
+      # Encounter::EntryState — so the points carry across untouched, with nothing to synchronise.
+      def transform_entry
+        return render_error("Wrong game status for transforming a model") unless @game_player.playing?
+        return render_error("You have no gang in this game") unless @game_player.list
+
+        entry = @game_player.list.list_entries.find(params[:list_entry_id])
+        return render_error("This model has no other form") unless entry.transformable?
+
+        transformed = params[:transformed]
+        return render_error("transformed must be true or false") unless [ true, false ].include?(transformed)
+
+        return render_error("Could not transform that model") unless entry.update(transformed: transformed)
+
+        broadcast_state!(@game)
+        render json: player_list_json(@game_player)
+      end
+
       # Adds or updates one of the current player's own tokens on a model (CARNEVALEB-16) — a free-form
       # marker (colour + optional label) the player tracks by hand. Keyed on the client-generated `id`,
       # so a re-sent create replays onto the same row instead of duplicating, and the same call edits a

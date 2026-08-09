@@ -1472,6 +1472,69 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /games/{id}/entries/{list_entry_id}/transform:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+      - name: list_entry_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    patch:
+      operationId: transformEntry
+      summary: Swap one of the current player's own models between its two printed cards
+      description: |
+        Violent Transformation (Yune Lobravym ⇄ The Beast Within). Only available while the game is
+        in_progress, only for entries in the requesting player's own gang (the opponent's models
+        404), and only for entries whose `transformable` is true — anything else is a 422.
+
+        `transformed` is the desired state rather than a blind toggle, so a retried request from a
+        flaky connection can't accidentally flip the model back.
+
+        One entry changes form; it does not become a second model. The two cards share their Life,
+        Will and Command Points "including any that have been lost", so the model keeps its single
+        EntryState and its current/starting points carry across untouched. `cost` also stays that of
+        the hire, so transforming can never move a gang's total or flip its validity.
+
+        The rule says this happens "at the start of this character's turn". That is not enforced:
+        the app tracks what the players do rather than adjudicating it, and the turn cursor is
+        rewindable, so there is no single moment to check against. Likewise The Beast Within's
+        inability to spend Will or Command Points is shown, not blocked — but its lack of magic
+        disciplines is reflected, so while transformed the model reports `mage: false` and empty
+        pools/granted_spells. The spell picks themselves are untouched and reappear on transforming
+        back.
+
+        Changes the roster's presentation rather than an entry state, so it is broadcast to both
+        players as a full `game_state` event, exactly like summon/dismiss.
+      tags: [Games]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransformEntryInput"
+      responses:
+        "200":
+          description: The player's full updated gang list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/List"
+        "401":
+          description: Not authenticated
+        "404":
+          description: Not found (including entries that belong to the opponent)
+        "422":
+          description: Wrong game status, a model with no other form, or a non-boolean `transformed`
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /games/{id}/entries/{list_entry_id}/spell_casts:
     parameters:
       - $ref: "#/components/parameters/Id"
@@ -2185,6 +2248,16 @@ components:
               type: boolean
               description: The desired state (true = mark cast, false = clear it) rather than a toggle.
 
+    TransformEntryInput:
+      type: object
+      required: [transformed]
+      properties:
+        transformed:
+          type: boolean
+          description: >
+            The desired form (true = the model's alternate card, false = the one it was hired as)
+            rather than a toggle, so a retried request can't flip it back.
+
     # ── Responses ───────────────────────────────────────────────────────────────
 
     Session:
@@ -2285,7 +2358,7 @@ components:
 
     ListEntry:
       type: object
-      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, demoted_leader, promotable_leader, cost, summoned, upgrade_selected, upgrade_available, upgrade_ducats, mage, distinct_discipline_per_copy, pools, granted_spells]
+      required: [id, position, entry_type, entry_id, name, keywords, flexible_leader, demoted_leader, promotable_leader, cost, summoned, upgrade_selected, upgrade_available, upgrade_ducats, transformable, transformed, mage, distinct_discipline_per_copy, pools, granted_spells]
       properties:
         id:
           type: integer
@@ -2381,6 +2454,41 @@ components:
         upgrade_ducats:
           type: integer
           description: The Ducat cost of this model's optional upgrade (0 when none is offered).
+        transformable:
+          type: boolean
+          description: >
+            Whether this model has a second printed card it swaps between mid-game — Violent
+            Transformation (Yune Lobravym ⇄ The Beast Within). The client offers the transform
+            button only when true. False for every other model and for Equipment.
+        transformed:
+          type: boolean
+          description: >
+            Which of its two cards this model is currently on the table as: false for the one it was
+            hired as, true for its alternate form. Only ever true during a game — a hired gang always
+            holds the model in its printed form. While true, `identifier`, `name`, `profile_name`,
+            `keywords`, `card_front`, `card_back` and `mage` all describe the alternate form, but
+            `cost` stays that of the hire, and the model keeps its one EntryState, so Life/Will/
+            Command Points carry across the change untouched. Toggle via
+            PATCH /games/{id}/entries/{list_entry_id}/transform.
+        alternate_identifier:
+          type: string
+          nullable: true
+          description: >
+            The card identifier of this model's other form, or null when it has none. Lets the gang
+            builder preview the other card without a round trip — in the builder the button only
+            flips the card being shown, because the rule transforms a model in play, not at hiring.
+        alternate_name:
+          type: string
+          nullable: true
+          description: The name printed on the other form's card, or null when there is no other form.
+        alternate_card_front:
+          type: string
+          nullable: true
+          description: Front face filename of the other form's card, resolved like `card_front`. Null when there is no other form.
+        alternate_card_back:
+          type: string
+          nullable: true
+          description: Back face filename of the other form's card, resolved like `card_back`. Null when there is no other form.
         state:
           allOf:
             - $ref: "#/components/schemas/EntryState"

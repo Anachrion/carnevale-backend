@@ -97,4 +97,58 @@ RSpec.describe EntrySerializer do
       expect(flags).to eq("spell:#{spell.id}" => false)
     end
   end
+
+  # Violent Transformation (Yune Lobravym ⇄ The Beast Within): one entry, two printed cards.
+  describe "a transforming model" do
+    def transforming_pair
+      yune = create(:profile, name: "Yune Lobravym", faction: "strigoi", ducats: 23,
+                              keywords: [ "Hero", "Unique" ], abilities: [ "Mage (2)" ])
+      beast = create(:profile, name: "The Beast Within", faction: "strigoi", ducats: 0,
+                               recruitable: false, keywords: [ "Hero", "Unique" ], abilities: [ "Brave" ])
+      [ create(:card_reference, profile: yune, identifier: "strigoi-yune-lobravym", name: "Yune Lobravym"),
+        create(:card_reference, profile: beast, identifier: "strigoi-the-beast-within", name: "The Beast Within") ]
+    end
+
+    it "advertises the other form on both cards, and on nothing else" do
+      yune_card, beast_card = transforming_pair
+      yune = create(:list_entry, entry: yune_card)
+      beast = create(:list_entry, entry: beast_card)
+      ordinary = create(:list_entry)
+
+      expect(EntrySerializer.new(yune, cantrips: cantrips).as_json).to include(
+        transformable: true, transformed: false, alternate_identifier: "strigoi-the-beast-within"
+      )
+      expect(EntrySerializer.new(beast, cantrips: cantrips).as_json[:alternate_identifier])
+        .to eq("strigoi-yune-lobravym")
+      expect(EntrySerializer.new(ordinary, cantrips: cantrips).as_json).to include(
+        transformable: false, alternate_identifier: nil
+      )
+    end
+
+    it "shows the other card once transformed, while the gang still pays for the hire" do
+      yune_card, = transforming_pair
+      entry = create(:list_entry, entry: yune_card, transformed: true)
+
+      json = EntrySerializer.new(entry, cantrips: cantrips).as_json
+
+      expect(json[:identifier]).to eq("strigoi-the-beast-within")
+      expect(json[:name]).to eq("The Beast Within")
+      expect(json[:profile_name]).to eq("The Beast Within")
+      expect(json[:transformed]).to be true
+      # The hire is what the gang was built from: transforming must never move its cost.
+      expect(json[:cost]).to eq(23)
+      expect(entry.profile.name).to eq("Yune Lobravym")
+    end
+
+    it "hides the spells it cannot use while transformed, and gives them back afterwards" do
+      yune_card, = transforming_pair
+      SpellPoolBackfill.call_for(yune_card.profile)
+      entry = create(:list_entry, entry: yune_card, transformed: true)
+
+      expect(EntrySerializer.new(entry, cantrips: cantrips).as_json).to include(mage: false, pools: [])
+
+      entry.update!(transformed: false)
+      expect(EntrySerializer.new(entry, cantrips: cantrips).as_json[:mage]).to be true
+    end
+  end
 end

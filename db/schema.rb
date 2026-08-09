@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_06_105110) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_09_073556) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -215,6 +215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_06_105110) do
     t.integer "position", null: false
     t.string "request_key"
     t.boolean "summoned", default: false, null: false
+    t.boolean "transformed", default: false, null: false
     t.datetime "updated_at", null: false
     t.boolean "upgrade_selected", default: false, null: false
     t.index ["companion_of_entry_id"], name: "index_list_entries_on_companion_of_entry_id"

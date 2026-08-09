@@ -15,6 +15,7 @@ end
 #  position              :integer          not null
 #  request_key           :string
 #  summoned              :boolean          default(FALSE), not null
+#  transformed           :boolean          default(FALSE), not null
 #  upgrade_selected      :boolean          default(FALSE), not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null

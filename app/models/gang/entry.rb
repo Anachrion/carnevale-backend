@@ -63,8 +63,53 @@ module Gang
     validate :mentor_in_same_list
 
     # The Catalog::Profile behind this entry, or nil for non-model entries (e.g. Equipment).
+    #
+    # This is always the profile the model was *hired* as, even while it is transformed — cost,
+    # gang validation and spell selection are all properties of the hire, and none of them may
+    # shift when a model changes form mid-game. What the model currently *is* on the table is
+    # #active_profile.
     def profile
       entry.profile if entry.is_a?(Catalog::CardReference)
+    end
+
+    # Violent Transformation: models that swap between two printed cards mid-game, keyed both ways
+    # by card identifier. The identifier rather than the profile name because it is the stable,
+    # globally unique key — a name is display text and can be re-worded.
+    #
+    # Hardcoded, per the same reasoning as companions:configure_exceptions: the pairing is not part
+    # of the catalog YAML round-trip, and one pair does not yet justify a self-referential column.
+    TRANSFORM_PAIRS = {
+      "strigoi-yune-lobravym"    => "strigoi-the-beast-within",
+      "strigoi-the-beast-within" => "strigoi-yune-lobravym"
+    }.freeze
+
+    # The card this entry was hired as, or nil for equipment.
+    def card_reference
+      entry if entry.is_a?(Catalog::CardReference)
+    end
+
+    # The other face of a transforming model — Yune's Beast, or the Beast's Yune — or nil for
+    # everything else. Both the in-game transform and the gang builder's card preview read this.
+    def alternate_card_reference
+      identifier = TRANSFORM_PAIRS[card_reference&.identifier]
+      return nil unless identifier
+
+      @alternate_card_reference ||= Catalog::CardReference.find_by(identifier: identifier)
+    end
+
+    def transformable?
+      alternate_card_reference.present?
+    end
+
+    # The profile the model is currently on the table as: its alternate form while transformed,
+    # otherwise the one it was hired as. Presentation only — see #profile.
+    def active_profile
+      transformed? && alternate_card_reference ? alternate_card_reference.profile : profile
+    end
+
+    # The card currently being shown for this model, same rule as #active_profile.
+    def active_card_reference
+      transformed? && alternate_card_reference ? alternate_card_reference : card_reference
     end
 
     # This entry's profile's spell pools, each annotated with what *this* model has actually
@@ -133,6 +178,7 @@ end
 #  position              :integer          not null
 #  request_key           :string
 #  summoned              :boolean          default(FALSE), not null
+#  transformed           :boolean          default(FALSE), not null
 #  upgrade_selected      :boolean          default(FALSE), not null
 #  created_at            :datetime         not null
 #  updated_at            :datetime         not null

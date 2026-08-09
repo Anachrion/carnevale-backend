@@ -33,19 +33,26 @@ class EntrySerializer
 
   def as_json
     entry = @entry
-    profile = entry.profile
+    # Two profiles, deliberately: `hired` is what the model cost and was built into the gang as,
+    # `profile` is what it currently *is* on the table (they differ only while a Violent
+    # Transformation model is transformed — see Gang::Entry#active_profile). Anything describing
+    # the model as it stands now reads the latter; anything describing the hire reads the former,
+    # so transforming can never move a gang's cost or flip its validity.
+    hired = entry.profile
+    profile = entry.active_profile
     # The card this member is hired as. A profile can have several card references, each with its
     # own illustration; which one the entry points at *is* the chosen illustration, so the client
     # needs the identifier and faces to render it and to highlight the pick among the profile's
     # alternatives. Nil for non-card entries (e.g. Equipment), which have no card face.
-    card = entry.entry if entry.entry.is_a?(Catalog::CardReference)
+    card = entry.active_card_reference
+    alternate = entry.alternate_card_reference
     spells = spell_payload
     {
       id: entry.id,
       position: entry.position,
       entry_type: entry.entry_type,
       entry_id: entry.entry_id,
-      name: entry.entry.name,
+      name: card&.name || entry.entry.name,
       # The underlying profile's name, without the card-reference letter suffix (e.g. "Beggar"
       # rather than "Beggar (A)"). Lets the client label a hired model by its model name and number
       # duplicates itself, instead of showing the printed card variant. Nil for Equipment.
@@ -55,7 +62,8 @@ class EntrySerializer
       keywords: profile&.keywords || [],
       # Whether this Leader demotes to a plain Hero alongside another Leader (see ProfilesController)
       # — lets the builder decide whether to still offer a Leader model once one is in the list.
-      flexible_leader: profile&.flexible_leader || false,
+      # A property of the hire, so it holds steady across a transformation.
+      flexible_leader: hired&.flexible_leader || false,
       # This flex Leader has been demoted to a plain Hero by the gang's composition (it prints Leader
       # but lost it); the client shows Hero and never pins it as the Leader.
       demoted_leader: @demoted_leader,
@@ -78,8 +86,19 @@ class EntrySerializer
       # offer, and its Ducat cost — the client shows the toggle only when upgrade_available.
       companion_of_entry_id: entry.companion_of_entry_id,
       upgrade_selected: entry.upgrade_selected,
-      upgrade_available: profile ? profile.companion_upgrade_ducats.positive? : false,
-      upgrade_ducats: profile&.companion_upgrade_ducats || 0,
+      upgrade_available: hired ? hired.companion_upgrade_ducats.positive? : false,
+      upgrade_ducats: hired&.companion_upgrade_ducats || 0,
+      # Violent Transformation (Yune Lobravym ⇄ The Beast Within). `transformable` tells the client
+      # to offer the button at all; `transformed` is which form is on the table now. The alternate
+      # card's identifier and faces ride along so the gang builder can preview the other form
+      # without a round trip — in the builder the button only flips the card being shown, because
+      # the rule transforms a model in play, not at hiring, and the gang always holds the hire.
+      transformable: entry.transformable?,
+      transformed: entry.transformed?,
+      alternate_identifier: alternate&.identifier,
+      alternate_name: alternate&.name,
+      alternate_card_front: alternate&.card_front,
+      alternate_card_back: alternate&.card_back,
       # Only present once the game has started (Encounter::Game#start!); nil beforehand
       # and for equipment entries, which have no HP/WP/CP to track.
       state: entry.entry_state && EntryStateSerializer.new(entry.entry_state, turn: @turn).as_json,
@@ -113,6 +132,11 @@ class EntrySerializer
 
   # The entry's two spell collections, built together because the second depends on the first.
   def spell_payload
+    # While transformed the model is its other card, and The Beast Within "has no magic
+    # disciplines" — so nothing Yune knows is available to it. The picks themselves are untouched
+    # (they live in entry_spells) and reappear the moment it transforms back.
+    return { pools: [], granted_spells: [] } if @entry.transformed? && !@entry.active_profile&.mage?
+
     pools = @entry.resolved_pools.map { |resolved| pool_json(resolved) }
     # A granted spell that duplicates a spell/cantrip already shown through a pool (Blood Crone's
     # Major Arcana grants all 5 Cantrips outright, one of which is also the Cantrip her own pool
