@@ -164,6 +164,10 @@ Rails.application.routes.draw do
   # these, those URLs 404 before Flutter ever boots. (Native app opens them as OS deep links.)
   get "reset-password", to: "web_app#index"
   get "join", to: "web_app#index"
+  # A shared game *setup* (CARNEVALEB-74): scenario, name, Ducat limit and board size travel in the
+  # query string, so the player who chose the settings can hand them to whoever is hosting. Nothing
+  # is stored — this route only needs to serve the SPA so the app can read its own query.
+  get "new-game", to: "web_app#index"
 
   # What turns the two paths above into *App Links* on Android: the OS fetches this at install time
   # for each host the app manifest claims, and only routes those URLs to the app if the certificate
