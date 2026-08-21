@@ -790,6 +790,107 @@ paths:
         "404":
           description: Not found
 
+  /collection:
+    get:
+      operationId: getCollection
+      summary: The current player's collection
+      description: >
+        One entry per catalog profile the player owns at least one miniature of. A profile absent
+        from the response is simply one they own none of — there is no zeroed entry to read.
+      tags: [Collection]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Not authenticated
+
+    put:
+      operationId: updateCollection
+      summary: Set the counts for several profiles at once
+      description: >
+        All or nothing: if any entry names a profile that does not exist, none of the others are
+        applied either, so the client never has to work out how far a half-applied batch got.
+      tags: [Collection]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionBulkInput"
+      responses:
+        "200":
+          description: OK — the entries as they now stand
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Not authenticated
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+  /collection/{profile_id}:
+    parameters:
+      - name: profile_id
+        in: path
+        required: true
+        schema:
+          type: integer
+
+    put:
+      operationId: updateCollectionItem
+      summary: Set the counts for one profile
+      description: >
+        Send just the count that moved and the other two settle around it. The three nest as
+        `painted <= built <= owned`, so raising a narrower count pulls the wider ones up with it,
+        and lowering a wider one pushes the narrower ones down. The values are absolute, never
+        increments, so replaying a request the client never saw the answer to is a no-op. Setting
+        every count to zero drops the profile from the collection; the response still reports the
+        resulting zeros so the client can reconcile without a second request.
+      tags: [Collection]
+      security:
+        - ApiKeyAuth: []
+          bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionItemInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CollectionItem"
+        "401":
+          description: Not authenticated
+        "422":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
   /equipment:
     get:
       operationId: getEquipment
@@ -2258,7 +2359,64 @@ components:
             The desired form (true = the model's alternate card, false = the one it was hired as)
             rather than a toggle, so a retried request can't flip it back.
 
+    CollectionItemInput:
+      type: object
+      required: [item]
+      properties:
+        item:
+          type: object
+          description: >
+            Any subset of the three counts. Whatever is left out settles around what is sent.
+          properties:
+            owned:
+              type: integer
+              minimum: 0
+            built:
+              type: integer
+              minimum: 0
+            painted:
+              type: integer
+              minimum: 0
+
+    CollectionBulkInput:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [profile_id]
+            properties:
+              profile_id:
+                type: integer
+              owned:
+                type: integer
+                minimum: 0
+              built:
+                type: integer
+                minimum: 0
+              painted:
+                type: integer
+                minimum: 0
+
     # ── Responses ───────────────────────────────────────────────────────────────
+
+    CollectionItem:
+      type: object
+      description: >
+        How many miniatures of one catalog profile a player has, and how far along they are. The
+        counts nest: every painted miniature is also built, and every built one is also owned.
+      required: [profile_id, owned, built, painted]
+      properties:
+        profile_id:
+          type: integer
+        owned:
+          type: integer
+        built:
+          type: integer
+        painted:
+          type: integer
 
     Session:
       type: object

@@ -61,6 +61,13 @@ Rails.application.routes.draw do
         end
       end
       resources :profiles, only: %i[index show]
+
+      # The player's own collection of miniatures (CARNEVALEB-76). Not a `resources` block:
+      # it is read whole and addressed by *catalog profile*, not by the id of a row the
+      # client ever sees — a player who owns none of a model has no row at all.
+      get "collection", to: "collection#index"
+      put "collection", to: "collection#bulk_update"
+      put "collection/:profile_id", to: "collection#update"
       get "cards/manifest", to: "cards#manifest"
       resources :abilities, only: %i[index]
       resources :equipment, only: %i[index]
