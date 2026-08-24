@@ -231,7 +231,7 @@ paths:
   /account:
     patch:
       operationId: updateAccount
-      summary: Update the current user's username
+      summary: Update the current user's account settings
       tags: [Session]
       security:
         - ApiKeyAuth: []
@@ -2096,10 +2096,13 @@ components:
       properties:
         user:
           type: object
-          required: [username]
           properties:
             username:
               type: string
+            collection_enabled:
+              type: boolean
+            collection_visible:
+              type: boolean
 
     ListInput:
       type: object
@@ -2424,7 +2427,7 @@ components:
       properties:
         user:
           type: object
-          required: [id, email, username]
+          required: [id, email, username, collection_enabled, collection_visible]
           properties:
             id:
               type: integer
@@ -2432,6 +2435,19 @@ components:
               type: string
             username:
               type: string
+            collection_enabled:
+              type: boolean
+              description: >
+                Whether the player has switched the Collection feature on (CARNEVALEB-76). False
+                until they do.
+            collection_visible:
+              type: boolean
+              description: >
+                Whether the Collection feature is offered at all — the home-screen entry and the
+                menu item. True by default; turning it off hides everything the feature adds,
+                including the catalogue marks, while remembering `collection_enabled`. Both switches
+                live on the account rather than in the client's local settings, so someone who
+                tracks a collection finds it set up the same way on every device.
         refresh_token:
           type: string
           description: >
@@ -2474,7 +2490,7 @@ components:
       properties:
         user:
           type: object
-          required: [id, email, username]
+          required: [id, email, username, collection_enabled, collection_visible]
           properties:
             id:
               type: integer
@@ -2482,6 +2498,19 @@ components:
               type: string
             username:
               type: string
+            collection_enabled:
+              type: boolean
+              description: >
+                Whether the player has switched the Collection feature on (CARNEVALEB-76). False
+                until they do.
+            collection_visible:
+              type: boolean
+              description: >
+                Whether the Collection feature is offered at all — the home-screen entry and the
+                menu item. True by default; turning it off hides everything the feature adds,
+                including the catalogue marks, while remembering `collection_enabled`. Both switches
+                live on the account rather than in the client's local settings, so someone who
+                tracks a collection finds it set up the same way on every device.
 
     List:
       type: object
