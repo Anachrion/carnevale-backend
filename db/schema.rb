@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_09_130656) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_125421) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -100,6 +100,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_130656) do
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_card_references_on_identifier", unique: true
     t.index ["profile_id"], name: "index_card_references_on_profile_id"
+  end
+
+  create_table "collection_items", force: :cascade do |t|
+    t.integer "built", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "owned", default: 0, null: false
+    t.integer "painted", default: 0, null: false
+    t.bigint "profile_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["profile_id"], name: "index_collection_items_on_profile_id"
+    t.index ["user_id", "profile_id"], name: "index_collection_items_on_user_id_and_profile_id", unique: true
+    t.check_constraint "painted >= 0 AND built >= painted AND owned >= built", name: "collection_items_counts_nest"
   end
 
   create_table "entry_pool_disciplines", force: :cascade do |t|
@@ -403,6 +416,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_130656) do
 
   create_table "users", force: :cascade do |t|
     t.boolean "admin", default: false, null: false
+    t.boolean "collection_enabled", default: false, null: false
+    t.boolean "collection_visible", default: true, null: false
     t.datetime "created_at", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -434,6 +449,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_09_130656) do
   add_foreign_key "agenda_events", "game_players"
   add_foreign_key "cable_tickets", "users"
   add_foreign_key "card_references", "profiles"
+  add_foreign_key "collection_items", "profiles"
+  add_foreign_key "collection_items", "users"
   add_foreign_key "entry_pool_disciplines", "list_entries"
   add_foreign_key "entry_pool_disciplines", "profile_spell_pools", column: "pool_id", on_delete: :cascade
   add_foreign_key "entry_spells", "list_entries"

@@ -46,7 +46,7 @@ module Api
       private
 
       def account_update_params
-        params.require(:user).permit(:username)
+        params.require(:user).permit(:username, :collection_enabled, :collection_visible)
       end
     end
   end

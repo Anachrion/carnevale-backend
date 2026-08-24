@@ -21,6 +21,11 @@ module Catalog
 
     has_many :card_references, -> { order(:identifier) }, class_name: "Catalog::CardReference"
 
+    # Every player who owns this model (CARNEVALEB-76). The catalog import upserts profiles
+    # rather than replacing them, so these survive a catalog refresh; the dependency is here
+    # only so a genuine deletion does not trip the foreign key.
+    has_many :collection_items, class_name: "Collection::Item", dependent: :delete_all
+
     has_many :illustrations, -> { order(:number) }, class_name: "Catalog::Illustration"
 
     # `exclusive_weapons` says the model picks *one* of these rather than carrying them all — the

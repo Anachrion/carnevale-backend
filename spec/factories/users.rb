@@ -17,6 +17,8 @@ end
 #
 #  id                     :bigint           not null, primary key
 #  admin                  :boolean          default(FALSE), not null
+#  collection_enabled     :boolean          default(FALSE), not null
+#  collection_visible     :boolean          default(TRUE), not null
 #  email                  :string           default(""), not null
 #  encrypted_password     :string           default(""), not null
 #  remember_created_at    :datetime

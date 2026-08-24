@@ -27,7 +27,10 @@ RSpec.describe "Api::V1::Registrations", type: :request do
       body = JSON.parse(response.body)
       expect(body.keys).to contain_exactly("user")
       expect(body["user"]).to eq(
-        "id" => User.last.id, "email" => "newuser@example.com", "username" => "newuser"
+        "id" => User.last.id, "email" => "newuser@example.com", "username" => "newuser",
+        # A fresh account has the Collection feature off — it introduces itself and asks first —
+        # but offered, so the introduction is reachable.
+        "collection_enabled" => false, "collection_visible" => true
       )
       # Registering doesn't sign anyone in: no JWT in the header, no refresh token in the body.
       expect(response.headers["Authorization"]).to be_nil
@@ -76,6 +79,50 @@ RSpec.describe "Api::V1::Registrations", type: :request do
       patch "/api/v1/account", params: { user: { username: "taken" } }.to_json, headers: auth_headers
 
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "switches the Collection feature on for the account" do
+      patch "/api/v1/account", params: { user: { collection_enabled: true } }.to_json, headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["user"]).to include("collection_enabled" => true)
+      expect(user.reload.collection_enabled).to be true
+    end
+
+    it "switches it back off again" do
+      user.update!(collection_enabled: true)
+
+      patch "/api/v1/account", params: { user: { collection_enabled: false } }.to_json, headers: auth_headers
+
+      expect(user.reload.collection_enabled).to be false
+    end
+
+    # It rides in the user payload so the app knows before it builds a screen that depends on it,
+    # rather than having to ask separately after sign-in.
+    it "reports the flag on every account payload" do
+      patch "/api/v1/account", params: { user: { username: "renamed3" } }.to_json, headers: auth_headers
+
+      expect(JSON.parse(response.body)["user"]).to have_key("collection_enabled")
+    end
+
+    it "hides the feature outright without forgetting it had been switched on" do
+      user.update!(collection_enabled: true)
+
+      patch "/api/v1/account", params: { user: { collection_visible: false } }.to_json, headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.collection_visible).to be false
+      # Kept, so switching it back on returns to the collection rather than to the introduction.
+      expect(user.collection_enabled).to be true
+    end
+
+    it "leaves the flags alone when the request does not mention them" do
+      user.update!(collection_enabled: true)
+
+      patch "/api/v1/account", params: { user: { username: "renamed4" } }.to_json, headers: auth_headers
+
+      expect(user.reload.collection_enabled).to be true
+      expect(user.collection_visible).to be true
     end
 
     it "ignores an attempt to also change the password through this endpoint" do

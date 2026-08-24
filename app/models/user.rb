@@ -25,6 +25,9 @@ class User < ApplicationRecord
   has_many :game_players, class_name: "Encounter::Player", dependent: :destroy
   has_many :games, through: :game_players
   has_many :refresh_tokens, dependent: :delete_all
+  # The player's physical collection: which models they own, and how far along each one is
+  # (CARNEVALEB-76). Keyed per catalog profile; see Collection::Item.
+  has_many :collection_items, class_name: "Collection::Item", dependent: :delete_all
 
   validates :username, presence: true, uniqueness: { case_sensitive: false }
 
@@ -52,6 +55,8 @@ end
 #
 #  id                     :bigint           not null, primary key
 #  admin                  :boolean          default(FALSE), not null
+#  collection_enabled     :boolean          default(FALSE), not null
+#  collection_visible     :boolean          default(TRUE), not null
 #  email                  :string           default(""), not null
 #  encrypted_password     :string           default(""), not null
 #  remember_created_at    :datetime
