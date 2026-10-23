@@ -130,6 +130,25 @@ bin/rubocop              # style
 bin/ci                   # style + security audits (Brakeman, bundler-audit) + seed check
 ```
 
+### Running everything with dekit
+
+[dekit](https://dekit.run) (`mise use -g dekit`) can bring up Postgres, Rails, the Tailwind watcher
+and the Flutter web app together, in one TUI. Each repo carries its own tasks in
+`dekit.tasks.yaml`; a `dekit.yaml` in the directory holding both checkouts (not versioned —
+create it once) combines them:
+
+```yaml
+# <parent of carnevale-backend and carnevale>/dekit.yaml
+load:
+  - file: carnevale-backend/dekit.tasks.yaml
+    at: back
+  - file: carnevale/dekit.tasks.yaml
+    at: front
+```
+
+Then, from either repo: `dekit up` starts the stack in dependency order (Colima → Postgres →
+Rails → Flutter), and `dekit` opens the TUI. It replaces `bin/dev`, so don't run both — they
+want the same port.
 ---
 
 ## Deployment

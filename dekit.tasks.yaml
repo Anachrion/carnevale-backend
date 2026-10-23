@@ -1,0 +1,29 @@
+# dekit tasks for the backend: Postgres (in Colima) and the Rails + Tailwind pair bin/dev runs.
+# This is a fragment, loaded by a dekit.yaml one level up that combines it with the frontend's
+# (see README, "Running everything with dekit"). Every task sets `cwd: .` — a fragment task runs
+# from the project root otherwise — and goes through `mise exec` so it gets this repo's Ruby
+# whichever shell started the runner.
+tasks:
+  colima:
+    type: job
+    cmd: colima start --vm-type vz --vz-rosetta # exits 0 straight away if the VM is already up
+    cwd: .
+
+  db:
+    cmd: docker compose up db
+    cwd: .
+    deps: [colima]
+    ready: {tcp: 5433, timeout: 60s}
+    stop: {cmd: docker compose stop db}
+
+  web:
+    cmd: mise exec -- bin/rails server
+    cwd: .
+    deps: [db]
+    ready: {http: "http://localhost:3000/up", timeout: 60s}
+    autostart: true
+
+  css:
+    cmd: mise exec -- bin/rails tailwindcss:watch
+    cwd: .
+    autostart: true
