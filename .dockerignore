@@ -55,7 +55,7 @@
 /.kamal
 
 # Ignore the Infisical project link (deploy-time only, never needed in the image).
-/.infisical.json
+/.infisical.yaml
 
 # Ignore development files
 /.devcontainer
