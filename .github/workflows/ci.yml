@@ -50,6 +50,17 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
+      # .ruby-version is the source of truth (setup-ruby and mise read it); the Dockerfile
+      # can't, so its RUBY_VERSION default is a copy that must not drift.
+      - name: Check Dockerfile Ruby version matches .ruby-version
+        run: |
+          expected=$(tr -d '[:space:]' < .ruby-version)
+          actual=$(sed -n 's/^ARG RUBY_VERSION=//p' Dockerfile)
+          if [ "$expected" != "$actual" ]; then
+            echo "::error file=Dockerfile::RUBY_VERSION is '$actual' but .ruby-version is '$expected'"
+            exit 1
+          fi
+
   test:
     runs-on: ubuntu-latest
 

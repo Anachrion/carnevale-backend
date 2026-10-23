@@ -70,3 +70,6 @@
 
 # macOS Finder artifacts.
 .DS_Store
+
+# Machine-specific mise env (secrets such as DEVISE_JWT_SECRET_KEY).
+mise.local.toml

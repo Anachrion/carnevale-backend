@@ -1,0 +1,9 @@
+# Local toolchain. Ruby is read from .ruby-version, which stays the single source of truth
+# (CI's ruby/setup-ruby reads it, and CI checks the Dockerfile's RUBY_VERSION against it).
+# Machine-specific env (e.g. DEVISE_JWT_SECRET_KEY) goes in the git-ignored mise.local.toml.
+
+[settings]
+idiomatic_version_file_enable_tools = ["ruby"]
+
+[tools]
+node = "24" # Puppeteer, used by Grover for backoffice card rendering
