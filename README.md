@@ -78,13 +78,44 @@ deltas — which is what makes reconnecting from anywhere free.
 
 ## Getting started
 
-**Requirements:** Ruby 3.4.9, Docker (for PostgreSQL), Bundler.
+In development only PostgreSQL runs in a container; Rails runs natively on your machine.
+
+**Requirements:** [mise](https://mise.jdx.dev) (installs Ruby and Node), a Docker runtime (we use
+Colima), Git LFS, libvips.
+
+Ruby's version lives in `.ruby-version` (the single source of truth — `mise.toml` tells mise to
+read it); Node's is pinned in `mise.toml`.
 
 ```bash
+# One-time tooling (macOS)
+brew install mise git-lfs vips colima docker docker-compose docker-buildx
+echo 'eval "$(mise activate zsh)"' >> ~/.zshrc && exec zsh
+git lfs install
+
+# Let the Docker CLI find the Homebrew compose/buildx plugins, in ~/.docker/config.json:
+#   { "cliPluginsExtraDirs": ["/opt/homebrew/lib/docker/cli-plugins"] }
+
+# Start the Docker VM. Rosetta is not needed for Postgres (native arm64 image), but it is
+# what makes the amd64 deploy build fast — see docs/DEPLOYMENT.md.
+colima start --vm-type vz --vz-rosetta
+
+# Project
+mise trust && mise install                # Ruby (from .ruby-version) and Node
+git lfs pull                              # card artwork and catalog blobs
 bundle install
+npm install                               # Puppeteer, used by Grover for backoffice card rendering
 docker compose up -d                      # PostgreSQL 17, published on port 5433
-bin/rails db:create db:migrate db:seed
-bin/rails server
+bin/setup                                 # db:prepare, then starts bin/dev (Rails + Tailwind watcher)
+```
+
+The app needs a JWT signing secret to boot (`config/initializers/devise.rb`). Either put the
+real master key in the git-ignored `config/master.key`
+(`infisical secrets get RAILS_MASTER_KEY --env=prod --plain > config/master.key`), or use a
+throwaway one as CI does, in the git-ignored `mise.local.toml` so mise loads it in this directory:
+
+```toml
+[env]
+DEVISE_JWT_SECRET_KEY = "<output of: openssl rand -hex 64>"
 ```
 
 The API is then at `http://localhost:3000/api/v1`, and the backoffice at `/backoffice`.

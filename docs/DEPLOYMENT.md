@@ -69,9 +69,17 @@ handles app + database.
 
 > We originally wanted an **Arm64 (Ampere)** server — a touch cheaper, and it would
 > build natively on an Apple Silicon Mac. Arm was **out of stock** at deploy time, so we
-> fell back to x86. The only consequence: the Docker image builds under **QEMU emulation**
-> on the Mac, making the *first* build slow (subsequent builds are cached). Switching back
-> is a one-line change (`builder.arch: arm64`) plus recreating the server.
+> fell back to x86. The only consequence: the Docker image builds under **emulation** on
+> the Mac (Rosetta through Colima, see the prerequisites below), making the *first* build
+> slow (subsequent builds are cached). Switching back is a one-line change
+> (`builder.arch: arm64`) plus recreating the server.
+>
+> Kamal's remote builder (`builder.remote`, commented out in `config/deploy.yml`) would
+> avoid emulation by building on the server — but the only server is production itself.
+> The build (native gems, Chromium, Node) would compete with the live app and Postgres for
+> 2 vCPU / 4 GB, risk the OOM killer picking Postgres, and pile build cache onto the 40 GB
+> disk. We keep building on the Mac. If deploys ever need to leave the Mac, the next step is
+> building on an x86 CI runner (GitHub Actions), not on the production box.
 
 ### Deploy tool: Kamal
 It's the Rails 8 default and already in the Gemfile. It turns a plain Linux box into
@@ -96,13 +104,35 @@ rather than as a separate container, which suits a two-core box with light job t
 ## How to deploy
 
 ### Prerequisites (one-time, on your Mac)
-- **Docker Desktop** running (Kamal builds the image locally).
+- **A Docker runtime** running — Kamal builds the image locally. We use **Colima** (Docker
+  Desktop works too, with nothing extra to configure):
+  ```bash
+  brew install colima docker docker-compose docker-buildx
+  colima start --vm-type vz --vz-rosetta
+  ```
+  Kamal needs `docker buildx`; Homebrew installs it as a CLI plugin the Docker CLI only finds
+  once `~/.docker/config.json` contains
+  `{ "cliPluginsExtraDirs": ["/opt/homebrew/lib/docker/cli-plugins"] }`.
+
+  `--vz-rosetta` is what keeps the deploy build reasonable: the server is x86
+  (`builder.arch: amd64`) and the Mac is arm64, so every `RUN` step of the `Dockerfile`
+  executes amd64 binaries. With Rosetta the VM translates them; without it, buildx falls
+  back to QEMU, which is much slower and occasionally crashes on native gem compilation.
+  Day-to-day (Postgres only) everything is native arm64 and Rosetta sits unused.
+
+  Colima's default VM (2 CPU / 2 GB) is plenty for Postgres but tight for the image build
+  (native gems, Chromium, Node + Puppeteer, all under emulation). Resize it before deploying —
+  a stop/start keeps the dev database volume:
+  ```bash
+  colima stop && colima start --cpu 4 --memory 6   # bump to 8 if the build gets OOM-killed
+  ```
 - **Infisical CLI**, logged in against EU Cloud and linked to this repo:
   ```bash
   brew install infisical
   infisical login --domain https://eu.infisical.com
-  infisical init --domain https://eu.infisical.com   # writes .infisical.json (committed)
   ```
+  The repo is already linked: `.infisical.yaml` (committed) names the project and the EU
+  domain, so a fresh checkout needs no `infisical init`.
   The Production environment holds the secrets Kamal needs: `KAMAL_REGISTRY_PASSWORD`
   (a GitHub PAT with `write:packages`), `RAILS_MASTER_KEY`, and
   `CARNEVALE_BACKEND_DATABASE_PASSWORD`. `POSTGRES_PASSWORD` is not stored separately —
@@ -114,10 +144,11 @@ rather than as a separate container, which suits a two-core box with light job t
   > to its own database.
 
   > The `--domain` flag is required: the CLI defaults to the US instance
-  > (`app.infisical.com`) and this org lives on EU Cloud. `infisical init` does **not**
-  > persist it, so `.infisical.json` carries a hand-added `"domain"` field — that is what
-  > makes every later `infisical run` hit the EU instance on any machine. Without it the
-  > CLI falls back to per-machine login state, which a fresh checkout doesn't have.
+  > (`app.infisical.com`) and this org lives on EU Cloud. For every later command,
+  > `general.domain` in `.infisical.yaml` is what makes `infisical run` hit the EU instance on
+  > any machine — without it the CLI falls back to per-machine login state, which a fresh
+  > checkout doesn't have. (`.infisical.yaml` replaced the legacy `.infisical.json`; the CLI
+  > prefers it when both exist.)
 
 ### Redeploy (the normal case)
 After committing code changes:
@@ -151,7 +182,7 @@ kamal app boot       # restart the app container
 |---|---|---|
 | `config/deploy.yml` | The entire Kamal config (server, image, proxy, env, accessory, volumes) | ✅ yes |
 | `.kamal/secrets` | Secret *references* only (`$VAR`) — no real values | ✅ yes |
-| `.infisical.json` | Which Infisical project/environment this repo reads — no values | ✅ yes |
+| `.infisical.yaml` | Which Infisical project (and EU domain) this repo reads — no values | ✅ yes |
 | Infisical → Production | The real secret **values** | — not in the repo |
 | `Dockerfile` | Production image build (Rails 8 default) | ✅ yes |
 

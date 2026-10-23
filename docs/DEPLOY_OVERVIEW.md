@@ -44,7 +44,8 @@ Persistent Docker volumes survive redeploys: `…_storage` (Active Storage uploa
 
 ## Deploying the backend
 
-Prerequisites (one-time, on your Mac): **Docker running**, and the **Infisical CLI**
+Prerequisites (one-time, on your Mac): **Docker running** (we use Colima with Rosetta for
+the amd64 build — see [`DEPLOYMENT.md`](DEPLOYMENT.md#prerequisites-one-time-on-your-mac)), and the **Infisical CLI**
 logged in against EU Cloud (`infisical login --domain https://eu.infisical.com`).
 Secrets live in the `carnevale` project, Production environment.
 
@@ -132,7 +133,7 @@ resolving; it can be dropped once nobody is on one.
 |---|---|
 | `config/deploy.yml` | The entire Kamal config (committed) |
 | `.kamal/secrets` | Secret *references* only — no real values (committed) |
-| `.infisical.json` | Which Infisical project/environment this repo reads (committed) |
+| `.infisical.yaml` | Which Infisical project (and EU domain) this repo reads (committed) |
 | Infisical → `carnevale` → Production | The real secret **values** |
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
 | `docs/DEPLOYMENT.md` | Full backend deploy detail and rationale |
