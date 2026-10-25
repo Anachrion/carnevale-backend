@@ -38,12 +38,18 @@ registry:
     - KAMAL_REGISTRY_PASSWORD   # a GitHub PAT with write:packages (see .kamal/secrets)
 
 # The server is an Intel/AMD (x86) CX23, so build for amd64. Because your Mac is
-# arm64, this build runs under emulation (Rosetta via Colima) and the first one can be
-# slow (a few minutes) -- that's expected. Don't uncomment `remote:`: it would build on
-# the production server itself, competing with the live app and Postgres for 2 vCPU /
-# 4 GB (see docs/DEPLOYMENT.md, "Host").
+# arm64, this build runs under emulation and the first one can be slow (a few minutes)
+# -- that's expected. Don't uncomment `remote:`: it would build on the production server
+# itself, competing with the live app and Postgres for 2 vCPU / 4 GB (see
+# docs/DEPLOYMENT.md, "Host").
 builder:
   arch: amd64
+  # Build with the Docker daemon itself (Colima's), not Kamal's default `docker-container`
+  # builder. That builder runs its own BuildKit, which doesn't detect Colima's Rosetta and
+  # emulates amd64 with its bundled QEMU instead -- about 6x slower on a CPU-bound step.
+  # The daemon's builder leaves amd64 binaries to the VM's kernel, i.e. to Rosetta. We
+  # give up registry build cache and multi-arch images, neither of which we use.
+  driver: docker
   # remote: ssh://root@62.238.30.155
   # Build from the working tree, NOT the default `git archive` of HEAD. Git archives contain only
   # LFS *pointer* files, so the default would ship 132-byte pointers for public/cards/*.png instead

@@ -116,15 +116,22 @@ rather than as a separate container, which suits a two-core box with light job t
 
   `--vz-rosetta` is what keeps the deploy build reasonable: the server is x86
   (`builder.arch: amd64`) and the Mac is arm64, so every `RUN` step of the `Dockerfile`
-  executes amd64 binaries. With Rosetta the VM translates them; without it, buildx falls
-  back to QEMU, which is much slower and occasionally crashes on native gem compilation.
-  Day-to-day (Postgres only) everything is native arm64 and Rosetta sits unused.
+  executes amd64 binaries, and Rosetta translates them in the VM. Day-to-day (Postgres only)
+  everything is native arm64 and Rosetta sits unused.
 
-  Colima's default VM (2 CPU / 2 GB) is plenty for Postgres but tight for the image build
-  (native gems, Chromium, Node + Puppeteer, all under emulation). Resize it before deploying —
-  a stop/start keeps the dev database volume:
+  Rosetta only helps because `config/deploy.yml` sets `builder.driver: docker`. Kamal's
+  default `docker-container` builder runs its own BuildKit in a container; its platform probe
+  does not recognise Rosetta (it reports `linux/arm64, linux/386` only), so it runs every amd64
+  step under its bundled QEMU instead. Measured on the same CPU-bound `RUN`: 18 s through
+  Kamal's builder (QEMU) vs 3 s through Colima's Docker (Rosetta). The last deploy built under
+  QEMU took ~11 minutes from an empty cache.
+
+  Colima's default VM (2 CPU / 2 GB) is plenty for Postgres. For the image build (native gems,
+  Chromium, Node + Puppeteer, all under emulation) we resize it as a precaution — the sizes
+  are an estimate, not a measured minimum. A stop/start keeps the dev database volume:
   ```bash
-  colima stop && colima start --cpu 4 --memory 6   # bump to 8 if the build gets OOM-killed
+  colima stop && colima start --cpu 4 --memory 6   # before deploying
+  colima stop && colima start --cpu 2 --memory 2   # after: a big VM keeps holding the RAM
   ```
 - **Infisical CLI**, logged in against EU Cloud and linked to this repo:
   ```bash
@@ -135,7 +142,15 @@ rather than as a separate container, which suits a two-core box with light job t
   domain, so a fresh checkout needs no `infisical init`.
   The Production environment holds the secrets Kamal needs: `KAMAL_REGISTRY_PASSWORD`
   (a GitHub PAT with `write:packages`), `RAILS_MASTER_KEY`, and
-  `CARNEVALE_BACKEND_DATABASE_PASSWORD`. `POSTGRES_PASSWORD` is not stored separately —
+  `CARNEVALE_BACKEND_DATABASE_PASSWORD`.
+
+  > **`KAMAL_REGISTRY_PASSWORD` expires.** It is a classic personal access token, created with
+  > an expiry date. When it lapses, the deploy stops at `docker login ghcr.io` with
+  > `Error response from daemon: … denied: denied` — before building anything, so production is
+  > untouched. Create a new classic token at https://github.com/settings/tokens with only the
+  > `write:packages` scope, paste it into Infisical (project `carnevale`, Production,
+  > `KAMAL_REGISTRY_PASSWORD`) through the web UI rather than `infisical secrets set`, which
+  > leaves it in shell history, and re-run the deploy. `POSTGRES_PASSWORD` is not stored separately —
   it is derived from the DB password in `.kamal/secrets`, since both must be the same
   value.
 
