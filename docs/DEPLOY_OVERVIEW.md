@@ -54,7 +54,7 @@ ship as real bytes. Run `git lfs pull` once so they're materialised, and **commi
 your code changes** before deploying.
 
 ```bash
-cd ~/Workspace/carnevale-backend
+# from carnevale-backend/
 infisical run --env=prod -- kamal deploy
 ```
 
@@ -75,7 +75,7 @@ kamal app boot       # restart the app container
 
 ## Deploying the frontend
 
-The Flutter frontend lives in a **separate repo** (`~/Workspace/carnevale`, sibling
+The Flutter frontend lives in a **separate repo** (`carnevale`, checked out as a sibling
 to this one). It ships two ways:
 
 ### Web app → served by Rails at `/app/`
@@ -138,4 +138,4 @@ resolving; it can be dropped once nobody is on one.
 | `bin/release-web` | Build + stage the Flutter web app for deploy |
 | `docs/DEPLOYMENT.md` | Full backend deploy detail and rationale |
 | `docs/DATA_AND_BACKUPS.md` | Sources of truth, catalog snapshots, nightly backups & restore |
-| `~/Workspace/carnevale` | The Flutter frontend repo (separate) |
+| `../carnevale` | The Flutter frontend repo (separate, sibling checkout) |
