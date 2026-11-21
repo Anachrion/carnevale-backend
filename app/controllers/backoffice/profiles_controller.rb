@@ -94,7 +94,6 @@ module Backoffice
       card_versions.each_with_index do |version, index|
         @changes[version.id] = Catalog::History.changes(version, previous_snapshot: index.zero? ? nil : card_versions[index - 1].card_snapshot)
       end
-      @current_version_id = card_versions.last&.id
 
       shared = PaperTrail::Version
         .where(item_type: "Catalog::Weapon", item_id: @profile.profile_weapons.select(:weapon_id))

@@ -63,9 +63,8 @@ module Backoffice
 
     # A card version restores the card as it was after that save; a weapon or rule version is
     # undone, restoring the record as it was before that change.
-    def history_revert_button(version, current_version_id: nil)
+    def history_revert_button(version)
       return unless Catalog::History.revertable?(version)
-      return if version.id == current_version_id
 
       if version.item_type == "Catalog::Profile"
         label = "Restore this version"

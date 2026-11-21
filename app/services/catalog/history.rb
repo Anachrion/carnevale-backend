@@ -71,7 +71,7 @@ module Catalog
     # already holds the previous snapshot and can pass it, saving a query per row.
     def changes(version, previous_snapshot: :lookup)
       case version.event
-      when "baseline" then [ "State of the card when the history started" ]
+      when "baseline" then [ "Card before its first recorded change" ]
       when "create" then [ "Created" ]
       else
         if version.item_type == "Catalog::Profile"
@@ -81,6 +81,17 @@ module Catalog
           field_changes(version)
         end
       end
+    end
+
+    # Of these versions, the ids that are their card's latest — the card's current state, which
+    # there is nothing to restore to. One query, whatever the number of cards.
+    def current_card_version_ids(versions)
+      card_ids = versions.select { |v| v.item_type == "Catalog::Profile" }.map(&:item_id).uniq
+      return Set.new if card_ids.empty?
+
+      PaperTrail::Version.where(item_type: "Catalog::Profile", item_id: card_ids)
+        .select("DISTINCT ON (item_id) id").order(:item_id, created_at: :desc, id: :desc)
+        .map(&:id).to_set
     end
 
     # Only a version that holds a full state can be restored: a card snapshot, or a weapon/rule

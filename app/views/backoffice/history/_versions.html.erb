@@ -1,13 +1,15 @@
 <%#
   A list of catalog history versions (CARNEVALEB-81), newest first.
   Locals: versions, authors, changes (version id => lines; computed here when missing),
-          show_record (default true), current_version_id (the card's current state, not revertable),
+          show_record (default true),
           revertable_types (item types offered a revert button here; default all).
+  Each card's latest version is its current state: it is labelled "Current" rather than offered a
+  restore that would do nothing.
 %>
 <% show_record = local_assigns.fetch(:show_record, true) %>
 <% revertable_types = local_assigns.fetch(:revertable_types, Catalog::History::TRACKED_TYPES) %>
 <% changes = local_assigns.fetch(:changes, {}) %>
-<% current_version_id = local_assigns[:current_version_id] %>
+<% current_ids = Catalog::History.current_card_version_ids(versions) %>
 
 <% if versions.empty? %>
   <p class="text-sm text-gray-500">No changes recorded yet. The history starts with the first edit made after it shipped.</p>
@@ -47,8 +49,10 @@
               <% end %>
             </td>
             <td class="text-right">
-              <% if revertable_types.include?(version.item_type) %>
-                <%= history_revert_button(version, current_version_id: current_version_id) %>
+              <% if current_ids.include?(version.id) %>
+                <span class="pill bg-emerald-50 text-emerald-700">Current</span>
+              <% elsif revertable_types.include?(version.item_type) %>
+                <%= history_revert_button(version) %>
               <% end %>
             </td>
           </tr>

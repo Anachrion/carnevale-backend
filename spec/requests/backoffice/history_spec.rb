@@ -61,6 +61,17 @@ RSpec.describe "Backoffice catalog history", type: :request do
       expect(response.body).to include("Capodecina", "Ducats: 20 → 25")
     end
 
+    it "labels each card's latest version Current instead of offering a restore that does nothing" do
+      patch backoffice_profile_path(profile), params: profile_params(ducats: 25)
+      baseline, current = Catalog::History.versions_for(profile).to_a
+
+      get backoffice_history_path
+
+      expect(response.body).to include("Current", "Card before its first recorded change")
+      expect(response.body).to include(revert_backoffice_version_path(baseline))
+      expect(response.body).not_to include(revert_backoffice_version_path(current))
+    end
+
     it "records nothing when a save changes nothing" do
       patch backoffice_profile_path(profile), params: profile_params
 
