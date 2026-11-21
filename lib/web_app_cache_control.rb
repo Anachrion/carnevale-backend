@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Forces revalidation on the Flutter web bundle under /app.
 #
 # config.public_file_server.headers marks everything in public/ "public, max-age=1 year, immutable",

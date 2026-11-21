@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # CARNEVALEB-47: the ~10 profiles whose spell-selection mechanics deviate from the standard
 # "one pool, one discipline" shape SpellPoolBackfill covers. Idempotent — replace_spell_pools!/
 # replace_granted_spells! always fully replace a profile's set, so re-running this reapplies the

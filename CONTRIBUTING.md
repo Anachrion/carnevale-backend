@@ -15,6 +15,18 @@ Note that the AGPL is a copyleft licence with a network clause: because this bac
 is reached over a network, anyone who modifies it and serves it to users must offer
 those users the source of their modified version. This is deliberate.
 
+Ruby files under `app/` and `lib/` start with a one-line
+[SPDX](https://spdx.dev/learn/handling-license-info/) licence identifier rather than
+the full notice (after `# frozen_string_literal: true` when a file has one). Start
+new files the same way:
+
+```ruby
+# SPDX-License-Identifier: AGPL-3.0-or-later
+```
+
+The full terms are in [LICENSE](LICENSE), and the copyright and third-party notices
+in [NOTICE](NOTICE).
+
 ## Do not contribute third-party intellectual property
 
 This is an unofficial fan project. It bundles Carnevale artwork, card data, rules

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # CARNEVALEB-49: the Leader profiles that may be hired alongside another Leader. Each prints with
 # both the Leader and Hero keywords and a special rule that drops its Leader keyword (demoting it to
 # a plain Hero) whenever the gang already contains another Leader — so the client keeps offering them

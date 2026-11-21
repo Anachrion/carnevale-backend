@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 namespace :cards do
   # Render card faces into public/cards, exactly as the backoffice's "render to catalog" button
   # does — both faces of every card reference. The front is drawn with the reference's own
