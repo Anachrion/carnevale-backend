@@ -1,0 +1,138 @@
+# Moderator autonomy over the catalog
+
+Goal: let a few hand-picked players (moderators) **patch or create cards using only the
+backoffice**, with no technical expertise, so the app stays maintained with minimal developer
+involvement.
+
+Finding: **the backoffice already covers about 80% of the way**. What is missing is access control,
+safeguards, and a handful of settings that today can only be changed in code.
+
+---
+
+## 1. The process today
+
+### Patching a card
+
+1. Sign in to `/backoffice`. This needs an `admin: true` account, granted by hand through
+   `kamal console`.
+2. Edit the profile: stats, keywords, abilities, weapons and special rules (picked from lists),
+   spell pools, granted spells, exclusive weapons. The card preview updates live.
+3. Save. The validity of every gang that uses this profile is recomputed, and the card is flagged
+   as out of date (`CardReference#stale?`).
+4. **Publish** page: the card is re-rendered by headless Chrome (Grover), converted to WebP, and its
+   `internal_version` is bumped. The manifest reflects it, so the app re-downloads the card.
+4. Optional: **Rebuild printable sheets** to regenerate the PDFs on `/cards`.
+5. **Developer side**: run `bin/catalog-snapshot`, then commit `db/catalog/`.
+
+### Creating a card
+
+Same path, plus:
+
+- entering the identifier (a single card or an A/B pair) at creation;
+- uploading the illustration from the profile editor;
+- framing it in the illustration editor (offset, zoom, flip).
+
+A moderator can therefore already do steps 2 to 5 alone. What blocks them is steps 1 and 6, and
+everything the form does not cover.
+
+---
+
+## 2. What still requires a developer
+
+### A. Access control (blocking)
+
+- `admin` is a plain boolean. Since the backoffice only covers the catalog, a moderator needs the
+  same rights as an admin, so **there is no separate moderator role**: moderators are admins.
+- **Granting and revoking access stays a console operation** (`kamal console`), on purpose: who gets
+  access remains a deliberate, developer-side decision, and there is no screen to build or secure.
+- **No change history** (no paper_trail or equivalent). If a card gets broken, there is no way to
+  tell who did it or what the previous value was, short of diffing against the last snapshot.
+
+### B. Profile settings missing from the form
+
+They are set by rake tasks that target hard-coded names:
+
+| Setting | Where it lives today |
+|---|---|
+| `recruitable`, `companion_upgrade_ducats`, companions | `lib/tasks/companions.rake` |
+| `flexible_leader`, `flexible_leader_with` | `lib/tasks/leader_exceptions.rake` |
+| `distinct_discipline_per_copy`, plus `mage_slot_count` and `distinct_from_other_pools` on spell pools | `lib/tasks/spell_pool_exceptions.rake` |
+| Transformation pairs (Yune ⇄ The Beast Within) | `TRANSFORM_PAIRS` constant, `app/models/gang/entry.rb` |
+
+A moderator creating "a new Tentacle" or "a new flexible Leader" is stuck.
+
+### C. Reference data that only lives in the seeds
+
+Abilities, Spells, Equipment, Agendas and Scenarios can only be changed in `db/seeds/*.rb`.
+
+The most painful point: the profile form **rejects any ability that is not in the glossary**
+(`validates_ability_glossary`). A card that introduces a new ability cannot be saved without a
+deploy.
+
+### D. Backups
+
+- The `db/catalog/` snapshot is manual and developer-only.
+- **It is incomplete**: `CatalogSnapshot` exports neither spell pools, nor granted spells, nor
+  companions, nor the leader/recruitable flags. The nightly `pg_dump` to R2 covers everything, but a
+  `catalog:import` from git would lose that data.
+- With autonomous moderators, the `pg_dump` is what protects their work. Either accept that
+  explicitly, or complete the snapshot and automate it.
+
+### E. Pitfalls for a non-technical author
+
+- **Keywords are free text**, yet the logic depends on them: `LeaderResolver` looks for exactly
+  `"Leader"`. A typo silently breaks gang validation.
+- **Weapons and special rules are shared**: editing "Stiletto" changes every card that carries it.
+  `cards_affected` exists but is not surfaced before saving.
+- **Saving is visible immediately**: the new stats (ducats, etc.) reach the API and gang validation
+  as soon as they are saved, while the card image stays the old one until it is published. There is
+  no draft and no review.
+- **Overlong text is clipped silently**: the card template is fixed-size and hides overflow. The
+  preview helps, but nothing flags it.
+- **Profiles cannot be deleted**: a card created by mistake can only be made non-recruitable (and
+  even that setting is not in the form).
+
+### F. What will stay developer work
+
+- **A new faction**: the list is fixed in `HasFaction::FACTIONS`, and the Flutter app hard-codes the
+  palette, the icons and `faction_rule.dart`. It requires a store release.
+- **A new spell discipline**: also a fixed list (enum) in `Catalog::Spell`.
+- **A new mechanic** the app must enforce itself (like transformation, companions or flexible
+  Leaders). A rule that is only text on the card works fine; a rule the app has to apply will
+  always need code.
+
+---
+
+## 3. Roadmap
+
+### Tier 1: delegate safely (small)
+
+1. A change history on the catalog (paper_trail), with a "who changed what" view and a revert.
+   This is what makes giving full admin rights to moderators safe.
+2. Complete `CatalogSnapshot` (spell pools, granted spells, companions, flags) and automate it
+   (nightly cron), or explicitly rely on the `pg_dump` alone.
+3. A "this weapon appears on N cards" warning before saving a shared weapon or rule.
+
+Access itself needs no work: moderators are made admins from `kamal console`.
+
+### Tier 2: cover every kind of card (medium)
+
+4. Expose the settings from section B in an "Advanced options" part of the form, and move
+   `TRANSFORM_PAIRS` into the database.
+5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
+   needed.
+6. Replace free-text keywords with a pick list for the ones the app acts on (Leader, Hero,
+   Henchman…).
+7. Detect overflowing text in the preview (a height comparison in JS) and flag it clearly.
+
+### Tier 3: comfort and safety net (optional)
+
+8. A draft mode: changes only reach the API when published. This is the heaviest change, and not
+   essential once the history (item 1) exists.
+9. A moderator guide inside the backoffice (the process from section 1, plus the pitfalls from
+   section E).
+
+### After tiers 1 and 2
+
+Developer involvement would only be needed for a new faction, a new discipline or a new mechanic.
+Patching or creating a card would happen entirely in the backoffice.
