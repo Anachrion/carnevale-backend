@@ -4,9 +4,13 @@ Which copy of a thing wins when two disagree, what protects it if the server die
 does not. Written after the first production `catalog:export`, when the catalog stopped living on a
 single box and nothing else changed.
 
-The short version: **the catalog is safe in git, and the players' data is now backed up nightly,
-off the box, to Cloudflare R2.** (Until 2026-07-20 the second half of that sentence read "the
-players' data is not" — see [The nightly database backup](#the-nightly-database-backup) below.)
+The short version: **everything authored in production — the catalog, the art uploaded through the
+backoffice, and the players' data — is backed up nightly, off the box, to Cloudflare R2.** The
+catalog's change history (who changed which card, with a revert) lives in the same database, so it
+is in that backup too. `db/catalog/` in git is the **development seed**, not a backup.
+
+(Until 2026-11-22 the catalog's backup was `db/catalog/`, refreshed by hand after every authoring
+session — see [CARNEVALEB-82](#why-the-catalog-is-no-longer-backed-up-in-git) below.)
 
 ---
 
@@ -18,7 +22,7 @@ someone's work with a seed file.
 ### 1. Authored in production → the production database wins
 
 Everything the backoffice can edit. A game creator signs in at `/backoffice`, edits a profile, and
-that edit exists **only in the production Postgres** until it is snapshotted:
+that edit exists **only in production** until the next nightly backup copies it to R2:
 
 - profiles (stats, keywords, abilities)
 - weapons and special rules (shared records)
@@ -71,13 +75,15 @@ Losing derived data costs time, not information. Everything above can be rebuilt
 
 | Data | Where it lives in production | Backed up? |
 |---|---|---|
-| Catalog records | Postgres | **Yes** — `db/catalog/*.yml` in git, by hand |
-| Uploaded art | `carnevale_backend_storage` volume | **Yes** — `db/catalog/blobs/` in git LFS, by hand (none uploaded yet) |
+| Catalog records and their change history | Postgres | **Yes** — nightly `pg_dump` to R2 |
+| Uploaded art | `carnevale_backend_storage` volume | **Yes** — nightly `rclone copy` to R2 `storage/` |
 | Committed art | in the image, from git | **Yes** — it *is* git |
 | Rendered cards | `carnevale_backend_cards` volume | **No** — not in git either; regenerable by publishing |
-| **Users, lists, games** | Postgres | **Yes** — nightly `pg_dump` to Cloudflare R2 (see below) |
+| **Users, lists, games** | Postgres | **Yes** — nightly `pg_dump` to R2 |
 
-### The catalog snapshot
+All of it comes from one systemd timer: see [The nightly backup](#the-nightly-database-backup).
+
+### The catalog snapshot (development seed)
 
 ```
 bin/catalog-snapshot
@@ -95,14 +101,31 @@ Two details it exists to get right, both easy to lose an afternoon to:
 
 It is safe to re-run: if production already matches what is committed, it says so and exits.
 
-Run it **after any session of authoring in the production backoffice**, and commit the result. Until
-you do, that work exists on exactly one disk.
+**What it is for.** `db/seeds.rb` calls `CatalogSnapshot.import`, so `db/catalog/` is how
+`bin/setup` gives a contributor a catalog on their machine — a production dump cannot be handed out,
+since it holds the players' accounts. Refresh it now and then, when local work needs newer cards;
+there is no freshness requirement, because it is not a backup.
+
+**What it does not carry**: spell pools, granted spells, companions and the leader/recruitable
+flags. `db/seeds.rb` rebuilds those right after the import, from `SpellPoolBackfill` and the
+`spell_pools:`, `leaders:` and `companions:configure_exceptions` rake tasks, so a local catalog is
+complete. That stops being true once those settings become editable in the backoffice
+(CARNEVALEB-84), which therefore has to add them to the snapshot.
+
+#### Why the catalog is no longer backed up in git
+
+Decided in CARNEVALEB-82 (2026-11-22). The snapshot was the catalog's backup, but it was only as
+fresh as the last time someone remembered to run it, and it does not carry the data listed above.
+The nightly `pg_dump` already covered the whole catalog; its short retention (7 daily + 4 weekly)
+matters little now that a card broken weeks ago can be restored from its history in the backoffice.
+The one gap was uploaded art, which `pg_dump` references but does not contain — hence the
+`rclone copy` of the storage volume, added at the same time.
 
 ### The nightly database backup
 
-This is what protects the player data — accounts, gang lists, games in progress — that lives only on
-the box's single Postgres volume. `catalog:export` protects the *catalog*, not the players; this
-`pg_dump` protects everything.
+This is what protects everything authored in production — the catalog and its history, the art
+uploaded through the backoffice, the player data (accounts, gang lists, games in progress) — that
+otherwise lives only on the box's volumes.
 
 **What runs.** A systemd timer on the box, `carnevale-db-backup.timer`, fires nightly at **03:00
 UTC** and runs `/opt/carnevale/db-backup.sh` (source: `deploy/backup/db-backup.sh`). Each night it:
@@ -114,9 +137,14 @@ UTC** and runs `/opt/carnevale/db-backup.sh` (source: `deploy/backup/db-backup.s
    overwrites good history.
 3. `rclone copy`s it to **Cloudflare R2**, under `daily/`, and on Sundays also under `weekly/`.
 4. Prunes to **7 daily + 4 weekly** copies (files are date-named, so a lexical sort is chronological).
+5. `rclone copy`s the `carnevale_backend_storage` volume (Active Storage, i.e. the uploaded art) to
+   `storage/`. A dump holds only the *reference* to an uploaded file, so this is what keeps the
+   bytes. It is `copy`, not `sync`: nothing is ever deleted on R2, so an image removed or replaced
+   by mistake on the box is still there. Only new files are sent; a few hundred KB per image.
 
-**Where the copies live.** `daily/carnevale-YYYY-MM-DD.dump` and `.../weekly/…` in the backup
-bucket. R2 is off-Hetzner, so it survives the box — and the provider — dying.
+**Where the copies live.** `daily/carnevale-YYYY-MM-DD.dump`, `.../weekly/…` and `storage/` (the
+Active Storage tree, as on disk) in the backup bucket. R2 is off-Hetzner, so it survives the box —
+and the provider — dying. Everything together is well within R2's free 10 GB.
 
 **Credentials.** A bucket-scoped R2 API token, written to the server's rclone config (mode 600)
 by `bin/install-db-backups`, which reads `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` /
@@ -146,16 +174,21 @@ Or list what actually made it off-box from a dev machine: `bin/db-restore --list
 
 1. Provision, then `kamal setup` (see `docs/DEPLOYMENT.md`).
 2. `kamal app exec "bin/rails db:prepare"` — schema, empty database.
-3. `kamal app exec "bin/rails db:seed"` — rulebook data (abilities, spells, scenarios…).
-4. `kamal app exec "bin/rails catalog:import"` — the catalog, from `db/catalog/`. Additive and
-   idempotent: it matches on natural keys, never deletes, and is safe to re-run.
+3. **The database:** restore the latest nightly dump over it with
+   `bin/db-restore --file <path> --production` — see below. It holds everything: rulebook, catalog,
+   change history, players.
+4. **The uploaded art:** copy it back into the storage volume, on the box:
+   `rclone copy r2:carnevale-backups/storage/ "$(docker volume inspect carnevale_backend_storage -f '{{.Mountpoint}}')"`
+   (`bin/install-db-backups` has set rclone up there). Without this, the cards whose art was
+   uploaded through the backoffice render with an empty frame.
 5. Card images ride in the image from whatever is in `public/cards` on the deploy machine, and the
    first deploy seeds the cards volume from it. They are **not** in git, so on a machine that never
    had them — a fresh clone — the directory is empty and the volume is seeded empty. That is
-   recoverable: publish from the backoffice once the catalog and illustrations are in place.
-6. **Player data:** restore the latest nightly dump over the fresh database — see below. (Steps 3–4
-   become redundant once you do this: the dump already contains the seeded rulebook and the catalog.
-   Run them only if you deliberately want day-one data instead of the last backup.)
+   recoverable: publish from the backoffice once the database and art are back.
+
+`db:seed` and `catalog:import` are for a **new, non-production environment** (a contributor's
+machine, a staging box): they give it the day-one rulebook and the catalog from `db/catalog/`, which
+may be weeks behind production. Never use them to restore production.
 
 ### Restore the database from a backup
 
@@ -177,9 +210,13 @@ box) or knowingly corrupt.
 
 ### Someone broke the catalog in production
 
-`db/catalog/` is a readable diff and git remembers every snapshot. Check out the good version and
-`catalog:import` it. Because import never deletes, a record that was *added* by mistake stays —
-remove it in the backoffice.
+Use the backoffice: **History** shows who changed what, and each card's history page restores an
+earlier version of the whole card (stats, weapons, rules, spells, companions); a weapon or special
+rule is undone from its own edit page (CARNEVALEB-81). No developer needed.
+
+If the damage predates the history, or touches data it does not cover, restore a dump into a side
+database (`bin/db-restore --file <path> --into carnevale_inspect`) and copy the good values from
+there.
 
 ---
 
@@ -189,13 +226,15 @@ In the order I would do it:
 
 1. **Nightly `pg_dump`, off the box** (CARNEVALEB-11). **Done** (2026-07-20) — nightly to R2, 7+4
    rotation, restore tested. See [The nightly database backup](#the-nightly-database-backup).
-2. **Automate the catalog snapshot** (P2). It is manual, so the safety net is only as fresh as the
-   last time someone remembered. `bin/catalog-snapshot` is a cron job away.
+2. ~~**Automate the catalog snapshot**~~. **Dropped** (CARNEVALEB-82, 2026-11-22): the nightly
+   backup covers the catalog, and now the uploaded art too; `db/catalog/` is the development seed.
+   See [why](#why-the-catalog-is-no-longer-backed-up-in-git).
 3. **Point `db/seeds.rb` at `CatalogSnapshot.import`** for profiles, weapons and rules, so a fresh
    install reproduces *production* rather than the day-one catalog. The hand-written faction files
    then retire, and the two sources of truth become one. (The rulebook seeds stay as they are — the
    backoffice cannot edit them.)
 4. **Only then consider moving the committed illustrations into Active Storage.** It buys one code
    path instead of two. It also moves 89 MB of art out of git — versioned, replicated, restorable by
-   clone — and into a single Docker volume with no automated backup. That is a downgrade in
-   durability bought with tidiness, and it stays a bad trade until (1) and (2) are done.
+   clone — and into a single Docker volume. That volume is now copied to R2 nightly, so the art
+   would no longer be lost with the box, but it would lose git's history and its restore-by-clone.
+   Still a trade to weigh, not an obvious win.

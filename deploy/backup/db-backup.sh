@@ -15,6 +15,9 @@
 #      or truncated dump never gets uploaded over good history.
 #   3. rclone copy it to R2 under daily/, and on Sundays also under weekly/.
 #   4. Prune to 7 daily + 4 weekly. Files are date-named, so a lexical sort is chronological.
+#   5. rclone copy the Active Storage volume (art uploaded through the backoffice) to R2 under
+#      storage/. pg_dump only holds the *reference* to an uploaded file, never its bytes, so
+#      without this a moderator's new illustration would live on this one disk (CARNEVALEB-82).
 #
 # Safe to re-run: a second run the same day just re-uploads today's file.
 
@@ -22,6 +25,7 @@ set -euo pipefail
 
 # --- config (override via the systemd unit's Environment= if the box ever changes) ---
 DB_CONTAINER="${DB_CONTAINER:-carnevale_backend-db}"
+STORAGE_VOLUME="${STORAGE_VOLUME:-carnevale_backend_storage}"
 REMOTE="${BACKUP_REMOTE:-r2:carnevale-backups}"
 export RCLONE_CONFIG="${RCLONE_CONFIG:-/root/.config/rclone/rclone.conf}"
 KEEP_DAILY="${KEEP_DAILY:-7}"
@@ -72,5 +76,14 @@ prune() {  # $1 = subdir, $2 = keep count
 
 prune daily  "$KEEP_DAILY"
 prune weekly "$KEEP_WEEKLY"
+
+# Uploaded art. `copy`, not `sync`: it never deletes on R2, so an image removed or overwritten by
+# mistake on the box is still in the backup. Only new or changed files are sent, so a night with
+# no uploads costs a listing. Images are a few hundred KB each; the whole catalog would be ~125 MB.
+storage="$(docker volume inspect "$STORAGE_VOLUME" -f '{{.Mountpoint}}' 2>/dev/null)" \
+  || die "volume $STORAGE_VOLUME not found"
+log "Copying uploaded art from ${STORAGE_VOLUME} to ${REMOTE}/storage/"
+rclone copy "$storage" "${REMOTE}/storage/"
+log "Storage OK ($(rclone size "${REMOTE}/storage/" 2>/dev/null | tr '\n' ' '))"
 
 log "Done."
