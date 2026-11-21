@@ -116,6 +116,29 @@ RSpec.describe "Backoffice::Weapons", type: :request do
       end
     end
 
+    # A weapon is shared: editing it changes every card carrying it (CARNEVALEB-83).
+    describe "GET edit, for a shared weapon" do
+      it "lists the profiles carrying it and asks for confirmation before saving" do
+        capo = create(:profile, name: "Capodecina")
+        bravo = create(:profile, name: "Bravo")
+        [ capo, bravo ].each { |p| Catalog::ProfileWeapon.create!(profile: p, weapon: stiletto, position: 1) }
+
+        get edit_backoffice_weapon_path(stiletto)
+
+        expect(response.body).to include("Shared by 2 profiles", "Capodecina", "Bravo")
+        expect(response.body).to include("data-turbo-confirm=\"This weapon is on 2 profiles.")
+      end
+
+      it "names the single carrier without asking when only one profile carries it" do
+        Catalog::ProfileWeapon.create!(profile: create(:profile, name: "Capodecina"), weapon: stiletto, position: 1)
+
+        get edit_backoffice_weapon_path(stiletto)
+
+        expect(response.body).to include("Carried only by")
+        expect(response.body).not_to include("data-turbo-confirm=\"This weapon")
+      end
+    end
+
     describe "PATCH update" do
       it "edits the weapon and says how many cards it just invalidated" do
         profile = create(:profile)

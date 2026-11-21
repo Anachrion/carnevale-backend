@@ -83,6 +83,19 @@ RSpec.describe "Backoffice::SpecialRules", type: :request do
       end
     end
 
+    describe "GET edit, for a shared rule" do
+      it "lists the profiles carrying it and asks for confirmation before saving" do
+        [ create(:profile, name: "Capodecina"), create(:profile, name: "Bravo") ].each do |p|
+          Catalog::ProfileSpecialRule.create!(profile: p, special_rule: aura, position: 1)
+        end
+
+        get edit_backoffice_special_rule_path(aura)
+
+        expect(response.body).to include("Shared by 2 profiles", "Capodecina", "Bravo")
+        expect(response.body).to include("data-turbo-confirm=\"This rule is on 2 profiles.")
+      end
+    end
+
     describe "PATCH update" do
       it "edits the rule and reports the cards it invalidated" do
         profile = create(:profile)

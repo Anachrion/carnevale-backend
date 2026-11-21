@@ -1,8 +1,9 @@
 <%# scope: :weapon — the model is namespaced, so the default param key would be catalog_weapon. %>
-<%= form_with model: weapon, scope: :weapon, url: url, method: method do |f| %>
+<%= form_with model: weapon, scope: :weapon, url: url, method: method, data: shared_save_confirm(weapon, "weapon") do |f| %>
   <% if weapon.errors.any? %>
     <div class="flash alert"><%= weapon.errors.full_messages.to_sentence %></div>
   <% end %>
+  <%= render "backoffice/shared/carried_by", record: weapon, noun: "weapon" unless weapon.new_record? %>
 
   <div class="table-wrap" style="margin-top:16px;">
     <table>
