@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit reviews every pull request automatically (CARNEVALEB-93). It is advisory only: it is not
+# a required check on main, so an outage of the bot never blocks a merge. Installed as a GitHub App
+# restricted to the Carnevale repositories; this file is its whole configuration.
+language: "en-US"
+
+reviews:
+  # Balanced feedback. "assertive" gets nitpicky; "quiet" comments only on serious issues.
+  profile: "chill"
+  # Comment, never request changes: a human decides.
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  in_progress_fortune: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["^main$"]
+    # Gem bumps are reviewed by CI (bundler-audit, the test suite), not by reading the lockfile.
+    ignore_usernames: ["dependabot[bot]"]
+
+  # Data, generated files and binaries: nothing to review.
+  path_filters:
+    - "!db/catalog/**"
+    - "!db/schema.rb"
+    - "!Gemfile.lock"
+    - "!package-lock.json"
+    - "!public/**"
+    - "!app/assets/images/**"
+
+  # What the diff alone does not show.
+  path_instructions:
+    - path: "app/models/catalog/**"
+      instructions: >-
+        Catalog::Profile#replace_*! destroys and recreates a card's join and child rows on every
+        save, on purpose; do not suggest diffing them in place. The change history versions a card
+        as a whole (Catalog::CardSnapshot, Catalog::History), not row by row. Profile has
+        `has_paper_trail on: []` deliberately: its versions are written explicitly after the save.
+    - path: "app/controllers/backoffice/**"
+      instructions: >-
+        The backoffice is admin-only (Backoffice::BaseController#authenticate_backoffice!). Admins
+        are trusted moderators; access is granted from the console, there is no role system to add.
+    - path: "db/migrate/**"
+      instructions: >-
+        Production runs on a single Postgres; migrations run on boot during a Kamal deploy. Flag
+        anything that locks a large table or cannot be rolled back.
+    - path: "spec/**"
+      instructions: >-
+        RSpec request, model and service specs with FactoryBot. Prefer tests of behaviour over
+        implementation details.
