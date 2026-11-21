@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # This rake task was added by annotate_rb gem.
 
 # Can set `ANNOTATERB_SKIP_ON_DB_TASKS` to be anything to skip this

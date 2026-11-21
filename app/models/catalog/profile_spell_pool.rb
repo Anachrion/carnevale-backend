@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 module Catalog
   class ProfileSpellPool < ApplicationRecord
     self.table_name = "profile_spell_pools"

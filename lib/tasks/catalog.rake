@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 namespace :catalog do
   # Snapshot the authored catalog (profiles, weapons, special rules, illustration records and the
   # uploaded art) to db/catalog/ as versioned YAML + LFS blobs. The catalog is authored in the

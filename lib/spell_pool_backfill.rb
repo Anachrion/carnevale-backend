@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # Creates one standard spell pool (of: 1, grants_cantrip: true, resets_each_round: true) per mage
 # profile that doesn't have one yet, parsed from its existing "Mage (X)" / "Expert Sorcerer (X)" /
 # "Discipline (A, B)" text. Idempotent — skips any profile that already has a pool — so it's safe

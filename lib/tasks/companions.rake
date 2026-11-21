@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 # CARNEVALEB-23: the Emissary of Mother Hydra automatically brings its four Tentacles into the gang
 # (1 of each, or 2 of each once its +12-Ducat upgrade is bought), and the Tentacles themselves can
 # never be hired or summoned on their own. These facts aren't part of the catalog YAML round-trip
