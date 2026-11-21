@@ -18,6 +18,9 @@ module Catalog
   class Weapon < ApplicationRecord
     include StringListColumns
 
+    # A weapon is a shared record, so its own field-level history makes sense as is (CARNEVALEB-81).
+    has_paper_trail
+
     has_many :profile_weapons, class_name: "Catalog::ProfileWeapon"
     has_many :profiles, through: :profile_weapons
 

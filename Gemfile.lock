@@ -262,6 +262,9 @@ GEM
       racc (~> 1.4)
     orm_adapter (0.5.0)
     ostruct (0.6.3)
+    paper_trail (17.0.0)
+      activerecord (>= 7.1)
+      request_store (~> 1.4)
     parallel (2.1.0)
     parser (3.3.11.1)
       ast (~> 2.4.1)
@@ -350,6 +353,8 @@ GEM
     regexp_parser (2.12.0)
     reline (0.7.0)
       io-console (~> 0.5)
+    request_store (1.7.0)
+      rack (>= 1.4)
     responders (3.2.1)
       actionpack (>= 7.0)
       railties (>= 7.0)
@@ -517,6 +522,7 @@ DEPENDENCIES
   jbuilder
   kamal
   letter_opener
+  paper_trail (~> 17.0)
   pg (~> 1.7)
   prawn
   propshaft

@@ -24,6 +24,9 @@ gem "bcrypt", "~> 3.1.7"
 gem "devise"
 # JWT authentication strategy for Devise, used by the Flutter API clients [https://github.com/waiting-for-dev/devise-jwt]
 gem "devise-jwt"
+# Change history on the catalog, so backoffice edits can be traced and reverted (CARNEVALEB-81)
+# [https://github.com/paper-trail-gem/paper_trail]
+gem "paper_trail", "~> 17.0"
 # Locale data for i18n: rails-i18n ships translations for ActiveModel/ActiveRecord validation
 # messages, dates, and number formats (the API surfaces validation errors verbatim to the Flutter
 # app, so these must be translated); devise-i18n does the same for Devise's auth messages.

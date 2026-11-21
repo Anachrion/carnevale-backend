@@ -3,3 +3,6 @@
 <h1>Edit <%= @weapon.name %></h1>
 
 <%= render "form", weapon: @weapon, url: backoffice_weapon_path(@weapon), method: :patch %>
+
+<h2 style="margin-top:32px;">History</h2>
+<%= render "backoffice/history/versions", versions: @versions, authors: @authors, show_record: false %>

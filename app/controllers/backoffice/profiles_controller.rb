@@ -16,7 +16,7 @@
 
 module Backoffice
   class ProfilesController < BaseController
-    before_action :set_profile, only: %i[edit update card card_preview card_pdf card_png illustration_editor illustration_position illustration_image render_to_catalog]
+    before_action :set_profile, only: %i[edit update history card card_preview card_pdf card_png illustration_editor illustration_position illustration_image render_to_catalog]
     before_action :set_pickable_records, only: %i[new create edit update]
 
     # GET /backoffice/profiles
@@ -67,6 +67,7 @@ module Backoffice
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
         @profile.replace_spell_pools!(pools_params)
         @profile.replace_granted_spells!(granted_spells_params)
+        Catalog::History.record!(@profile, event: "create")
       end
 
       redirect_to edit_backoffice_profile_path(@profile),
@@ -80,6 +81,29 @@ module Backoffice
 
     # GET /backoffice/profiles/:id/edit
     def edit
+    end
+
+    # GET /backoffice/profiles/:id/history
+    #
+    # The card's versions, newest first, each with what it changed (CARNEVALEB-81). Changes to the
+    # shared weapons and rules the card carries are interleaved: they change the printed card too,
+    # though they are not this card's own versions and are undone from the weapon or rule itself.
+    def history
+      card_versions = Catalog::History.versions_for(@profile).to_a
+      @changes = {}
+      card_versions.each_with_index do |version, index|
+        @changes[version.id] = Catalog::History.changes(version, previous_snapshot: index.zero? ? nil : card_versions[index - 1].card_snapshot)
+      end
+      @current_version_id = card_versions.last&.id
+
+      shared = PaperTrail::Version
+        .where(item_type: "Catalog::Weapon", item_id: @profile.profile_weapons.select(:weapon_id))
+        .or(PaperTrail::Version.where(item_type: "Catalog::SpecialRule", item_id: @profile.profile_special_rules.select(:special_rule_id)))
+        .includes(:item).to_a
+      shared.each { |version| @changes[version.id] = Catalog::History.changes(version) }
+
+      @versions = (card_versions + shared).sort_by { |v| [ v.created_at, v.id ] }.reverse
+      @authors = Catalog::History.authors(@versions)
     end
 
     # POST /backoffice/profiles/:id/card_preview
@@ -110,9 +134,12 @@ module Backoffice
     # stale (Catalog::CardReference#stale?) and the publish page picks them up.
     def update
       saved = false
+      # Taken before anything changes: it becomes the card's baseline if it has no history yet.
+      before = Catalog::CardSnapshot.capture(@profile)
 
       # The weapons and rules are join rows, so they are rewritten rather than assigned. One
-      # transaction, so an invalid profile cannot leave a half-rewritten weapon list behind.
+      # transaction, so an invalid profile cannot leave a half-rewritten weapon list behind — and
+      # so a rolled-back save leaves no version behind either.
       Catalog::Profile.transaction do
         @profile.assign_attributes(profile_params)
         saved = @profile.save
@@ -122,6 +149,7 @@ module Backoffice
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
         @profile.replace_spell_pools!(pools_params)
         @profile.replace_granted_spells!(granted_spells_params)
+        Catalog::History.record!(@profile, event: "update", before: before)
       end
 
       if saved

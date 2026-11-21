@@ -133,6 +133,8 @@ Rails.application.routes.draw do
         patch :illustration_position
         patch :illustration_image
         post  :render_to_catalog
+        # The card's change history, with a revert per version (CARNEVALEB-81).
+        get   :history
       end
       collection do
         get  :export_pdf
@@ -150,6 +152,13 @@ Rails.application.routes.draw do
     # right rather than inside one profile. The profile editor creates them inline (format: json).
     resources :weapons, only: %i[index new create edit update destroy]
     resources :special_rules, only: %i[index new create edit update destroy]
+
+    # The catalog's change history across cards, weapons and special rules, and the revert of one
+    # version (CARNEVALEB-81).
+    get "history", to: "history#index", as: :history
+    resources :versions, only: [] do
+      member { post :revert }
+    end
   end
 
   mount ActionCable.server => "/cable"
