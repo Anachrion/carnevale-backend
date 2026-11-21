@@ -21,8 +21,10 @@ safeguards, and a handful of settings that today can only be changed in code.
    as out of date (`CardReference#stale?`).
 4. **Publish** page: the card is re-rendered by headless Chrome (Grover), converted to WebP, and its
    `internal_version` is bumped. The manifest reflects it, so the app re-downloads the card.
-4. Optional: **Rebuild printable sheets** to regenerate the PDFs on `/cards`.
-5. **Developer side**: run `bin/catalog-snapshot`, then commit `db/catalog/`.
+5. Optional: **Rebuild printable sheets** to regenerate the PDFs on `/cards`.
+
+Nothing to do on the developer side afterwards: the nightly backup copies the catalog and any
+uploaded art off the box (CARNEVALEB-82), and every change is in the History (CARNEVALEB-81).
 
 ### Creating a card
 
@@ -32,8 +34,8 @@ Same path, plus:
 - uploading the illustration from the profile editor;
 - framing it in the illustration editor (offset, zoom, flip).
 
-A moderator can therefore already do steps 2 to 5 alone. What blocks them is steps 1 and 6, and
-everything the form does not cover.
+A moderator can therefore already do steps 2 to 5 alone. What blocks them is step 1 (access is
+granted by a developer, on purpose) and everything the form does not cover.
 
 ---
 
@@ -45,8 +47,8 @@ everything the form does not cover.
   same rights as an admin, so **there is no separate moderator role**: moderators are admins.
 - **Granting and revoking access stays a console operation** (`kamal console`), on purpose: who gets
   access remains a deliberate, developer-side decision, and there is no screen to build or secure.
-- **No change history** (no paper_trail or equivalent). If a card gets broken, there is no way to
-  tell who did it or what the previous value was, short of diffing against the last snapshot.
+- ~~**No change history**~~. **Done** (CARNEVALEB-81): the backoffice History shows who changed
+  what, and any card, weapon or special rule can be restored to an earlier version.
 
 ### B. Profile settings missing from the form
 
@@ -71,12 +73,14 @@ deploy.
 
 ### D. Backups
 
-- The `db/catalog/` snapshot is manual and developer-only.
-- **It is incomplete**: `CatalogSnapshot` exports neither spell pools, nor granted spells, nor
-  companions, nor the leader/recruitable flags. The nightly `pg_dump` to R2 covers everything, but a
-  `catalog:import` from git would lose that data.
-- With autonomous moderators, the `pg_dump` is what protects their work. Either accept that
-  explicitly, or complete the snapshot and automate it.
+**Settled** (CARNEVALEB-82): the nightly backup to R2 protects the moderators' work — the
+`pg_dump` for the catalog and its history, plus an `rclone copy` of the uploaded art, which the dump
+only references. `db/catalog/` is no longer a backup but the development seed, refreshed by hand.
+See `docs/DATA_AND_BACKUPS.md`.
+
+- The snapshot does not carry spell pools, granted spells, companions or the leader/recruitable
+  flags; `db/seeds.rb` rebuilds them from rake tasks, so a local catalog is complete today. Once
+  those settings are editable in the backoffice (item 4 below), the snapshot must carry them.
 
 ### E. Pitfalls for a non-technical author
 
@@ -107,10 +111,10 @@ deploy.
 
 ### Tier 1: delegate safely (small)
 
-1. A change history on the catalog (paper_trail), with a "who changed what" view and a revert.
-   This is what makes giving full admin rights to moderators safe.
-2. Complete `CatalogSnapshot` (spell pools, granted spells, companions, flags) and automate it
-   (nightly cron), or explicitly rely on the `pg_dump` alone.
+1. ~~A change history on the catalog, with a "who changed what" view and a revert.~~ **Done**
+   (CARNEVALEB-81, #51).
+2. ~~Complete and automate `CatalogSnapshot`, or rely on the `pg_dump` alone.~~ **Done**
+   (CARNEVALEB-82): rely on the nightly backup, now extended to the uploaded art.
 3. A "this weapon appears on N cards" warning before saving a shared weapon or rule.
 
 Access itself needs no work: moderators are made admins from `kamal console`.
@@ -118,7 +122,8 @@ Access itself needs no work: moderators are made admins from `kamal console`.
 ### Tier 2: cover every kind of card (medium)
 
 4. Expose the settings from section B in an "Advanced options" part of the form, and move
-   `TRANSFORM_PAIRS` into the database.
+   `TRANSFORM_PAIRS` into the database. Add those settings to `CatalogSnapshot` at the same time,
+   so the development seed keeps them (CARNEVALEB-84).
 5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
    needed.
 6. Replace free-text keywords with a pick list for the ones the app acts on (Leader, Hero,
