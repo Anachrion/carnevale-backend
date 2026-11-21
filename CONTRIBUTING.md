@@ -67,8 +67,14 @@ See the [README](README.md) for setup. Before opening a pull request:
 - Run the linter: `bundle exec rubocop`
 - Keep changes focused, and match the style of the surrounding code.
 
-New source files should carry the standard AGPL license header (see any existing
-`.rb` file under `app/` for the exact text).
+New source files start with the one-line SPDX licence identifier described under
+[License of contributions](#license-of-contributions).
+
+Every pull request against `main` gets an automatic review from
+[CodeRabbit](https://www.coderabbit.ai/) (configured in `.coderabbit.yaml`). It is
+advisory: read its comments, reply when one does not apply (it learns from that), and
+resolve what is useful. It is not a required check, and a maintainer still reviews and
+merges.
 
 ## Adding a new language
 
