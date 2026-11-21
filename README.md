@@ -50,7 +50,7 @@ rendered.
 
 | Layer | Technology |
 |---|---|
-| Language | Ruby 3.4.9 |
+| Language | Ruby 3.4.13 |
 | Framework | Rails 8.1.3 (full stack — JSON API *and* server-rendered backoffice) |
 | Database | PostgreSQL 17 |
 | Auth | Devise + devise-jwt — short-lived access tokens with rotating refresh tokens |
