@@ -1,0 +1,11 @@
+<% content_for :title, "History" %>
+
+<h1>History</h1>
+<p class="text-sm text-gray-500">
+  The latest <%= Catalog::History.recent.limit_value %> changes to cards, weapons and special rules.
+  Open a card to see its full history and restore an earlier version.
+</p>
+
+<div class="mt-4">
+  <%= render "backoffice/history/versions", versions: @versions, authors: @authors %>
+</div>

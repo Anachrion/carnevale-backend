@@ -16,6 +16,10 @@
 
 module Catalog
   class SpecialRule < ApplicationRecord
+    # A special rule is a shared record, so its own field-level history makes sense as is
+    # (CARNEVALEB-81).
+    has_paper_trail
+
     has_many :profile_special_rules, class_name: "Catalog::ProfileSpecialRule"
     has_many :profiles, through: :profile_special_rules
 

@@ -1,0 +1,20 @@
+<% content_for :title, "History of #{@profile.name}" %>
+
+<div style="display:flex;align-items:center;gap:12px;">
+  <h1>History of <%= @profile.name %></h1>
+  <span class="pill" style="<%= faction_pill_style(@profile.faction) %>"><%= @profile.faction.capitalize %></span>
+  <%= link_to "← Edit #{@profile.name}", edit_backoffice_profile_path(@profile), class: "btn", style: "margin-left:auto;" %>
+</div>
+
+<p class="text-sm text-gray-500">
+  Each card version holds the whole card. Restoring one writes back its stats, weapons, special rules,
+  spell pools, granted spells and companions, and is recorded like any other change.
+  Changes to the shared weapons and rules this card carries are listed too: undo those from the
+  weapon or rule itself, since they affect every card carrying it.
+</p>
+
+<div class="mt-4">
+  <%= render "backoffice/history/versions",
+        versions: @versions, authors: @authors, changes: @changes,
+        revertable_types: [ "Catalog::Profile" ] %>
+</div>

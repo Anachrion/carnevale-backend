@@ -21,6 +21,7 @@ module Backoffice
   # which the publish page reports without being told (a card's fingerprint covers its weapons).
   class WeaponsController < BaseController
     before_action :set_weapon, only: %i[edit update destroy]
+    before_action -> { set_history_for(@weapon) }, only: %i[edit update]
 
     # GET /backoffice/weapons
     def index

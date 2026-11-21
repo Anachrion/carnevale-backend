@@ -1,0 +1,63 @@
+<%#
+  A list of catalog history versions (CARNEVALEB-81), newest first.
+  Locals: versions, authors, changes (version id => lines; computed here when missing),
+          show_record (default true),
+          revertable_types (item types offered a revert button here; default all).
+  Each card's latest version is its current state: it is labelled "Current" rather than offered a
+  restore that would do nothing.
+%>
+<% show_record = local_assigns.fetch(:show_record, true) %>
+<% revertable_types = local_assigns.fetch(:revertable_types, Catalog::History::TRACKED_TYPES) %>
+<% changes = local_assigns.fetch(:changes, {}) %>
+<% current_ids = Catalog::History.current_card_version_ids(versions) %>
+
+<% if versions.empty? %>
+  <p class="text-sm text-gray-500">No changes recorded yet. The history starts with the first edit made after it shipped.</p>
+<% else %>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="w-40">When</th>
+          <th class="w-32">Who</th>
+          <% if show_record %><th>What</th><% end %>
+          <th class="w-28">Event</th>
+          <th>Changes</th>
+          <th class="w-44"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% versions.each do |version| %>
+          <% lines = changes.fetch(version.id) { Catalog::History.changes(version) } %>
+          <tr>
+            <td class="whitespace-nowrap tabular-nums text-gray-500"><%= l(version.created_at, format: :short) %></td>
+            <td><%= history_author(version, authors) %></td>
+            <% if show_record %>
+              <td>
+                <span class="pill bg-gray-100 text-gray-500"><%= history_kind(version) %></span>
+                <%= history_record(version) %>
+              </td>
+            <% end %>
+            <td><%= history_event(version) %></td>
+            <td>
+              <% if lines.any? %>
+                <ul class="space-y-0.5">
+                  <% lines.each do |line| %><li><%= line %></li><% end %>
+                </ul>
+              <% else %>
+                <span class="text-gray-400">—</span>
+              <% end %>
+            </td>
+            <td class="text-right">
+              <% if current_ids.include?(version.id) %>
+                <span class="pill bg-emerald-50 text-emerald-700">Current</span>
+              <% elsif revertable_types.include?(version.item_type) %>
+                <%= history_revert_button(version) %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

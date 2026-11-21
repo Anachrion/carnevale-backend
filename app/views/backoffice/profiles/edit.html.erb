@@ -4,6 +4,7 @@
   <h1>Edit <%= @profile.name %></h1>
   <span class="pill" style="<%= faction_pill_style(@profile.faction) %>"><%= @profile.faction.capitalize %></span>
   <%= link_to "← All profiles", backoffice_profiles_path, class: "btn", style: "margin-left:auto;" %>
+  <%= link_to "History", history_backoffice_profile_path(@profile), class: "btn" %>
   <%= link_to "Open card →", card_backoffice_profile_path(@profile), target: "_blank", class: "btn btn-indigo" %>
 </div>
 

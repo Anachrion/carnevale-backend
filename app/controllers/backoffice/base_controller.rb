@@ -26,6 +26,8 @@ module Backoffice
     layout "backoffice"
 
     before_action :authenticate_backoffice!
+    # Every catalog change made from here is attributed to the signed-in admin (CARNEVALEB-81).
+    before_action :set_paper_trail_whodunnit
 
     # Stable per-app secret shared between the controller and the Grover URLs it builds.
     def self.render_token
@@ -33,6 +35,18 @@ module Backoffice
     end
 
     private
+
+    # The author paper_trail records on each version: the user id, or nil for Grover's render-token
+    # request (which writes nothing anyway).
+    def user_for_paper_trail
+      current_user&.id
+    end
+
+    # The edit pages of shared records (weapons, special rules) list their own history underneath.
+    def set_history_for(record)
+      @versions = Catalog::History.versions_for(record).reorder(created_at: :desc, id: :desc).limit(50).to_a
+      @authors = Catalog::History.authors(@versions)
+    end
 
     # The json list columns (a profile's keywords and abilities, a weapon's abilities) are edited
     # as one-per-line textareas — the forms' only concession to their shape, and cheaper to use

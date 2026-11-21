@@ -20,6 +20,7 @@ module Backoffice
   # allowed to be blank in that case and in no other.
   class SpecialRulesController < BaseController
     before_action :set_special_rule, only: %i[edit update destroy]
+    before_action -> { set_history_for(@special_rule) }, only: %i[edit update]
 
     # GET /backoffice/special_rules
     def index

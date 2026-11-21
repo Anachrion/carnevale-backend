@@ -3,3 +3,6 @@
 <h1>Edit <%= display_name(@special_rule) %></h1>
 
 <%= render "form", special_rule: @special_rule, url: backoffice_special_rule_path(@special_rule), method: :patch %>
+
+<h2 style="margin-top:32px;">History</h2>
+<%= render "backoffice/history/versions", versions: @versions, authors: @authors, show_record: false %>

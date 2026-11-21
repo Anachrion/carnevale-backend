@@ -19,6 +19,12 @@ module Catalog
     include HasFaction
     include StringListColumns
 
+    # Versioned, but never automatically (CARNEVALEB-81). paper_trail's own callback would fire
+    # inside #save — before the backoffice rewrites the weapons, rules and spells — and miss them.
+    # Catalog::History writes each version explicitly once the whole card has been saved, with the
+    # full card attached (Catalog::CardSnapshot).
+    has_paper_trail on: []
+
     has_many :card_references, -> { order(:identifier) }, class_name: "Catalog::CardReference"
 
     # Every player who owns this model (CARNEVALEB-76). The catalog import upserts profiles
@@ -144,6 +150,18 @@ module Catalog
 
     def replace_special_rules!(ids)
       replace_join!(profile_special_rules, :special_rule_id, ids)
+    end
+
+    # Companions are not edited in the backoffice form (lib/tasks/companions.rake sets them), but a
+    # revert restores the whole card, them included: { companion_profile_id:, base_quantity:,
+    # upgraded_quantity: }.
+    def replace_companions!(companions_data)
+      return if companions_data.nil?
+
+      transaction do
+        profile_companions.destroy_all
+        companions_data.each { |data| profile_companions.create!(data) }
+      end
     end
 
     # Draw these instead of what the database holds, without writing anything — the editor's live
