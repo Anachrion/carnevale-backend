@@ -1,0 +1,25 @@
+<%#
+  Which profiles carry a shared weapon or special rule (CARNEVALEB-83). Editing one changes every
+  card listed here, so it is shown before the form rather than discovered after saving.
+  Locals: record (a Catalog::Weapon or Catalog::SpecialRule, persisted), noun ("weapon" / "rule").
+%>
+<% profiles = carried_by_profiles(record).to_a %>
+<% if profiles.size > 1 %>
+  <div class="flash alert" style="margin-top:16px;">
+    <strong>Shared by <%= profiles.size %> profiles.</strong>
+    Saving changes this <%= noun %> on every one of their cards, and marks them all out of date.
+    <details style="margin-top:6px;">
+      <summary style="cursor:pointer;">Show the profiles</summary>
+      <ul style="margin-top:6px;columns:3;column-gap:24px;">
+        <% profiles.each do |profile| %>
+          <li><%= link_to profile.name, edit_backoffice_profile_path(profile) %>
+            <span style="color:#9ca3af;font-size:12px;"><%= profile.faction.to_s.capitalize %></span></li>
+        <% end %>
+      </ul>
+    </details>
+  </div>
+<% elsif profiles.size == 1 %>
+  <p style="margin-top:16px;color:#6b7280;font-size:13px;">
+    Carried only by <%= link_to profiles.first.name, edit_backoffice_profile_path(profiles.first) %>.
+  </p>
+<% end %>
