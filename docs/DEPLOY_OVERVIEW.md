@@ -50,8 +50,10 @@ logged in against EU Cloud (`infisical login --domain https://eu.infisical.com`)
 Secrets live in the `carnevale` project, Production environment.
 
 Kamal builds from the **working tree** (not `git archive`), so that LFS card images
-ship as real bytes. Run `git lfs pull` once so they're materialised, and **commit
-your code changes** before deploying.
+ship as real bytes. Deploy from an up-to-date `main`: hooks in `.kamal/hooks/` refuse
+uncommitted changes, another commit, LFS pointers or a red CI, and sync the nightly
+backup script afterwards. You also need the **GitHub CLI** logged in (`gh auth login`)
+for the CI check. See [`DEPLOYMENT.md`](DEPLOYMENT.md#redeploy-the-normal-case).
 
 ```bash
 # from carnevale-backend/

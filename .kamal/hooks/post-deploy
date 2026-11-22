@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Runs on the deploy machine once production has switched to the new version (CARNEVALEB-92).
+#
+# Keeps the nightly backup in sync with the repo. That script runs on the host from a systemd timer
+# (deploy/backup/), outside every container, so a deploy never updates it on its own: a change to it
+# used to need a manual bin/install-db-backups. The install is idempotent; --no-run installs without
+# taking a backup right away.
+#
+# The deploy has already succeeded at this point, so a failure here warns instead of failing it.
+set -uo pipefail
+
+echo "post-deploy: ${KAMAL_PERFORMER:-someone} deployed ${KAMAL_VERSION:0:7} in ${KAMAL_RUNTIME:-?}s; syncing the backup script."
+
+if ! bin/install-db-backups --no-run; then
+  printf '\n\033[33mpost-deploy: the backup script could not be synced. The deploy itself succeeded.\033[0m\n' >&2
+  printf 'Retry with: infisical run --env=prod -- bin/install-db-backups --no-run\n' >&2
+fi
+exit 0
