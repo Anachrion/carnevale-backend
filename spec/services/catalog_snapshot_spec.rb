@@ -141,6 +141,33 @@ RSpec.describe CatalogSnapshot do
       expect(Catalog::Spell.cantrip_for("fateweaving").name).to eq("Cantrip of Fate")
     end
 
+    it "keeps the players' spell picks when re-importing an unchanged snapshot" do
+      build_exceptions!
+      reader = Catalog::Profile.find_by!(name: "Tarot Reader")
+      pool = reader.profile_spell_pools.order(:position).first
+      list = create(:list, faction: :guild, points: 100)
+      entry = Gang::Entry.new(list: list, entry: reader.card_references.first, position: 1).tap { |e| e.save(validate: false) }
+      Gang::EntrySpell.new(list_entry: entry, spell: create(:spell, discipline: :fateweaving), pool: pool).save!(validate: false)
+      described_class.export(dir: dir)
+
+      described_class.import(dir: dir)
+
+      expect(entry.entry_spells.pluck(:pool_id)).to eq([ pool.id ])
+    end
+
+    # A cantrip renamed in the backoffice reaches the snapshot under its new name, while a fresh
+    # seed first creates the original from db/seeds/spells.rb: two cantrips in one discipline.
+    it "imports a renamed cantrip over the seeded original" do
+      Catalog::Spell.create!(name: "Cantrip of the Sun", discipline: :divinity, cost: 0, difficulty: 7, cantrip: true)
+      dir.join("spells.yml").write([ { "discipline" => "divinity", "name" => "Cantrip of the Dawn", "cost" => 0,
+                                       "difficulty" => 7, "description" => "", "cantrip" => true } ].to_yaml)
+
+      described_class.import(dir: dir)
+
+      expect(Catalog::Spell.cantrip_for("divinity").name).to eq("Cantrip of the Dawn")
+      expect(Catalog::Spell.find_by!(name: "Cantrip of the Sun").cantrip).to be(false)
+    end
+
     it "leaves pools, grants and companions alone when importing an older snapshot without them" do
       build_exceptions!
       described_class.export(dir: dir)
