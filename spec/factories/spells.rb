@@ -24,5 +24,6 @@ end
 #
 # Indexes
 #
-#  index_spells_on_name_and_discipline  (name,discipline) UNIQUE
+#  index_spells_on_name_and_discipline      (name,discipline) UNIQUE
+#  index_spells_one_cantrip_per_discipline  (discipline) UNIQUE WHERE cantrip
 #
