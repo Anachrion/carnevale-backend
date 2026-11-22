@@ -6,6 +6,10 @@
   Locals: pool (nilable), disciplines (array of slugs), all_special_rules.
 %>
 <div class="js-pool-row" style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin-bottom:8px;">
+  <%# First in the row, and always sent (blank on a new row): it ties the row to its pool, so
+      removing another pool never moves this one's player picks (Profile#replace_spell_pools!). It
+      also opens a fresh hash in Rails' profile[pools][] array for every row. %>
+  <input type="hidden" name="profile[pools][][id]" value="<%= pool&.id %>">
   <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start;">
     <div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Disciplines</div>

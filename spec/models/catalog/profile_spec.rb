@@ -41,6 +41,26 @@ RSpec.describe Catalog::Profile, type: :model do
       expect(profile.profile_spell_pools.pluck(:id)).to eq([ first.id ])
       expect(entry.entry_spells.pluck(:pool_id)).to eq([ first.id ])
     end
+
+    # The editor sends each row's pool id, so removing the *first* pool keeps the second one's
+    # record and picks, rather than shifting the second row onto the first record.
+    it "matches rows to pools by id when the caller sends them" do
+      profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: %w[fateweaving] },
+                                     { of: 1, slot_count: 1, disciplines: %w[divinity] } ])
+      first, second = profile.profile_spell_pools.order(:position).to_a
+      pick!(first)
+      divinity_pick = Gang::EntrySpell.new(list_entry: entry, spell: create(:spell, discipline: :divinity), pool: second)
+      divinity_pick.save!(validate: false)
+
+      profile.replace_spell_pools!([ { id: second.id.to_s, of: 1, slot_count: 1, disciplines: %w[divinity] },
+                                     { id: nil, of: 1, slot_count: 0, disciplines: %w[wild_magic] } ])
+
+      kept, added = profile.profile_spell_pools.order(:position).to_a
+      expect(kept.id).to eq(second.id)
+      expect(kept.position).to eq(1)
+      expect(added.id).not_to eq(first.id)
+      expect(entry.entry_spells.reload).to eq([ divinity_pick ])
+    end
   end
 
   describe "#refresh_dependent_list_validity!" do

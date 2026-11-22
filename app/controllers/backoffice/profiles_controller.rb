@@ -501,10 +501,12 @@ module Backoffice
     # said nothing about it" case to preserve, and this always returns a real array (possibly empty,
     # meaning "no pools"), shaped for Catalog::Profile#replace_spell_pools!.
     def pools_params
-      permitted = params.permit(profile: { pools: [ :of, :slot_count, :mage_slot_count, :unlimited, :grants_cantrip,
+      permitted = params.permit(profile: { pools: [ :id, :of, :slot_count, :mage_slot_count, :unlimited, :grants_cantrip,
         :resets_each_round, :mentor_derived, :distinct_from_other_pools, :special_rule_id, disciplines: [] ] })
       Array(permitted.dig(:profile, :pools)).map do |row|
         {
+          # The pool this row edits; blank for a new one. See Profile#replace_spell_pools!.
+          id: row[:id].presence,
           of: row[:of].presence || 1,
           slot_count: row[:slot_count].presence || 0,
           # Both were missing from the form, so saving a profile reset them: every standard mage's
