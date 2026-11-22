@@ -33,8 +33,13 @@ fail() {
 command -v gh >/dev/null || fail "the GitHub CLI (gh) is not installed; it is needed to check CI." "Install it (brew install gh && gh auth login), or SKIP_CI_CHECK=1."
 gh auth status >/dev/null 2>&1 || fail "the GitHub CLI is not logged in." "Run: gh auth login   (or SKIP_CI_CHECK=1)"
 
-# KAMAL_VERSION is the commit being deployed (pre-build made sure the tree was clean).
-sha="${KAMAL_VERSION%%_*}"
+# The commit Kamal built: HEAD of this clean working tree. Not KAMAL_VERSION, which is only the
+# image tag and can be overridden with --version; pre-build refuses a tag that is not HEAD, and the
+# check is repeated here so this gate never vouches for something else.
+sha=$(git rev-parse HEAD)
+if [ "${KAMAL_VERSION%%_*}" != "$sha" ]; then
+  fail "the version being deployed (${KAMAL_VERSION}) is not HEAD (${sha}); its CI says nothing about what was built."
+fi
 repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 deadline=$(( $(date +%s) + WAIT_SECONDS ))
 
