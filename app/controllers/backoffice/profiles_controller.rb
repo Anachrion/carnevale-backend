@@ -495,16 +495,20 @@ module Backoffice
     # said nothing about it" case to preserve, and this always returns a real array (possibly empty,
     # meaning "no pools"), shaped for Catalog::Profile#replace_spell_pools!.
     def pools_params
-      permitted = params.permit(profile: { pools: [ :of, :slot_count, :unlimited, :grants_cantrip,
-        :resets_each_round, :mentor_derived, :special_rule_id, disciplines: [] ] })
+      permitted = params.permit(profile: { pools: [ :of, :slot_count, :mage_slot_count, :unlimited, :grants_cantrip,
+        :resets_each_round, :mentor_derived, :distinct_from_other_pools, :special_rule_id, disciplines: [] ] })
       Array(permitted.dig(:profile, :pools)).map do |row|
         {
           of: row[:of].presence || 1,
           slot_count: row[:slot_count].presence || 0,
+          # Both were missing from the form, so saving a profile reset them: every standard mage's
+          # mage_slot_count (what an Apprentice Doctor copies) and Tarot Reader's Minor Arcana.
+          mage_slot_count: row[:mage_slot_count].presence || 0,
           unlimited: row[:unlimited].present?,
           grants_cantrip: row[:grants_cantrip].present?,
           resets_each_round: row[:resets_each_round].present?,
           mentor_derived: row[:mentor_derived].present?,
+          distinct_from_other_pools: row[:distinct_from_other_pools].present?,
           special_rule_id: row[:special_rule_id].presence,
           disciplines: Array(row[:disciplines]).compact_blank
         }
