@@ -94,18 +94,26 @@ module Catalog
     # special_rule_id:, disciplines: [...] }, in the order they should print/apply. A nil array means
     # the caller said nothing about pools (the live card preview, for one), so the current set stands.
     #
-    # Pools are owned, ordered child records (unlike weapons/special rules, which are join rows to a
-    # shared catalog) — replaced the same way illustrations are: destroy and recreate, rather than
-    # diffed in place, since a rework this infrequent doesn't need to preserve individual pool ids.
+    # Pools are updated **in place, matched by position**, never destroyed and recreated: players'
+    # picks (Gang::EntrySpell, Gang::EntryPoolDiscipline) point at a pool with ON DELETE CASCADE, so
+    # recreating the pools wiped every gang's known spells for this model on each backoffice save,
+    # each history restore and each catalog import (found on CARNEVALEB-84; it was built when pools
+    # were reworked rarely). Only pools really removed (the list got shorter) are destroyed, taking
+    # their picks with them. A discipline dropped from a pool leaves picks in it, which the gang's
+    # validation then reports.
     def replace_spell_pools!(pools_data)
       return if pools_data.nil?
 
       transaction do
-        profile_spell_pools.destroy_all
+        existing = profile_spell_pools.reorder(:position).to_a
         pools_data.each_with_index do |data, index|
-          pool = profile_spell_pools.create!(data.except(:disciplines).merge(position: index + 1))
-          Array(data[:disciplines]).each { |discipline| pool.profile_spell_pool_disciplines.create!(discipline: discipline) }
+          attributes = data.except(:disciplines).merge(position: index + 1)
+          pool = existing[index]
+          pool ? pool.update!(attributes) : (pool = profile_spell_pools.create!(attributes))
+          sync_pool_disciplines(pool, Array(data[:disciplines]))
         end
+        existing.drop(pools_data.size).each(&:destroy!)
+        profile_spell_pools.reset
       end
     end
 
@@ -161,6 +169,15 @@ module Catalog
     end
 
     private
+
+    # A pool's eligible disciplines, made to match: rows no longer wanted go, missing ones are added.
+    def sync_pool_disciplines(pool, wanted)
+      pool.profile_spell_pool_disciplines.where.not(discipline: wanted).delete_all
+      (wanted - pool.profile_spell_pool_disciplines.pluck(:discipline)).each do |discipline|
+        pool.profile_spell_pool_disciplines.create!(discipline: discipline)
+      end
+      pool.profile_spell_pool_disciplines.reset
+    end
 
     def replace_join!(collection, foreign_key, ids)
       return if ids.nil?
