@@ -6,11 +6,25 @@ module Catalog
 
     enum :discipline, DISCIPLINES.index_with(&:itself)
 
+    # Edited in the backoffice (CARNEVALEB-86), so it has a history like weapons and rules.
+    has_paper_trail
+
+    # Gangs that chose this spell (player data) and profiles granted it. Both are foreign keys, so a
+    # spell in use cannot be deleted.
+    has_many :entry_spells, class_name: "Gang::EntrySpell"
+    has_many :profile_granted_spells, class_name: "Catalog::ProfileGrantedSpell"
+
     scope :cantrips, -> { where(cantrip: true) }
 
     validates :name, presence: true, uniqueness: { scope: :discipline }
     validates :cost, :difficulty, presence: true
     validates :discipline, presence: true
+    # A Mage knows its Discipline's one Cantrip (cantrip_for); a second would make that ambiguous.
+    validates :cantrip, uniqueness: { scope: :discipline, message: "already exists for this discipline" }, if: :cantrip?
+
+    def in_use?
+      entry_spells.exists? || profile_granted_spells.exists?
+    end
 
     # The free Cantrip a Mage of the given Discipline always knows (rulebook p24), or nil.
     def self.cantrip_for(discipline)
