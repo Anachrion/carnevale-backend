@@ -47,11 +47,13 @@ RSpec.describe Catalog::Ability do
       expect("Gain Expert Offence (2)"[described_class.keyword_pattern]).to eq("Expert Offence (2)")
     end
 
+    # Parentheses cannot be part of a glossary name (they would read as a rating, which base_name
+    # strips), so the punctuation here is the kind a name can hold: "." and "+".
     it "treats a name containing regex punctuation literally" do
-      create(:ability, name: "Point-Blank (Heavy)")
+      create(:ability, name: "Snap.Shot+")
 
-      expect("Gain Point-Blank (Heavy)"[described_class.keyword_pattern]).to eq("Point-Blank (Heavy)")
-      expect("Point!Blank xHeavyx"[described_class.keyword_pattern]).to be_nil
+      expect("Gain Snap.Shot+ (2)"[described_class.keyword_pattern]).to eq("Snap.Shot+ (2)")
+      expect("SnapxShott"[described_class.keyword_pattern]).to be_nil
     end
 
     it "matches the same name only once when both categories define it" do
@@ -65,6 +67,15 @@ RSpec.describe Catalog::Ability do
       expect(described_class.count).to eq(0)
 
       expect("Gain Acrobatic (2)"[described_class.keyword_pattern]).to be_nil
+    end
+  end
+
+  describe "validation" do
+    it "rejects a name carrying a rating, which belongs on the card" do
+      ability = build(:ability, name: "Acrobatic (2)")
+
+      expect(ability).not_to be_valid
+      expect(ability.errors[:name].join).to include("rating")
     end
   end
 end

@@ -10,8 +10,35 @@ module Catalog
   class Ability < ApplicationRecord
     CATEGORIES = %w[character weapon].freeze
 
+    # Edited in the backoffice (CARNEVALEB-86), so it has a history like weapons and rules.
+    has_paper_trail
+
     validates :category, inclusion: { in: CATEGORIES }
     validates :name, presence: true, uniqueness: { scope: :category }
+    validate :name_has_no_rating
+
+    # The records that list abilities of a category: profiles for character abilities, weapons for
+    # weapon abilities. Both store them as strings with an optional rating ("Acrobatic (2)").
+    def self.carrier_class(category)
+      category == "weapon" ? Catalog::Weapon : Catalog::Profile
+    end
+
+    # How many profiles (or weapons) list each ability of a category, keyed by base name. Computed
+    # in Ruby: the lists are json arrays, and the catalog is a few hundred rows.
+    def self.usage_counts(category)
+      carrier_class(category).pluck(:abilities).each_with_object(Hash.new(0)) do |list, counts|
+        Array(list).map { |entry| base_name(entry) }.uniq.each { |base| counts[base] += 1 }
+      end
+    end
+
+    # The profiles (or weapons) whose list names this ability, under any rating. Uses the saved
+    # name, so it stays right while a rename is being edited.
+    def carriers
+      saved_name = name_in_database || name
+      self.class.carrier_class(category).order(:name).select do |record|
+        Array(record.abilities).any? { |entry| self.class.base_name(entry) == saved_name }
+      end
+    end
 
     scope :character, -> { where(category: "character") }
     scope :weapon, -> { where(category: "weapon") }
@@ -44,6 +71,14 @@ module Catalog
       return /(?!)/ if names.empty?
 
       /\b(#{names.map { |name| Regexp.escape(name) }.join("|")})(?!\w)(\s*\([^)]+\))?/
+    end
+
+    private
+
+    # The rating belongs to each card ("Acrobatic (2)"), never to the glossary entry, or lookups
+    # (which strip it) would never match.
+    def name_has_no_rating
+      errors.add(:name, "must not include a rating like \"(2)\": the card carries the rating") if name.to_s.match?(RATING)
     end
   end
 end
