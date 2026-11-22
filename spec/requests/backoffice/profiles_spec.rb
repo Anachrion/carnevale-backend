@@ -410,6 +410,36 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response.body).to include(card_preview_backoffice_profile_path(profile))
     end
 
+    # Saving never re-renders the card, so until it is published the editor and the menu say so.
+    describe "the out-of-date card reminder" do
+      let(:images_dir) { Pathname(Dir.mktmpdir) }
+
+      before do
+        stub_const("Catalog::CardReference::IMAGES_DIR", images_dir)
+        File.binwrite(reference.front_path, "FRONT")
+        File.binwrite(reference.back_path, "BACK")
+        reference.stamp_source!
+      end
+
+      after { FileUtils.remove_entry(images_dir) }
+
+      it "shows nothing while the published image matches the data" do
+        get edit_backoffice_profile_path(profile)
+
+        expect(response.body).not_to include("Card image out of date")
+        expect(Nokogiri::HTML(response.body).at_css(%(a[href="#{publish_backoffice_profiles_path}"] span))).to be_nil
+      end
+
+      it "flags the card on its editor and counts it on the Publish cards tab once its data changes" do
+        patch backoffice_profile_path(profile), params: valid_params(ducats: 25)
+        get edit_backoffice_profile_path(profile)
+
+        expect(response.body).to include("Card image out of date")
+        badge = Nokogiri::HTML(response.body).at_css(%(a[href="#{publish_backoffice_profiles_path}"] span))
+        expect(badge.text.strip).to eq("1")
+      end
+    end
+
     # CARNEVALEB-94: a selected weapon or rule opens its own editor, in a new tab so the profile's
     # unsaved changes survive. Rows added later get the link from the JS, via the URL template.
     it "links each selected weapon and special rule to its editor" do

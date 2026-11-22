@@ -50,10 +50,21 @@
         }
       %>
       <nav class="flex items-center gap-1 text-sm">
+        <%
+          # Cards whose image no longer matches their data. Saving never re-renders a card, so this
+          # keeps a forgotten publish in sight on every page, not just in the notice after the save.
+          stale_cards = Catalog::CardReference.stale_count if respond_to?(:current_user) && current_user
+        %>
         <% nav.each do |label, (path, current)| %>
-          <%= link_to label, path,
+          <%= link_to path,
                 class: "rounded-md px-2.5 py-1.5 no-underline transition #{current ?
-                  'bg-white/10 font-medium text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'}" %>
+                  'bg-white/10 font-medium text-white' : 'text-gray-400 hover:bg-white/5 hover:text-gray-100'}" do %>
+            <%= label %>
+            <% if label == "Publish cards" && stale_cards.to_i.positive? %>
+              <span class="ml-1 rounded-full bg-amber-400 px-1.5 py-0.5 text-xs font-semibold text-gray-900"
+                    title="<%= pluralize(stale_cards, "card") %> out of date"><%= stale_cards %></span>
+            <% end %>
+          <% end %>
         <% end %>
       </nav>
 

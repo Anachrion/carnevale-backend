@@ -8,6 +8,22 @@
   <%= link_to "Open card →", card_backoffice_profile_path(@profile), target: "_blank", class: "btn btn-indigo" %>
 </div>
 
+<%# Saving never re-renders the card, so say so here until it is published, not just once in the
+    notice after the save. One profile's references: cheap enough to check on every load. %>
+<% stale_refs = @profile.card_references.select(&:stale?) %>
+<% if stale_refs.any? %>
+  <div class="mt-3 flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    <span>
+      <strong>Card image out of date.</strong>
+      The app still shows the last published image of
+      <%= stale_refs.size == 1 ? "this card" : "these #{stale_refs.size} cards" %>, which does not
+      match the data below.
+    </span>
+    <%= link_to "Open card to publish →", card_backoffice_profile_path(@profile), target: "_blank",
+          class: "btn btn-indigo", style: "margin-left:auto;" %>
+  </div>
+<% end %>
+
 <%= render "form",
       profile: @profile,
       url: backoffice_profile_path(@profile),

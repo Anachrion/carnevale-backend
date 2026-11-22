@@ -260,6 +260,40 @@ RSpec.describe Catalog::CardReference do
     end
   end
 
+  describe ".stale_count" do
+    # The test environment's null store would hide the caching this is about.
+    before { allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new) }
+
+    it "is cached, and recounted as soon as the data a card draws from changes" do
+      render!
+      expect(described_class.stale_count).to eq(0)
+
+      profile.update!(ducats: 13)
+      expect(described_class.stale_count).to eq(1)
+
+      render!
+      expect(described_class.stale_count).to eq(0)
+    end
+
+    it "notices a weapon taken off a card, which moves no updated_at" do
+      weapon = Catalog::Weapon.create!(name: "Stiletto", damage: 3)
+      profile.profile_weapons.create!(weapon: weapon, position: 1)
+      render!
+      expect(described_class.stale_count).to eq(0)
+
+      Catalog::ProfileWeapon.where(profile: profile).delete_all
+      expect(described_class.stale_count).to eq(1)
+    end
+
+    it "does not re-run the sweep while nothing changed" do
+      render!
+      described_class.stale_count
+      expect(described_class).not_to receive(:stale)
+
+      described_class.stale_count
+    end
+  end
+
   describe "#stamp_source! and #reversion!" do
     it "tracks the sources and the bytes independently" do
       render!

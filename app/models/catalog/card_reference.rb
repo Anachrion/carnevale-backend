@@ -150,6 +150,34 @@ module Catalog
       ]).select(&:stale?)
     end
 
+    # How many cards are out of date, for the "Publish cards (N)" counter shown on every backoffice
+    # page. The sweep above hashes every committed illustration file (~170 ms locally, more on the
+    # server), too slow to run on each page, so the count is cached against everything a moderator
+    # can change: the template, and the row count and latest updated_at of each table the
+    # fingerprint reads (the count catches a deleted row, which moves no updated_at). What only a
+    # deploy changes, a committed illustration file, is caught by the expiry.
+    # Model => its timestamp column (attachments are never updated, only replaced, so created_at).
+    # Class names, resolved when called, so this loads before the models it lists.
+    STALENESS_SOURCES = {
+      "Catalog::Profile" => :updated_at, "Catalog::ProfileWeapon" => :updated_at,
+      "Catalog::ProfileSpecialRule" => :updated_at, "Catalog::Weapon" => :updated_at,
+      "Catalog::SpecialRule" => :updated_at, "Catalog::Illustration" => :updated_at,
+      "Catalog::CardReference" => :updated_at, "ActiveStorage::Attachment" => :created_at
+    }.freeze
+
+    def self.stale_count
+      Rails.cache.fetch([ "card_references/stale_count", template_digest, staleness_inputs_key ],
+                        expires_in: 10.minutes) { stale.size }
+    end
+
+    # Small tables and indexed counts: a few milliseconds, against the full sweep it stands in for.
+    def self.staleness_inputs_key
+      STALENESS_SOURCES.map do |name, stamp|
+        scope = name.constantize.unscoped
+        "#{scope.count}@#{scope.maximum(stamp)&.utc&.iso8601(6)}"
+      end.join("/")
+    end
+
     # The card template every profile is drawn into: change the layout, a helper, or a template
     # asset and every card on disk is out of date, whatever the profiles say. Cached against the
     # files' mtimes so sweeping the catalog doesn't re-hash the multi-megabyte motifs per card.
