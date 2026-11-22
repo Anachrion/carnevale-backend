@@ -71,6 +71,14 @@ RSpec.describe Catalog::Ability do
   end
 
   describe "validation" do
+    it "stores the name without surrounding spaces, so cards can match it" do
+      create(:ability, name: "  Tide Walker ")
+      profile = build(:profile, abilities: [ "Tide Walker (1)" ])
+
+      expect(described_class.known_names("character")).to include("Tide Walker")
+      expect(profile).to be_valid
+    end
+
     it "rejects a name carrying a rating, which belongs on the card" do
       ability = build(:ability, name: "Acrobatic (2)")
 
