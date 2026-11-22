@@ -32,6 +32,16 @@ reviews:
 
   # What the diff alone does not show.
   path_instructions:
+    # Scale: what keeps concurrency findings proportionate (added after #58, where most findings
+    # were races between two moderators editing the same row in the same second).
+    - path: "**/*.rb"
+      instructions: >-
+        Scale: one server, one Postgres, a handful of trusted admins in the backoffice, and a few
+        hundred players. Only flag a concurrency issue (race, missing lock, check-then-write) when it
+        is realistic at that scale, e.g. on player-facing paths such as gangs and live games, or when
+        its outcome is unrecoverable. Two admins editing the same catalog row in the same second is
+        not realistic, and catalog mistakes are recoverable from the change history. Do not suggest
+        locks on hot player-facing paths to protect against backoffice races.
     - path: "app/models/catalog/**"
       instructions: >-
         Catalog::Profile#replace_*! destroys and recreates a card's join and child rows on every
