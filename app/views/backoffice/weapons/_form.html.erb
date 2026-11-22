@@ -2,6 +2,7 @@
 <%= form_with model: weapon, scope: :weapon, url: url, method: method, data: shared_save_confirm(weapon, "weapon") do |f| %>
   <% if weapon.errors.any? %>
     <div class="flash alert"><%= weapon.errors.full_messages.to_sentence %></div>
+    <%= missing_ability_links(weapon, "weapon") %>
   <% end %>
   <%= render "backoffice/shared/carried_by", record: weapon, noun: "weapon" unless weapon.new_record? %>
 

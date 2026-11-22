@@ -1,0 +1,59 @@
+<% content_for :title, "Abilities" %>
+
+<h1>Abilities</h1>
+<p class="text-sm text-gray-500">
+  The rulebook glossary. A profile or weapon can only list an ability found here; the rating
+  (“Acrobatic (2)”) is written on the card, not on the ability.
+</p>
+
+<%= form_with url: backoffice_abilities_path, method: :get do |f| %>
+  <%= hidden_field_tag :category, @category %>
+  <div class="toolbar">
+    <% Catalog::Ability::CATEGORIES.each do |category| %>
+      <%= link_to "#{category.capitalize} abilities", backoffice_abilities_path(category: category),
+            class: "btn #{"btn-indigo" if category == @category}" %>
+    <% end %>
+    <%= f.text_field :search, value: params[:search], placeholder: "Search by name…", class: "w-56" %>
+    <span class="count"><%= @abilities.size %> abilit<%= @abilities.size == 1 ? "y" : "ies" %></span>
+    <div class="ml-auto">
+      <%= link_to "+ New #{@category} ability", new_backoffice_ability_path(category: @category), class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th class="w-56">Name</th>
+        <th>Description</th>
+        <th class="text-center w-32">Used by</th>
+        <th class="w-10"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @abilities.each do |ability| %>
+        <% used = @usage[ability.name].to_i %>
+        <tr class="group">
+          <td><%= link_to ability.name, edit_backoffice_ability_path(ability) %></td>
+          <td class="text-gray-500"><%= truncate(ability.description, length: 160).presence || "—" %></td>
+          <td class="text-center">
+            <span class="pill bg-gray-100 text-gray-500">
+              <%= used %> <%= @category == "weapon" ? "weapon" : "profile" %><%= "s" unless used == 1 %>
+            </span>
+          </td>
+          <td class="text-center">
+            <% if used.zero? %>
+              <%= button_to "🗑", backoffice_ability_path(ability), method: :delete,
+                    class: "rounded p-1 text-gray-300 opacity-0 transition group-hover:opacity-100 " \
+                           "hover:bg-red-50 hover:text-red-600 focus:opacity-100",
+                    form: { class: "inline" },
+                    data: { turbo_confirm: "Delete #{ability.name}? No card lists it." },
+                    title: "Delete this unused ability" %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

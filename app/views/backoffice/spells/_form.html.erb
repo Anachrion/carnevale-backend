@@ -1,0 +1,50 @@
+<%# scope: :spell — the model is namespaced, so the default param key would be catalog_spell. %>
+<%= form_with model: spell, scope: :spell, url: url, method: method do |f| %>
+  <% if spell.errors.any? %>
+    <div class="flash alert"><%= spell.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <div class="table-wrap" style="margin-top:16px;">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:170px;"><%= f.label :discipline %></th>
+          <td>
+            <%= f.select :discipline, Catalog::Spell::DISCIPLINES.map { |d| [ d.humanize.titleize, d ] }, include_blank: spell.new_record? %>
+            <div style="color:#6b7280;font-size:13px;">The five Disciplines are fixed; a new one needs a developer (the app knows them too).</div>
+          </td>
+        </tr>
+        <tr>
+          <th><%= f.label :name %></th>
+          <td><%= f.text_field :name, style: "width:320px;" %></td>
+        </tr>
+        <tr>
+          <th><%= f.label :cost %></th>
+          <td><%= f.number_field :cost, min: 0, style: "width:90px;" %></td>
+        </tr>
+        <tr>
+          <th><%= f.label :difficulty %></th>
+          <td><%= f.number_field :difficulty, min: 0, style: "width:90px;" %></td>
+        </tr>
+        <tr>
+          <th><%= f.label :cantrip %></th>
+          <td>
+            <%= f.check_box :cantrip %>
+            <span style="color:#6b7280;font-size:13px;">The free spell every Mage of this Discipline knows. One per Discipline.</span>
+          </td>
+        </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;"><%= f.label :description %></th>
+          <td><%= f.text_area :description, rows: 5, style: "width:100%;max-width:560px;" %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="margin-top:16px;">
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <%= link_to "Cancel", backoffice_spells_path, class: "btn" %>
+      <%= f.submit spell.new_record? ? "Create spell" : "Save spell", class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>

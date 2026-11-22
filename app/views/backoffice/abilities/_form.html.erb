@@ -1,0 +1,60 @@
+<%# scope: :ability — the model is namespaced, so the default param key would be catalog_ability. %>
+<% carriers = ability.new_record? ? [] : ability.carriers %>
+<% confirm = carriers.size > 1 ? { turbo_confirm: "#{ability.name} is listed by #{carriers.size} cards. If you renamed it, every one of them is renamed too. Save?" } : {} %>
+<%= form_with model: ability, scope: :ability, url: url, method: method, data: confirm do |f| %>
+  <% if ability.errors.any? %>
+    <div class="flash alert"><%= ability.errors.full_messages.to_sentence %></div>
+  <% end %>
+
+  <% if carriers.any? %>
+    <div class="flash <%= carriers.size > 1 ? "alert" : "notice" %>" style="margin-top:16px;">
+      <strong>Listed by <%= carriers.size %> <%= ability.category == "weapon" ? "weapon" : "profile" %><%= "s" unless carriers.size == 1 %>.</strong>
+      Renaming it renames it on every one of them (their rating is kept) and marks their cards out of date.
+      Special rule texts that mention the old name are not rewritten: check them after a rename.
+      <details style="margin-top:6px;">
+        <summary style="cursor:pointer;">Show them</summary>
+        <ul style="margin-top:6px;columns:3;column-gap:24px;">
+          <% carriers.each do |record| %>
+            <li><%= link_to record.name, record.is_a?(Catalog::Weapon) ? edit_backoffice_weapon_path(record) : edit_backoffice_profile_path(record) %></li>
+          <% end %>
+        </ul>
+      </details>
+    </div>
+  <% end %>
+
+  <div class="table-wrap" style="margin-top:16px;">
+    <table>
+      <tbody>
+        <tr>
+          <th style="width:170px;"><%= f.label :category %></th>
+          <td>
+            <% if ability.new_record? %>
+              <%= f.select :category, Catalog::Ability::CATEGORIES.map { |c| [ "#{c.capitalize} ability", c ] } %>
+              <div style="color:#6b7280;font-size:13px;">Character abilities go on profiles, weapon abilities on weapons.</div>
+            <% else %>
+              <%= ability.category.capitalize %> ability
+            <% end %>
+          </td>
+        </tr>
+        <tr>
+          <th><%= f.label :name %></th>
+          <td>
+            <%= f.text_field :name, style: "width:320px;" %>
+            <div style="color:#6b7280;font-size:13px;">Without the rating: “Acrobatic”, not “Acrobatic (2)”.</div>
+          </td>
+        </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;"><%= f.label :description %></th>
+          <td><%= f.text_area :description, rows: 5, style: "width:100%;max-width:560px;" %></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="toolbar" style="margin-top:16px;">
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <%= link_to "Cancel", backoffice_abilities_path(category: ability.category), class: "btn" %>
+      <%= f.submit ability.new_record? ? "Create ability" : "Save ability", class: "btn btn-emerald" %>
+    </div>
+  </div>
+<% end %>

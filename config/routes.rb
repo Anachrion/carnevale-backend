@@ -153,6 +153,11 @@ Rails.application.routes.draw do
     resources :weapons, only: %i[index new create edit update destroy]
     resources :special_rules, only: %i[index new create edit update destroy]
 
+    # The rulebook glossary (abilities) and the Disciplines' spells, once only editable in
+    # db/seeds/*.rb (CARNEVALEB-86).
+    resources :abilities, only: %i[index new create edit update destroy]
+    resources :spells, only: %i[index new create edit update destroy]
+
     # The catalog's change history across cards, weapons and special rules, and the revert of one
     # version (CARNEVALEB-81).
     get "history", to: "history#index", as: :history

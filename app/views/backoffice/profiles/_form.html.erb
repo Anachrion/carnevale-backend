@@ -10,6 +10,7 @@
 
   <% if profile.errors.any? %>
     <div class="flash alert"><%= profile.errors.full_messages.to_sentence %></div>
+    <%= missing_ability_links(profile, "character") %>
   <% end %>
 
   <!-- ── The live card: both faces, redrawn as the form below is filled in ────── -->
