@@ -1,0 +1,20 @@
+<%#
+  One companion row (CARNEVALEB-84): a model this profile brings into a gang automatically, and how
+  many before and after the paid upgrade. An existing Catalog::ProfileCompanion, or nil for the
+  blank row the JS clones.
+
+  Locals: companion (nilable), all_profiles.
+%>
+<div class="js-companion-row" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:6px;">
+  <label style="font-size:12px;color:#6b7280;">Companion<br>
+    <%= select_tag nil, options_from_collection_for_select(all_profiles, :id, :name, companion&.companion_profile_id),
+          name: "profile[companions][][companion_profile_id]", include_blank: "—", style: "padding:6px;max-width:260px;" %>
+  </label>
+  <label style="font-size:12px;color:#6b7280;">How many<br>
+    <input type="number" name="profile[companions][][base_quantity]" value="<%= companion&.base_quantity || 1 %>" min="0" style="width:60px;padding:6px;">
+  </label>
+  <label style="font-size:12px;color:#6b7280;">With the upgrade<br>
+    <input type="number" name="profile[companions][][upgraded_quantity]" value="<%= companion&.upgraded_quantity || 1 %>" min="0" style="width:60px;padding:6px;">
+  </label>
+  <button type="button" class="btn js-remove-row">✕</button>
+</div>

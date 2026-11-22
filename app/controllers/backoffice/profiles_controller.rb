@@ -53,6 +53,7 @@ module Backoffice
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
         @profile.replace_spell_pools!(pools_params)
         @profile.replace_granted_spells!(granted_spells_params)
+        @profile.replace_companions!(companions_params)
         Catalog::History.record!(@profile, event: "create")
       end
 
@@ -139,6 +140,7 @@ module Backoffice
         @profile.replace_special_rules!(submitted_ids(:special_rule_ids))
         @profile.replace_spell_pools!(pools_params)
         @profile.replace_granted_spells!(granted_spells_params)
+        @profile.replace_companions!(companions_params)
         Catalog::History.record!(@profile, event: "update", before: before)
       end
 
@@ -432,6 +434,8 @@ module Backoffice
       @all_weapons = Catalog::Weapon.order(:name)
       @all_special_rules = Catalog::SpecialRule.order(:name)
       @all_spells = Catalog::Spell.order(:discipline, :name)
+      # For the companions editor and the flexible Leader partner (CARNEVALEB-84).
+      @all_profiles = Catalog::Profile.order(:name).to_a
     end
 
     # Render the card template for a profile carrying the form's current (unsaved) values. Shared
@@ -465,6 +469,8 @@ module Backoffice
     def profile_params
       permitted = params.expect(profile: [
         :name, :faction, :version, :abilities_text, :keywords_text, :exclusive_weapons,
+        # Advanced options (CARNEVALEB-84), once set only by rake tasks.
+        :recruitable, :flexible_leader, :flexible_leader_with_id, :distinct_discipline_per_copy, :companion_upgrade_ducats,
         *Catalog::Profile::STATS,
         { weapon_ids: [], special_rule_ids: [] }
       ])
@@ -532,6 +538,22 @@ module Backoffice
           consumes_slot: row[:consumes_slot].present?,
           resets_each_round: row[:resets_each_round].present?,
           special_rule_id: row[:special_rule_id].presence
+        }
+      end
+    end
+
+    # Shaped for Catalog::Profile#replace_companions! (CARNEVALEB-84): the models this profile brings
+    # into a gang automatically, with their counts before and after the paid upgrade. Like pools,
+    # only #create/#update read it, and no rows submitted means none.
+    def companions_params
+      permitted = params.permit(profile: { companions: %i[companion_profile_id base_quantity upgraded_quantity] })
+      Array(permitted.dig(:profile, :companions)).filter_map do |row|
+        next if row[:companion_profile_id].blank?
+
+        {
+          companion_profile_id: row[:companion_profile_id].to_i,
+          base_quantity: row[:base_quantity].presence || 1,
+          upgraded_quantity: row[:upgraded_quantity].presence || 1
         }
       end
     end

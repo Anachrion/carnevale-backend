@@ -1,0 +1,64 @@
+<%#
+  Settings few cards need, once set only by rake tasks that targeted profiles by name
+  (CARNEVALEB-84). Collapsed unless one of them is in use, so the common case stays simple.
+
+  Locals: f (the profile form builder), profile, all_profiles.
+%>
+<% in_use = !profile.recruitable? || profile.flexible_leader? || profile.distinct_discipline_per_copy? ||
+            profile.profile_companions.any? || profile.companion_upgrade_ducats.to_i.positive? %>
+<% leaders = all_profiles.select { |p| Array(p.keywords).include?("Leader") && p.id != profile.id } %>
+<details <%= "open" if in_use %> style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;">
+  <summary style="cursor:pointer;font-weight:600;">Advanced options
+    <span style="font-weight:400;color:#6b7280;font-size:13px;">— for the few cards with special recruitment or spell rules</span>
+  </summary>
+
+  <div style="display:grid;gap:14px;margin-top:12px;">
+    <div>
+      <%= f.check_box :recruitable %>
+      <%= f.label :recruitable, "Can be hired" %>
+      <div style="color:#6b7280;font-size:13px;">
+        Unchecked, the model is not offered in the hire list: a companion that only arrives with
+        another model, a transformation form, or a card created by mistake (profiles cannot be deleted).
+      </div>
+    </div>
+
+    <div>
+      <%= f.check_box :flexible_leader %>
+      <%= f.label :flexible_leader, "Flexible Leader" %>
+      <span style="margin-left:12px;font-size:13px;color:#6b7280;">only alongside</span>
+      <%= f.collection_select :flexible_leader_with_id, leaders, :id, :name, { include_blank: "any Leader" }, style: "padding:4px;" %>
+      <div style="color:#6b7280;font-size:13px;">
+        A Leader that becomes a Hero when hired alongside another Leader (The Duke), or only
+        alongside one specific Leader (La Signora with Il Capitano).
+      </div>
+    </div>
+
+    <div>
+      <%= f.check_box :distinct_discipline_per_copy %>
+      <%= f.label :distinct_discipline_per_copy, "Each copy picks a different Discipline" %>
+      <div style="color:#6b7280;font-size:13px;">When several copies are hired, no two may choose the same Discipline (Romani).</div>
+    </div>
+
+    <div class="js-companions-editor">
+      <div style="font-weight:600;font-size:14px;margin-bottom:6px;">Companions</div>
+      <div class="js-companion-rows">
+        <% profile.profile_companions.each do |companion| %>
+          <%= render "companion_row", companion: companion, all_profiles: all_profiles %>
+        <% end %>
+      </div>
+      <template class="js-companion-template">
+        <%= render "companion_row", companion: nil, all_profiles: all_profiles %>
+      </template>
+      <button type="button" class="btn js-companion-add">+ Add companion</button>
+      <span style="margin-left:12px;font-size:13px;">
+        <%= f.label :companion_upgrade_ducats, "Upgrade cost (Ducats)" %>
+        <%= f.number_field :companion_upgrade_ducats, min: 0, style: "width:70px;padding:4px;" %>
+      </span>
+      <div style="color:#6b7280;font-size:13px;margin-top:6px;">
+        Models added to the gang automatically with this one (the Emissary of Mother Hydra's
+        Tentacles), and how many after the paid upgrade. Companions are usually not hireable on
+        their own: untick “Can be hired” on their own card.
+      </div>
+    </div>
+  </div>
+</details>
