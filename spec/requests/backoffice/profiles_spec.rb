@@ -477,6 +477,22 @@ RSpec.describe "Backoffice::Profiles", type: :request do
 
     # CARNEVALEB-84: these two had no field, so every save reset them, losing every standard
     # mage's mage_slot_count (what an Apprentice Doctor copies) and Minor Arcana's rule.
+    it "ties each pool row to its pool, so removing the first pool keeps the second one" do
+      profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: [ "fateweaving" ] },
+                                     { of: 1, slot_count: 1, disciplines: [ "divinity" ] } ])
+      first, second = profile.profile_spell_pools.order(:position).to_a
+
+      get edit_backoffice_profile_path(profile)
+      expect(response.body).to include(%(name="profile[pools][][id]" value="#{second.id}"))
+
+      patch backoffice_profile_path(profile), params: valid_params(
+        pools: [ { id: second.id.to_s, of: "1", slot_count: "1", grants_cantrip: "1", resets_each_round: "1", disciplines: [ "divinity" ] } ]
+      )
+
+      expect(profile.reload.profile_spell_pools.pluck(:id)).to eq([ second.id ])
+      expect(Catalog::ProfileSpellPool.exists?(first.id)).to be(false)
+    end
+
     it "keeps a pool's Mage (X) slot count and its different-Discipline rule" do
       patch backoffice_profile_path(profile), params: valid_params(
         pools: [

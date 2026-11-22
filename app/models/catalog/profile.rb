@@ -94,25 +94,34 @@ module Catalog
     # special_rule_id:, disciplines: [...] }, in the order they should print/apply. A nil array means
     # the caller said nothing about pools (the live card preview, for one), so the current set stands.
     #
-    # Pools are updated **in place, matched by position**, never destroyed and recreated: players'
-    # picks (Gang::EntrySpell, Gang::EntryPoolDiscipline) point at a pool with ON DELETE CASCADE, so
+    # Pools are **updated in place**, never destroyed and recreated: players' picks
+    # (Gang::EntrySpell, Gang::EntryPoolDiscipline) point at a pool with ON DELETE CASCADE, so
     # recreating the pools wiped every gang's known spells for this model on each backoffice save,
     # each history restore and each catalog import (found on CARNEVALEB-84; it was built when pools
-    # were reworked rarely). Only pools really removed (the list got shorter) are destroyed, taking
-    # their picks with them. A discipline dropped from a pool leaves picks in it, which the gang's
-    # validation then reports.
+    # were reworked rarely).
+    #
+    # Rows are matched to existing pools by `id` when the caller has them (the backoffice editor:
+    # removing the first of two pools must keep the second pool's record and picks); otherwise by
+    # position (the catalog import and history restore, whose ids are not portable). A row with a
+    # blank or unknown id creates a pool; only the pools no row matched are destroyed,
+    # taking their picks with them. A discipline dropped from a pool leaves picks in it, which the
+    # gang's validation then reports.
     def replace_spell_pools!(pools_data)
       return if pools_data.nil?
 
       transaction do
         existing = profile_spell_pools.reorder(:position).to_a
-        pools_data.each_with_index do |data, index|
-          attributes = data.except(:disciplines).merge(position: index + 1)
-          pool = existing[index]
+        by_id = existing.index_by(&:id)
+        # The editor always sends the key (blank on a new row); the import and restore never do.
+        keyed = pools_data.any? { |data| data.key?(:id) }
+        kept = pools_data.each_with_index.map do |data, index|
+          attributes = data.except(:disciplines, :id).merge(position: index + 1)
+          pool = keyed ? by_id[data[:id].to_i] : existing[index]
           pool ? pool.update!(attributes) : (pool = profile_spell_pools.create!(attributes))
           sync_pool_disciplines(pool, Array(data[:disciplines]))
+          pool
         end
-        existing.drop(pools_data.size).each(&:destroy!)
+        (existing - kept).each(&:destroy!)
         profile_spell_pools.reset
       end
     end
