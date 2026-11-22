@@ -131,6 +131,14 @@ accessories:
     volumes:
       - carnevale_backend_db_data:/var/lib/postgresql/data
 
+# The deploy hooks in .kamal/hooks (CARNEVALEB-92). Kamal hides a hook's output unless it fails, so
+# the CI wait in pre-deploy and the backup-sync warning in post-deploy (which never fails the
+# deploy) would otherwise go unseen.
+hooks_output:
+  pre-build: :verbose
+  pre-deploy: :verbose
+  post-deploy: :verbose
+
 # Handy shortcuts: `kamal console`, `kamal logs`, `kamal shell`, `kamal dbc`
 aliases:
   console: app exec --interactive --reuse "bin/rails console"

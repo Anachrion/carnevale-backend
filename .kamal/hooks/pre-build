@@ -26,10 +26,18 @@ if [ -n "$(git status --porcelain)" ]; then
   fail "the working tree has uncommitted changes; commit or stash them first." "$(git status --short)"
 fi
 
+# The image tag must be the commit being built. `kamal deploy --version X` (or VERSION=X) tags the
+# image X while still building the working tree, so the CI check in pre-deploy would vouch for X
+# rather than for what ships.
+head=$(git rev-parse HEAD)
+if [ "${KAMAL_VERSION%%_*}" != "$head" ]; then
+  fail "the version being deployed (${KAMAL_VERSION}) is not HEAD (${head})." \
+       "Kamal builds the working tree, so deploy without --version / VERSION."
+fi
+
 # 2. The latest origin/main.
 if [ "${ALLOW_NON_MAIN:-}" != "1" ]; then
   git fetch --quiet origin main
-  head=$(git rev-parse HEAD)
   main=$(git rev-parse origin/main)
   if [ "$head" != "$main" ]; then
     fail "HEAD ($(git rev-parse --short HEAD), on '$(git branch --show-current)') is not origin/main ($(git rev-parse --short origin/main))." \
