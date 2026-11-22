@@ -255,6 +255,12 @@ class CatalogSnapshot
     rows.each do |row|
       spell = Catalog::Spell.find_or_initialize_by(discipline: row.fetch("discipline"), name: row.fetch("name"))
       tally[:spells] += 1 if spell.new_record?
+      # One cantrip per discipline: a cantrip renamed in the backoffice arrives under its new name
+      # while the seeds created the original, so the original steps down first. It is kept, not
+      # deleted, since gangs may still reference it.
+      if row["cantrip"]
+        Catalog::Spell.where(discipline: spell.discipline, cantrip: true).where.not(id: spell.id).update_all(cantrip: false)
+      end
       spell.update!(row.slice("cost", "difficulty", "description", "cantrip"))
     end
   end
