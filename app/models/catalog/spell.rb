@@ -26,6 +26,18 @@ module Catalog
       entry_spells.exists? || profile_granted_spells.exists?
     end
 
+    # The discipline decides which pools a chosen spell fits, and a cantrip does not use a spell
+    # slot (ListValidationService#check_spell_selections). So changing either can flip the validity
+    # of gangs that chose this spell, whose cached selection_valid would otherwise stay stale until
+    # their owner next edits them, as Profile#refresh_dependent_list_validity! does for profiles.
+    # A callback, so the backoffice edit and an undo from the history both trigger it.
+    after_update_commit :refresh_dependent_list_validity!, if: -> { saved_change_to_discipline? || saved_change_to_cantrip? }
+
+    def refresh_dependent_list_validity!
+      list_ids = Gang::Entry.where(id: entry_spells.select(:list_entry_id)).select(:list_id)
+      Gang::List.where(id: list_ids).find_each(&:refresh_selection_validity)
+    end
+
     # The free Cantrip a Mage of the given Discipline always knows (rulebook p24), or nil.
     def self.cantrip_for(discipline)
       cantrips.find_by(discipline: discipline)
