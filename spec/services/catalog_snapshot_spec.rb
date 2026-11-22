@@ -55,6 +55,107 @@ RSpec.describe CatalogSnapshot do
     expect(profile.illustrations.find_by(number: 2).path).to eq("p07.png")
   end
 
+  # CARNEVALEB-84: everything the backoffice can edit must survive the dev seed. One catalog with
+  # every exception shape the rake tasks used to set by name.
+  describe "advanced options, spell pools, grants, companions, glossary and spells" do
+    def build_exceptions!
+      Catalog::Ability.create!(category: "character", name: "Mage", description: "Knows (X) spells.")
+      tarot = Catalog::SpecialRule.create!(name: "Minor Arcana", description: "An extra Cantrip.")
+      baptism = Catalog::SpecialRule.create!(name: "", spell_name: "Dagonite Baptism", description: "")
+      waves = Catalog::Spell.create!(name: "Waves of Force", discipline: :divinity, cost: 1, difficulty: 6, description: "Push.")
+      Catalog::Spell.create!(name: "Cantrip of Fate", discipline: :fateweaving, cost: 0, difficulty: 7, cantrip: true)
+
+      reader = create(:profile, faction: "guild", name: "Tarot Reader", abilities: [ "Mage (2)" ],
+                                distinct_discipline_per_copy: true)
+      create(:card_reference, profile: reader, identifier: "guild-tarot-reader")
+      reader.replace_spell_pools!([
+        { of: 1, slot_count: 3, mage_slot_count: 2, disciplines: %w[fateweaving wild_magic] },
+        { of: 1, slot_count: 0, distinct_from_other_pools: true, special_rule_id: tarot.id, disciplines: %w[fateweaving] },
+        { of: 1, slot_count: 0, unlimited: true, resets_each_round: false, disciplines: %w[wild_magic] }
+      ])
+      reader.replace_granted_spells!([
+        { grant_kind: "named_spell", spell_id: waves.id },
+        { grant_kind: "named_spell", unique_spell_name: "Dagonite Baptism", unique_spell_cost: 1,
+          unique_spell_difficulty: 6, unique_spell_description: "Drown.", special_rule_id: baptism.id },
+        { grant_kind: "all_cantrips" }
+      ])
+
+      apprentice = create(:profile, faction: "guild", name: "Apprentice Doctor")
+      create(:card_reference, profile: apprentice, identifier: "guild-apprentice-doctor")
+      apprentice.replace_spell_pools!([ { of: 1, slot_count: 0, mentor_derived: true, disciplines: [] } ])
+
+      capitano = create(:profile, faction: "guild", name: "Il Capitano", keywords: [ "Leader" ])
+      create(:card_reference, profile: capitano, identifier: "guild-il-capitano")
+      signora = create(:profile, faction: "guild", name: "La Signora", keywords: [ "Leader" ],
+                                 flexible_leader: true, flexible_leader_with: capitano)
+      create(:card_reference, profile: signora, identifier: "guild-la-signora")
+
+      tentacle = create(:profile, faction: "guild", name: "Maw Tentacle", recruitable: false)
+      create(:card_reference, profile: tentacle, identifier: "guild-maw-tentacle")
+      emissary = create(:profile, faction: "guild", name: "Emissary", companion_upgrade_ducats: 12)
+      create(:card_reference, profile: emissary, identifier: "guild-emissary")
+      emissary.replace_companions!([ { companion_profile_id: tentacle.id, base_quantity: 1, upgraded_quantity: 2 } ])
+    end
+
+    def wipe_catalog!
+      [ Catalog::ProfileCompanion, Catalog::ProfileGrantedSpell, Catalog::ProfileSpellPoolDiscipline,
+        Catalog::ProfileSpellPool, Catalog::ProfileWeapon, Catalog::ProfileSpecialRule, Catalog::CardReference,
+        Catalog::Illustration ].each(&:delete_all)
+      Catalog::Profile.update_all(flexible_leader_with_id: nil)
+      [ Catalog::Profile, Catalog::Weapon, Catalog::SpecialRule, Catalog::Ability, Catalog::Spell ].each(&:delete_all)
+    end
+
+    it "exports, imports into an empty catalog, and exports the very same files again" do
+      build_exceptions!
+      described_class.export(dir: dir)
+      first = %w[abilities spells weapons special_rules profiles].to_h { |f| [ f, dir.join("#{f}.yml").read ] }
+
+      wipe_catalog!
+      described_class.import(dir: dir)
+      again = Pathname(Dir.mktmpdir)
+      described_class.export(dir: again)
+
+      first.each { |name, content| expect(again.join("#{name}.yml").read).to eq(content), "#{name}.yml differs" }
+      FileUtils.remove_entry(again)
+    end
+
+    it "restores the shapes the game logic reads" do
+      build_exceptions!
+      described_class.export(dir: dir)
+      wipe_catalog!
+      described_class.import(dir: dir)
+
+      reader = Catalog::Profile.find_by!(name: "Tarot Reader")
+      expect(reader.distinct_discipline_per_copy).to be(true)
+      expect(reader.profile_spell_pools.order(:position).map { |p| [ p.mage_slot_count, p.distinct_from_other_pools, p.unlimited ] })
+        .to eq([ [ 2, false, false ], [ 0, true, false ], [ 0, false, true ] ])
+      expect(reader.profile_granted_spells.order(:position).map { |g| g.resolved_name || g.grant_kind })
+        .to eq([ "Waves of Force", "Dagonite Baptism", "all_cantrips" ])
+      expect(Catalog::Profile.find_by!(name: "Apprentice Doctor").profile_spell_pools.sole.mentor_derived).to be(true)
+      expect(Catalog::Profile.find_by!(name: "La Signora").flexible_leader_with.name).to eq("Il Capitano")
+      expect(Catalog::Profile.find_by!(name: "Maw Tentacle").recruitable).to be(false)
+      emissary = Catalog::Profile.find_by!(name: "Emissary")
+      expect(emissary.companion_upgrade_ducats).to eq(12)
+      expect(emissary.profile_companions.map { |c| [ c.companion_profile.name, c.base_quantity, c.upgraded_quantity ] })
+        .to eq([ [ "Maw Tentacle", 1, 2 ] ])
+      expect(Catalog::Spell.cantrip_for("fateweaving").name).to eq("Cantrip of Fate")
+    end
+
+    it "leaves pools, grants and companions alone when importing an older snapshot without them" do
+      build_exceptions!
+      described_class.export(dir: dir)
+      profiles = YAML.safe_load(dir.join("profiles.yml").read)
+      profiles.each { |p| p.except!("spell_pools", "granted_spells", "companions", "flexible_leader_with", *described_class::PROFILE_FLAGS) }
+      dir.join("profiles.yml").write(profiles.to_yaml)
+
+      described_class.import(dir: dir)
+
+      expect(Catalog::Profile.find_by!(name: "Tarot Reader").profile_spell_pools.count).to eq(3)
+      expect(Catalog::Profile.find_by!(name: "Emissary").profile_companions.count).to eq(1)
+      expect(Catalog::Profile.find_by!(name: "Maw Tentacle").recruitable).to be(false)
+    end
+  end
+
   it "is idempotent — a second import neither duplicates nor errors" do
     build_catalog!
     described_class.export(dir: dir)
