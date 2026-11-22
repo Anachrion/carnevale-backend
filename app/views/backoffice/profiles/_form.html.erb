@@ -181,6 +181,12 @@
             <%= render "granted_spells_editor", profile: profile, all_spells: @all_spells, all_special_rules: @all_special_rules %>
           </td>
         </tr>
+        <tr>
+          <th style="vertical-align:top;padding-top:14px;">Advanced</th>
+          <td>
+            <%= render "advanced_options", f: f, profile: profile, all_profiles: @all_profiles %>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
@@ -377,6 +383,7 @@
 
   wireRowEditor('.js-pools-editor', '.js-pool-rows', '.js-pool-row', '.js-pool-template', '.js-pool-add');
   wireRowEditor('.js-grants-editor', '.js-grant-rows', '.js-grant-row', '.js-grant-template', '.js-grant-add');
+  wireRowEditor('.js-companions-editor', '.js-companion-rows', '.js-companion-row', '.js-companion-template', '.js-companion-add');
 
   // ── The card identifier (new profiles only) ────────────────────────────────────
   // Suggested from the faction and name, and left alone the moment it is typed into by hand:

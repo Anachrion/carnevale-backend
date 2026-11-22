@@ -492,6 +492,49 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(second).to have_attributes(mage_slot_count: 0, distinct_from_other_pools: true)
     end
 
+    describe "advanced options (CARNEVALEB-84)" do
+      let(:capitano) { create(:profile, name: "Il Capitano", keywords: [ "Leader" ]) }
+      let(:tentacle) { create(:profile, name: "Maw Tentacle") }
+
+      it "saves the recruitment flags, the flexible Leader partner and the companions" do
+        patch backoffice_profile_path(profile), params: valid_params(
+          recruitable: "0", flexible_leader: "1", flexible_leader_with_id: capitano.id.to_s,
+          distinct_discipline_per_copy: "1", companion_upgrade_ducats: "12",
+          companions: [ { companion_profile_id: tentacle.id.to_s, base_quantity: "1", upgraded_quantity: "2" } ]
+        )
+
+        expect(response).to redirect_to(edit_backoffice_profile_path(profile))
+        profile.reload
+        expect(profile).to have_attributes(recruitable: false, flexible_leader: true, flexible_leader_with: capitano,
+                                           distinct_discipline_per_copy: true, companion_upgrade_ducats: 12)
+        expect(profile.profile_companions.map { |c| [ c.companion_profile, c.base_quantity, c.upgraded_quantity ] })
+          .to eq([ [ tentacle, 1, 2 ] ])
+      end
+
+      it "removes the companions when their rows are removed" do
+        profile.replace_companions!([ { companion_profile_id: tentacle.id, base_quantity: 1, upgraded_quantity: 2 } ])
+
+        patch backoffice_profile_path(profile), params: valid_params
+
+        expect(profile.reload.profile_companions).to be_empty
+      end
+
+      it "records the change in the card's history" do
+        patch backoffice_profile_path(profile), params: valid_params(recruitable: "0")
+
+        version = Catalog::History.versions_for(profile).last
+        expect(Catalog::History.changes(version)).to include("Recruitable: true → false")
+      end
+
+      it "opens the section when the card uses one of its settings" do
+        profile.update!(recruitable: false)
+
+        get edit_backoffice_profile_path(profile)
+
+        expect(response.body).to match(/<details open[^>]*>\s*<summary[^>]*>Advanced options/)
+      end
+    end
+
     it "shows both fields with the saved values in the editor" do
       profile.replace_spell_pools!([ { of: 1, slot_count: 3, mage_slot_count: 2, distinct_from_other_pools: true, disciplines: [ "fateweaving" ] } ])
 
