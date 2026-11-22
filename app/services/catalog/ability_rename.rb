@@ -15,7 +15,6 @@ module Catalog
 
     def initialize(ability, new_name, attributes)
       @ability = ability
-      @old_name = ability.name
       @new_name = new_name.to_s.strip
       @attributes = attributes
     end
@@ -24,6 +23,10 @@ module Catalog
     # the ability or a card fails to save; nothing is written then.
     def call
       ActiveRecord::Base.transaction do
+        # Locked and reloaded first: a concurrent rename that committed in between would otherwise
+        # leave us searching the cards for a name they no longer carry.
+        @ability.lock!
+        @old_name = @ability.name
         carriers = renaming? ? @ability.carriers : []
         @ability.update!(@attributes.merge(name: @new_name))
         carriers.each { |record| rewrite(record) }
@@ -37,7 +40,10 @@ module Catalog
       @new_name.present? && @new_name != @old_name
     end
 
+    # Locked and reloaded so the rewrite starts from the committed list, not the copy loaded with
+    # the carriers: an entry added meanwhile by another save would otherwise be dropped.
     def rewrite(record)
+      record.lock!
       before = Catalog::CardSnapshot.capture(record) if record.is_a?(Catalog::Profile)
       record.update!(abilities: record.abilities.map { |entry| renamed(entry) })
       Catalog::History.record!(record, event: "update", before: before) if before
