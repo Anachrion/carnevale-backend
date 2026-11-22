@@ -52,16 +52,16 @@ granted by a developer, on purpose) and everything the form does not cover.
 
 ### B. Profile settings missing from the form
 
-They are set by rake tasks that target hard-coded names:
+**Mostly done** (CARNEVALEB-84). These were set by rake tasks that targeted hard-coded names;
+they are now in the profile form's "Advanced options" and in the spell pool editor:
 
-| Setting | Where it lives today |
+| Setting | Now |
 |---|---|
-| `recruitable`, `companion_upgrade_ducats`, companions | `lib/tasks/companions.rake` |
-| `flexible_leader`, `flexible_leader_with` | `lib/tasks/leader_exceptions.rake` |
-| `distinct_discipline_per_copy`, plus `mage_slot_count` and `distinct_from_other_pools` on spell pools | `lib/tasks/spell_pool_exceptions.rake` |
-| Transformation pairs (Yune ⇄ The Beast Within) | `TRANSFORM_PAIRS` constant, `app/models/gang/entry.rb` |
-
-A moderator creating "a new Tentacle" or "a new flexible Leader" is stuck.
+| `recruitable`, `companion_upgrade_ducats`, companions | Advanced options |
+| `flexible_leader`, `flexible_leader_with` | Advanced options |
+| `distinct_discipline_per_copy` | Advanced options |
+| `mage_slot_count` and `distinct_from_other_pools` on spell pools | Spell pool editor. Both were missing, so every save reset them |
+| Transformation pairs (Yune ⇄ The Beast Within) | Still the `TRANSFORM_PAIRS` constant, `app/models/gang/entry.rb` (CARNEVALEB-85) |
 
 ### C. Reference data that only lives in the seeds
 
@@ -78,9 +78,8 @@ deploy.
 only references. `db/catalog/` is no longer a backup but the development seed, refreshed by hand.
 See `docs/DATA_AND_BACKUPS.md`.
 
-- The snapshot does not carry spell pools, granted spells, companions or the leader/recruitable
-  flags; `db/seeds.rb` rebuilds them from rake tasks, so a local catalog is complete today. Once
-  those settings are editable in the backoffice (item 4 below), the snapshot must carry them.
+- The snapshot now carries everything the backoffice edits, the glossary and spells included
+  (CARNEVALEB-84). The seed's rake tasks retire once `db/catalog/` is refreshed from production.
 
 ### E. Pitfalls for a non-technical author
 
@@ -121,9 +120,9 @@ Access itself needs no work: moderators are made admins from `kamal console`.
 
 ### Tier 2: cover every kind of card (medium)
 
-4. Expose the settings from section B in an "Advanced options" part of the form, and move
-   `TRANSFORM_PAIRS` into the database. Add those settings to `CatalogSnapshot` at the same time,
-   so the development seed keeps them (CARNEVALEB-84).
+4. ~~Expose the settings from section B in an "Advanced options" part of the form, and add them
+   to `CatalogSnapshot`.~~ **Done** (CARNEVALEB-84). Moving `TRANSFORM_PAIRS` into the database
+   remains (CARNEVALEB-85).
 5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
    needed.
 6. Replace free-text keywords with a pick list for the ones the app acts on (Leader, Hero,

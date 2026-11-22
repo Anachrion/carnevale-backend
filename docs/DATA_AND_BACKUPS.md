@@ -106,11 +106,18 @@ It is safe to re-run: if production already matches what is committed, it says s
 since it holds the players' accounts. Refresh it now and then, when local work needs newer cards;
 there is no freshness requirement, because it is not a backup.
 
-**What it does not carry**: spell pools, granted spells, companions and the leader/recruitable
-flags. `db/seeds.rb` rebuilds those right after the import, from `SpellPoolBackfill` and the
-`spell_pools:`, `leaders:` and `companions:configure_exceptions` rake tasks, so a local catalog is
-complete. That stops being true once those settings become editable in the backoffice
-(CARNEVALEB-84), which therefore has to add them to the snapshot.
+**What it carries**: everything the backoffice can edit (CARNEVALEB-84): the ability glossary
+(`abilities.yml`), the spells (`spells.yml`), weapons, special rules, and per profile its stats,
+keywords, abilities, advanced options (recruitable, flexible Leader and partner, distinct
+Discipline per copy, companion upgrade cost), spell pools, granted spells, companions, card
+references and illustrations. References between records are portable: rules by stable key,
+spells by discipline and name, profiles by their anchor identifier. Only render bookkeeping and
+player data stay out.
+
+Snapshots committed before CARNEVALEB-84 lack the pools, grants, companions and options, so
+`db/seeds.rb` still rebuilds them from the `spell_pools:`, `leaders:` and
+`companions:configure_exceptions` rake tasks until `db/catalog/` is refreshed from production;
+those tasks then retire.
 
 #### Why the catalog is no longer backed up in git
 
