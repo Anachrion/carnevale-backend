@@ -51,12 +51,35 @@ module Backoffice
     # *before* that change (or before it was deleted), so this undoes the change.
     def revert_shared(version)
       record = version.reify
-      PaperTrail.request(controller_info: { reverted_from_id: version.id }) { record.save! }
+      PaperTrail.request(controller_info: { reverted_from_id: version.id }) { restore_shared(record) }
 
-      path = record.is_a?(Catalog::Weapon) ? edit_backoffice_weapon_path(record) : edit_backoffice_special_rule_path(record)
-      affected = record.cards_affected.count
-      redirect_to path, notice: "Undid the change to #{record.name.presence || "this rule"}. " \
-                                "#{affected} card#{"s" unless affected == 1} now out of date."
+      notice = "Undid the change to #{record.name.presence || "this #{record.model_name.human.downcase}"}."
+      if record.respond_to?(:cards_affected)
+        affected = record.cards_affected.count
+        notice += " #{affected} card#{"s" unless affected == 1} now out of date."
+      end
+      redirect_to edit_path_for(record), notice: notice
+    end
+
+    # Saves a reified weapon, rule, ability or spell. An ability whose name changes back is renamed
+    # through Catalog::AbilityRename, so the cards listing it follow, as they did when it was
+    # renamed in the first place.
+    def restore_shared(record)
+      current = record.class.find_by(id: record.id)
+      if record.is_a?(Catalog::Ability) && current && current.name != record.name
+        Catalog::AbilityRename.call(current, record.name, description: record.description)
+      else
+        record.save!
+      end
+    end
+
+    def edit_path_for(record)
+      case record
+      when Catalog::Weapon then edit_backoffice_weapon_path(record)
+      when Catalog::SpecialRule then edit_backoffice_special_rule_path(record)
+      when Catalog::Ability then edit_backoffice_ability_path(record)
+      when Catalog::Spell then edit_backoffice_spell_path(record)
+      end
     end
   end
 end

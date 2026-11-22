@@ -1,0 +1,8 @@
+<% content_for :title, "Edit #{@ability.name}" %>
+
+<h1>Edit <%= @ability.name %></h1>
+
+<%= render "form", ability: @ability, url: backoffice_ability_path(@ability), method: :patch %>
+
+<h2 style="margin-top:32px;">History</h2>
+<%= render "backoffice/history/versions", versions: @versions, authors: @authors, show_record: false %>

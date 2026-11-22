@@ -8,7 +8,7 @@ module Catalog
   # Profiles are not: a card is recorded here, explicitly, once the backoffice has saved it *and*
   # rewritten its weapons, rules and spells, as a whole-card snapshot (Catalog::CardSnapshot).
   module History
-    TRACKED_TYPES = %w[Catalog::Profile Catalog::Weapon Catalog::SpecialRule].freeze
+    TRACKED_TYPES = %w[Catalog::Profile Catalog::Weapon Catalog::SpecialRule Catalog::Ability Catalog::Spell].freeze
 
     # Columns too noisy to show in a weapon or rule's change list.
     HIDDEN_CHANGES = %w[id created_at updated_at].freeze

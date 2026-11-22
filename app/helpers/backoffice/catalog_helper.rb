@@ -47,7 +47,30 @@ module Backoffice
       tag.div(style: "color:#6b7280;font-size:13px;margin-top:6px;") do
         safe_join([
           tag.span("Must be one of these #{category} abilities (a “(X)” rating may follow): "),
-          tag.span(names.join(", "), style: "color:#374151;")
+          tag.span(names.join(", "), style: "color:#374151;"),
+          " ",
+          link_to("Manage abilities", backoffice_abilities_path(category: category), target: "_blank", rel: "noopener")
+        ])
+      end
+    end
+
+    # When a save is rejected because the glossary does not know an ability yet, a link per missing
+    # one to create it, prefilled, in a new tab (CARNEVALEB-86). Save the card again once it exists.
+    def missing_ability_links(record, category)
+      return unless record.errors.include?(:abilities)
+
+      known = Catalog::Ability.known_names(category)
+      missing = Array(record.abilities).map { |entry| Catalog::Ability.base_name(entry) }.uniq.reject { |name| known.include?(name) }
+      return if missing.empty?
+
+      tag.div(class: "flash notice") do
+        safe_join([
+          "Not in the glossary yet: ",
+          safe_join(missing.map do |name|
+            link_to("create the #{category} ability “#{name}”",
+              new_backoffice_ability_path(category: category, name: name), target: "_blank", rel: "noopener")
+          end, ", "),
+          ". Then save again."
         ])
       end
     end

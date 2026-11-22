@@ -4,7 +4,8 @@ module Backoffice
   # Labels for the catalog history pages (CARNEVALEB-81).
   module HistoryHelper
     KIND_LABELS = {
-      "Catalog::Profile" => "Card", "Catalog::Weapon" => "Weapon", "Catalog::SpecialRule" => "Special rule"
+      "Catalog::Profile" => "Card", "Catalog::Weapon" => "Weapon", "Catalog::SpecialRule" => "Special rule",
+      "Catalog::Ability" => "Ability", "Catalog::Spell" => "Spell"
     }.freeze
 
     EVENT_LABELS = {
@@ -44,6 +45,8 @@ module Backoffice
       when Catalog::Profile then link_to(name, history_backoffice_profile_path(item))
       when Catalog::Weapon then link_to(name, edit_backoffice_weapon_path(item))
       when Catalog::SpecialRule then link_to(name, edit_backoffice_special_rule_path(item))
+      when Catalog::Ability then link_to(name, edit_backoffice_ability_path(item))
+      when Catalog::Spell then link_to(name, edit_backoffice_spell_path(item))
       end
     end
 
@@ -58,7 +61,7 @@ module Backoffice
       else
         label = "Undo this change"
         confirm = "Restore this #{history_kind(version).downcase} to how it was before this change? " \
-                  "Later changes to it are undone too, and every card carrying it goes out of date."
+                  "Later changes to it are undone too, and every card using it goes out of date."
       end
 
       button_to label, revert_backoffice_version_path(version),

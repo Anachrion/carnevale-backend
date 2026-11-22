@@ -1,0 +1,8 @@
+<% content_for :title, "Edit #{@spell.name}" %>
+
+<h1>Edit <%= @spell.name %></h1>
+
+<%= render "form", spell: @spell, url: backoffice_spell_path(@spell), method: :patch %>
+
+<h2 style="margin-top:32px;">History</h2>
+<%= render "backoffice/history/versions", versions: @versions, authors: @authors, show_record: false %>

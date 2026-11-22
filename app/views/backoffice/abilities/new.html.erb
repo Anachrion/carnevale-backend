@@ -1,0 +1,5 @@
+<% content_for :title, "New ability" %>
+
+<h1>New ability</h1>
+
+<%= render "form", ability: @ability, url: backoffice_abilities_path, method: :post %>
