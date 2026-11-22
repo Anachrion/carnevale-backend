@@ -159,10 +159,14 @@ module Catalog
     # Model => its timestamp column (attachments are never updated, only replaced, so created_at).
     # Class names, resolved when called, so this loads before the models it lists.
     STALENESS_SOURCES = {
-      "Catalog::Profile" => :updated_at, "Catalog::ProfileWeapon" => :updated_at,
-      "Catalog::ProfileSpecialRule" => :updated_at, "Catalog::Weapon" => :updated_at,
-      "Catalog::SpecialRule" => :updated_at, "Catalog::Illustration" => :updated_at,
-      "Catalog::CardReference" => :updated_at, "ActiveStorage::Attachment" => :created_at
+      "Catalog::Profile" => :updated_at,
+      "Catalog::ProfileWeapon" => :updated_at,
+      "Catalog::ProfileSpecialRule" => :updated_at,
+      "Catalog::Weapon" => :updated_at,
+      "Catalog::SpecialRule" => :updated_at,
+      "Catalog::Illustration" => :updated_at,
+      "Catalog::CardReference" => :updated_at,
+      "ActiveStorage::Attachment" => :created_at
     }.freeze
 
     def self.stale_count
