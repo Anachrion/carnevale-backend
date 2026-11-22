@@ -13,6 +13,9 @@ module Catalog
     # Edited in the backoffice (CARNEVALEB-86), so it has a history like weapons and rules.
     has_paper_trail
 
+    # Cards are matched by base_name, which strips; a stored "Tide Walker " would match nothing.
+    normalizes :name, with: ->(name) { name.strip }
+
     validates :category, inclusion: { in: CATEGORIES }
     validates :name, presence: true, uniqueness: { scope: :category }
     validate :name_has_no_rating
