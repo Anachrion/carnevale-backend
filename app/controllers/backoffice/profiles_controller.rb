@@ -119,13 +119,18 @@ module Backoffice
     # stale (Catalog::CardReference#stale?) and the publish page picks them up.
     def update
       saved = false
-      # Taken before anything changes: it becomes the card's baseline if it has no history yet.
-      before = Catalog::CardSnapshot.capture(@profile)
+      before = nil
 
       # The weapons and rules are join rows, so they are rewritten rather than assigned. One
       # transaction, so an invalid profile cannot leave a half-rewritten weapon list behind — and
       # so a rolled-back save leaves no version behind either.
       Catalog::Profile.transaction do
+        # Locked first, as Catalog::AbilityRename locks the cards it rewrites: an ability renamed
+        # while this form was open is then either already committed (and validated against here)
+        # or waits for this save, never overwritten by it.
+        @profile.lock!
+        # Taken before anything changes: it becomes the card's baseline if it has no history yet.
+        before = Catalog::CardSnapshot.capture(@profile)
         @profile.assign_attributes(profile_params)
         saved = @profile.save
         raise ActiveRecord::Rollback unless saved
