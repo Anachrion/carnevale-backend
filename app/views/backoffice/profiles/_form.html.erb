@@ -142,6 +142,7 @@
             <%= render "association_picker", param: :weapon_ids, noun: "weapon",
                   records: @all_weapons, selected: profile.weapons,
                   create_url: backoffice_weapons_path(format: :json),
+                  edit_url_template: edit_backoffice_weapon_path("__ID__"),
                   create_fields: { name: "Name", damage: "Damage", evasion: "Evasion",
                                    penetration: "Penetration", range: "Range",
                                    abilities_text: "Abilities (one per line)" } %>
@@ -159,6 +160,7 @@
             <%= render "association_picker", param: :special_rule_ids, noun: "special rule",
                   records: @all_special_rules, selected: profile.special_rules,
                   create_url: backoffice_special_rules_path(format: :json),
+                  edit_url_template: edit_backoffice_special_rule_path("__ID__"),
                   create_fields: { name: "Name", description: "Description" } %>
             <div style="color:#6b7280;font-size:13px;margin-top:6px;">
               Weapons and special rules are shared across the catalog — attaching one here does not
@@ -266,12 +268,26 @@
     const rows = picker.querySelector('.js-rows');
     const template = picker.querySelector('.js-template');
 
+    // Each row's ✎ opens the editor of whatever its select currently holds (CARNEVALEB-94).
+    function syncEditLink(row) {
+      const link = row.querySelector('.js-edit');
+      const select = row.querySelector('.js-select');
+      if (!link || !select) return;
+      link.href = picker.dataset.editUrlTemplate.replace('__ID__', encodeURIComponent(select.value));
+    }
+
     function addRow(id) {
       rows.appendChild(template.content.cloneNode(true));
-      const select = rows.lastElementChild.querySelector('.js-select');
+      const row = rows.lastElementChild;
+      const select = row.querySelector('.js-select');
       if (id) select.value = id;
+      syncEditLink(row);
       scheduleRefresh();
     }
+
+    picker.addEventListener('change', function (event) {
+      if (event.target.classList.contains('js-select')) syncEditLink(event.target.closest('.js-row'));
+    });
 
     picker.querySelector('.js-add').addEventListener('click', function () { addRow(); });
 

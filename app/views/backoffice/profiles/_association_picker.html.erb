@@ -10,10 +10,15 @@
   it posts to the weapons/special-rules controller as JSON and drops the result into every select.
   Nested <form> tags are illegal, so it is plain inputs collected by hand — see the JS in _form.
 
+  Each row also links to the selected record's own editor (✎), in a new tab so the profile's
+  unsaved changes survive; the JS in _form retargets it when the select changes (CARNEVALEB-94).
+
   Locals: param (:weapon_ids), records (everything pickable), selected (the current ones), noun,
-          create_url, create_fields (the columns the inline creator asks for).
+          create_url, create_fields (the columns the inline creator asks for),
+          edit_url_template (the editor path with "__ID__" in place of the record id).
 %>
 <div class="js-picker" data-noun="<%= noun %>" data-create-url="<%= create_url %>"
+     data-edit-url-template="<%= edit_url_template %>"
      data-model="<%= param.to_s.sub("_ids", "") %>">
   <div class="js-rows">
     <% selected.each do |record| %>
@@ -21,6 +26,8 @@
         <%= select_tag "profile[#{param}][]",
               options_from_collection_for_select(records, :id, :name, record.id),
               class: "js-select", style: "flex:1;max-width:420px;padding:6px;" %>
+        <%= link_to "✎", edit_url_template.sub("__ID__", record.id.to_s), class: "btn js-edit",
+              target: "_blank", rel: "noopener", title: "Edit this #{noun} (opens a new tab)" %>
         <button type="button" class="btn js-up" title="Move up">↑</button>
         <button type="button" class="btn js-down" title="Move down">↓</button>
         <button type="button" class="btn js-remove" title="Remove">✕</button>
@@ -34,6 +41,8 @@
       <%= select_tag "profile[#{param}][]",
             options_from_collection_for_select(records, :id, :name),
             class: "js-select", style: "flex:1;max-width:420px;padding:6px;" %>
+      <%# href set by the JS from the select's value when the row is added. %>
+      <a class="btn js-edit" target="_blank" rel="noopener" title="Edit this <%= noun %> (opens a new tab)">✎</a>
       <button type="button" class="btn js-up" title="Move up">↑</button>
       <button type="button" class="btn js-down" title="Move down">↓</button>
       <button type="button" class="btn js-remove" title="Remove">✕</button>
