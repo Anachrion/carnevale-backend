@@ -23,6 +23,12 @@
     <label style="font-size:12px;color:#6b7280;">Slots<br>
       <input type="number" name="profile[pools][][slot_count]" value="<%= pool&.slot_count || 0 %>" min="0" style="width:60px;padding:6px;">
     </label>
+    <%# The Mage (X) part of Slots, without Expert Sorcerer: what an Apprentice Doctor copies from
+        this model as a mentor (Gang::Entry). Saving a pool without it would reset it to 0. %>
+    <label style="font-size:12px;color:#6b7280;" title="The Mage (X) part of Slots, without Expert Sorcerer. An Apprentice Doctor mentored by this model gets this many slots.">
+      Of which Mage (X)<br>
+      <input type="number" name="profile[pools][][mage_slot_count]" value="<%= pool&.mage_slot_count || 0 %>" min="0" style="width:60px;padding:6px;">
+    </label>
     <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
       <input type="checkbox" name="profile[pools][][unlimited]" value="1" <%= "checked" if pool&.unlimited? %>>
       Unlimited
@@ -40,6 +46,11 @@
     <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
       <input type="checkbox" name="profile[pools][][mentor_derived]" value="1" <%= "checked" if pool&.mentor_derived? %>>
       Mentor-derived
+    </label>
+    <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;"
+           title="This pool's Discipline must differ from every other pool's (Tarot Reader's Minor Arcana).">
+      <input type="checkbox" name="profile[pools][][distinct_from_other_pools]" value="1" <%= "checked" if pool&.distinct_from_other_pools? %>>
+      Different Discipline from other pools
     </label>
     <label style="font-size:12px;color:#6b7280;">Explained by<br>
       <%= select_tag nil, options_from_collection_for_select(all_special_rules, :id, :name, pool&.special_rule_id),

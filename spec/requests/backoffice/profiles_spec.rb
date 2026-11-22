@@ -475,6 +475,32 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(grant.consumes_slot?).to be false
     end
 
+    # CARNEVALEB-84: these two had no field, so every save reset them, losing every standard
+    # mage's mage_slot_count (what an Apprentice Doctor copies) and Minor Arcana's rule.
+    it "keeps a pool's Mage (X) slot count and its different-Discipline rule" do
+      patch backoffice_profile_path(profile), params: valid_params(
+        pools: [
+          { of: "1", slot_count: "3", mage_slot_count: "2", grants_cantrip: "1", resets_each_round: "1",
+            disciplines: [ "fateweaving" ] },
+          { of: "1", slot_count: "0", mage_slot_count: "0", grants_cantrip: "1", resets_each_round: "1",
+            distinct_from_other_pools: "1", disciplines: [ "fateweaving" ] }
+        ]
+      )
+
+      first, second = profile.reload.profile_spell_pools.order(:position)
+      expect(first).to have_attributes(mage_slot_count: 2, distinct_from_other_pools: false)
+      expect(second).to have_attributes(mage_slot_count: 0, distinct_from_other_pools: true)
+    end
+
+    it "shows both fields with the saved values in the editor" do
+      profile.replace_spell_pools!([ { of: 1, slot_count: 3, mage_slot_count: 2, distinct_from_other_pools: true, disciplines: [ "fateweaving" ] } ])
+
+      get edit_backoffice_profile_path(profile)
+
+      expect(response.body).to include('name="profile[pools][][mage_slot_count]" value="2"')
+      expect(response.body).to match(/name="profile\[pools\]\[\]\[distinct_from_other_pools\]" value="1"\s+checked/)
+    end
+
     it "clears spell pools and granted spells when the form submits none" do
       profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: [ "blood_rites" ] } ])
       profile.replace_granted_spells!([ { grant_kind: "all_cantrips" } ])
