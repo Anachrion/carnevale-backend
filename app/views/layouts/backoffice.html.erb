@@ -11,6 +11,24 @@
     <%# The backoffice's shared furniture (.btn, .table-wrap, .pill, the editor's stat strip) lives
         in app/assets/tailwind/application.css — the screens not yet reworked still lean on it. %>
     <%= stylesheet_link_tag :tailwind, "data-turbo-track": "reload" %>
+
+    <%#
+      Confirmation prompts. Buttons and forms across the backoffice carry data-turbo-confirm (delete
+      a weapon, save a shared rule, restore a version…), but this layout does not load Turbo: its
+      screens boot their own scripts on DOMContentLoaded, which Turbo Drive's page visits would
+      skip. So nothing ever asked. This honours the attribute on its own, on the form or on the
+      button that submits it, and on links.
+    %>
+    <script>
+      document.addEventListener('submit', function (event) {
+        const message = (event.submitter && event.submitter.dataset.turboConfirm) || event.target.dataset.turboConfirm;
+        if (message && !window.confirm(message)) event.preventDefault();
+      }, true);
+      document.addEventListener('click', function (event) {
+        const link = event.target.closest('a[data-turbo-confirm]');
+        if (link && !window.confirm(link.dataset.turboConfirm)) event.preventDefault();
+      }, true);
+    </script>
   </head>
 
   <body class="min-h-full bg-gray-50 font-sans text-gray-900 antialiased">
