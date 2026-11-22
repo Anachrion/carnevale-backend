@@ -1,6 +1,48 @@
 require 'rails_helper'
 
 RSpec.describe Catalog::Profile, type: :model do
+  # Players' spell picks point at a pool with ON DELETE CASCADE, so replacing the pools must not
+  # recreate them: that wiped every gang's known spells on each backoffice save (CARNEVALEB-84).
+  describe "#replace_spell_pools!" do
+    let(:profile) { create(:profile, faction: :guild, abilities: [ "Mage (2)" ], keywords: [ "Leader", "Discipline (Fateweaving)" ]) }
+    let(:spell) { create(:spell, discipline: :fateweaving) }
+    let!(:entry) do
+      list = create(:list, faction: :guild, points: 100)
+      Gang::Entry.new(list: list, entry: create(:card_reference, profile: profile), position: 1).tap { |e| e.save(validate: false) }
+    end
+
+    def pick!(pool)
+      entry.entry_pool_disciplines.create!(pool: pool, discipline: "fateweaving")
+      Gang::EntrySpell.new(list_entry: entry, spell: spell, pool: pool).save!(validate: false)
+    end
+
+    it "keeps the players' picks when the pools are saved again, changed or not" do
+      pool = profile.profile_spell_pools.sole
+      pick!(pool)
+
+      profile.replace_spell_pools!([ { of: 1, slot_count: 3, mage_slot_count: 2, disciplines: %w[fateweaving wild_magic] } ])
+
+      expect(profile.profile_spell_pools.sole.id).to eq(pool.id)
+      expect(profile.profile_spell_pools.sole).to have_attributes(slot_count: 3, disciplines: %w[fateweaving wild_magic])
+      expect(entry.entry_spells.count).to eq(1)
+      expect(entry.entry_pool_disciplines.count).to eq(1)
+    end
+
+    it "adds pools after the existing ones and removes only the pools dropped from the list" do
+      first = profile.profile_spell_pools.sole
+      pick!(first)
+      profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: %w[fateweaving] },
+                                     { of: 1, slot_count: 1, disciplines: %w[divinity] } ])
+      second = profile.profile_spell_pools.order(:position).last
+      Gang::EntrySpell.new(list_entry: entry, spell: create(:spell, discipline: :divinity), pool: second).save!(validate: false)
+
+      profile.replace_spell_pools!([ { of: 1, slot_count: 2, disciplines: %w[fateweaving] } ])
+
+      expect(profile.profile_spell_pools.pluck(:id)).to eq([ first.id ])
+      expect(entry.entry_spells.pluck(:pool_id)).to eq([ first.id ])
+    end
+  end
+
   describe "#refresh_dependent_list_validity!" do
     # B-24: editing a profile in the backoffice touches no gang's own row, so a gang that hired it
     # keeps its stale cached validity until the owner next edits the list. This recomputes it now.

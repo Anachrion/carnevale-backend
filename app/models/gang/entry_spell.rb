@@ -12,8 +12,9 @@ module Gang
 
     validates :spell_id, uniqueness: { scope: :list_entry_id }
     # Enforced here rather than a DB NOT NULL: the column has to stay nullable so a profile's pool
-    # structure can be reconfigured (replace_spell_pools! destroys old pools, cascading these rows
-    # away) without a window where an in-flight write could violate a stricter constraint.
+    # structure can be reconfigured (replace_spell_pools! destroys the pools a profile no longer has,
+    # cascading these rows away; the others are updated in place) without a window where an
+    # in-flight write could violate a stricter constraint.
     validates :pool_id, presence: true
 
     private
