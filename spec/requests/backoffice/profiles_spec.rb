@@ -410,6 +410,24 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response.body).to include(card_preview_backoffice_profile_path(profile))
     end
 
+    # CARNEVALEB-94: a selected weapon or rule opens its own editor, in a new tab so the profile's
+    # unsaved changes survive. Rows added later get the link from the JS, via the URL template.
+    it "links each selected weapon and special rule to its editor" do
+      stiletto = Catalog::Weapon.create!(name: "Stiletto", damage: 1)
+      rule = Catalog::SpecialRule.create!(name: "Sure Footed", description: "Gain Acrobatic (2).")
+      profile.replace_weapons!([ stiletto.id ])
+      profile.replace_special_rules!([ rule.id ])
+
+      get edit_backoffice_profile_path(profile)
+
+      body = Nokogiri::HTML(response.body)
+      weapon_link = body.at_css(%(a.js-edit[href="#{edit_backoffice_weapon_path(stiletto)}"]))
+      rule_link = body.at_css(%(a.js-edit[href="#{edit_backoffice_special_rule_path(rule)}"]))
+      expect(weapon_link["target"]).to eq("_blank")
+      expect(rule_link["target"]).to eq("_blank")
+      expect(response.body).to include(%(data-edit-url-template="#{edit_backoffice_special_rule_path("__ID__")}"))
+    end
+
     it "edits the stats, keywords and abilities" do
       patch backoffice_profile_path(profile), params: valid_params
 
