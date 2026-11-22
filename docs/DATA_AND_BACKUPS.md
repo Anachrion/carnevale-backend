@@ -162,7 +162,9 @@ the post-PUT HEAD; the PUT is integrity-checked via Content-MD5 anyway).
 
 **Install / update.** From a machine with SSH to the box:
 `infisical run --env=prod -- bin/install-db-backups`. Idempotent — re-run it to push a
-script change or after rotating the R2 token.
+script change or after rotating the R2 token. Every `kamal deploy` also runs it (with
+`--no-run`) from the `post-deploy` hook, so a script change ships with the next deploy
+(CARNEVALEB-92).
 
 **Check it is healthy.** On the box:
 

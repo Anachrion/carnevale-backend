@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Runs on the deploy machine before Kamal builds the image (CARNEVALEB-92). Kamal builds from the
+# *working tree*, not from a commit, so what is on disk here is exactly what ships. Refuses to build:
+#
+#   1. with uncommitted changes, which would reach production without review or CI;
+#   2. from anything but the latest origin/main, so only merged, CI-checked code ships;
+#   3. with Git LFS files still as pointers: the card art would ship as tiny text files and the
+#      cards would render without illustrations.
+#
+# Overrides, for an emergency only:
+#   ALLOW_NON_MAIN=1 kamal deploy     skip check 2 (deploy another branch or commit)
+#   kamal deploy --skip-hooks         skip every hook (this one, the CI check, the backup sync)
+set -euo pipefail
+
+fail() {
+  printf '\n\033[31mpre-build: %s\033[0m\n' "$1" >&2
+  [ -n "${2:-}" ] && printf '%s\n' "$2" >&2
+  exit 1
+}
+
+# 1. Clean working tree. --porcelain ignores gitignored files, so public/cards (rendered cards,
+#    gitignored but shipped from the working tree on purpose) does not count.
+if [ -n "$(git status --porcelain)" ]; then
+  fail "the working tree has uncommitted changes; commit or stash them first." "$(git status --short)"
+fi
+
+# 2. The latest origin/main.
+if [ "${ALLOW_NON_MAIN:-}" != "1" ]; then
+  git fetch --quiet origin main
+  head=$(git rev-parse HEAD)
+  main=$(git rev-parse origin/main)
+  if [ "$head" != "$main" ]; then
+    fail "HEAD ($(git rev-parse --short HEAD), on '$(git branch --show-current)') is not origin/main ($(git rev-parse --short origin/main))." \
+         "Run: git switch main && git pull --ff-only   (or ALLOW_NON_MAIN=1 to deploy this commit anyway)"
+  fi
+fi
+
+# 3. Git LFS: installed, and every tracked file downloaded ('*' in ls-files; '-' is a pointer).
+command -v git-lfs >/dev/null || fail "git-lfs is not installed; the card art would ship as pointers." "Install it (brew install git-lfs && git lfs install), then git lfs pull."
+pointers=$(git lfs ls-files | awk '$2 == "-" { print $3 }')
+if [ -n "$pointers" ]; then
+  fail "$(printf '%s\n' "$pointers" | wc -l | tr -d ' ') Git LFS file(s) are still pointers, not their content." \
+       "Run: git lfs pull"
+fi
+
+echo "pre-build: clean tree, origin/main, LFS files present."

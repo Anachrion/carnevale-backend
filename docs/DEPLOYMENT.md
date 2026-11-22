@@ -133,6 +133,11 @@ rather than as a separate container, which suits a two-core box with light job t
   colima stop && colima start --cpu 4 --memory 6   # before deploying
   colima stop && colima start --cpu 2 --memory 2   # after: a big VM keeps holding the RAM
   ```
+- **Git LFS** and the **GitHub CLI**, logged in. The deploy hooks need them: LFS to ship the card
+  art as real bytes, `gh` to check that CI passed on the commit being deployed.
+  ```bash
+  brew install git-lfs gh && git lfs install && gh auth login
+  ```
 - **Infisical CLI**, logged in against EU Cloud and linked to this repo:
   ```bash
   brew install infisical
@@ -166,13 +171,23 @@ rather than as a separate container, which suits a two-core box with light job t
   > prefers it when both exist.)
 
 ### Redeploy (the normal case)
-After committing code changes:
+From an up-to-date `main`:
 ```bash
+git switch main && git pull --ff-only
 infisical run --env=prod -- kamal deploy
 ```
-Kamal builds from the **working tree** (not `git archive`) so LFS card images ship as
-real bytes — run `git lfs pull` once so they're materialised, and **commit your code
-changes** before deploying.
+Kamal builds from the **working tree** (not `git archive`), so LFS card images ship as real
+bytes and whatever is on disk is exactly what ships. Three hooks in `.kamal/hooks/`
+(CARNEVALEB-92) guard that, on the machine running the deploy:
+
+| Hook | When | What it does |
+|---|---|---|
+| `pre-build` | before the image is built | Refuses uncommitted changes, anything but the latest `origin/main`, and Git LFS files left as pointers (`git lfs pull` fixes that) |
+| `pre-deploy` | after the image is pushed, before the switch | Refuses unless the required CI checks (lint, scan_ruby, test) passed on that commit; waits up to 15 minutes while they run, as right after a merge. Needs `gh` logged in. Skipped on `kamal rollback` |
+| `post-deploy` | after the switch | Runs `bin/install-db-backups --no-run`, so the host-side nightly backup script always matches the repo. Warns, without failing the deploy, if that fails |
+
+Overrides, for an emergency only: `ALLOW_NON_MAIN=1` (deploy another commit), `SKIP_CI_CHECK=1`
+(skip the CI check), or `kamal deploy --skip-hooks` (skip all three).
 
 ### First-time setup (for a rebuild or a fresh server)
 ```bash

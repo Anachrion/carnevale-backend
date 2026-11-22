@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Runs on the deploy machine after the image is built and pushed, before production switches to it
+# (CARNEVALEB-92). Refuses to deploy a commit whose required CI checks (lint, scan_ruby, test) did
+# not pass on GitHub. Right after a merge the checks on main are usually still running, so it waits
+# for them, up to 15 minutes, rather than failing straight away.
+#
+# Needs the GitHub CLI, logged in (gh auth login). Not run for a rollback, which deploys an image
+# that already went through this.
+#
+# Overrides, for an emergency only:
+#   SKIP_CI_CHECK=1 kamal deploy      skip this check
+#   kamal deploy --skip-hooks         skip every hook
+set -euo pipefail
+
+REQUIRED_CHECKS=(lint scan_ruby test)
+WAIT_SECONDS=900
+INTERVAL=15
+
+[ "${KAMAL_COMMAND:-}" = "rollback" ] && exit 0
+if [ "${SKIP_CI_CHECK:-}" = "1" ]; then
+  echo "pre-deploy: CI check skipped (SKIP_CI_CHECK=1)."
+  exit 0
+fi
+
+fail() {
+  printf '\n\033[31mpre-deploy: %s\033[0m\n' "$1" >&2
+  [ -n "${2:-}" ] && printf '%s\n' "$2" >&2
+  exit 1
+}
+
+command -v gh >/dev/null || fail "the GitHub CLI (gh) is not installed; it is needed to check CI." "Install it (brew install gh && gh auth login), or SKIP_CI_CHECK=1."
+gh auth status >/dev/null 2>&1 || fail "the GitHub CLI is not logged in." "Run: gh auth login   (or SKIP_CI_CHECK=1)"
+
+# KAMAL_VERSION is the commit being deployed (pre-build made sure the tree was clean).
+sha="${KAMAL_VERSION%%_*}"
+repo=$(gh repo view --json nameWithOwner -q .nameWithOwner)
+deadline=$(( $(date +%s) + WAIT_SECONDS ))
+
+while true; do
+  runs=$(gh api "repos/$repo/commits/$sha/check-runs?per_page=100" \
+           -q '.check_runs[] | "\(.name) \(.status) \(.conclusion)"' 2>/dev/null || true)
+
+  pending=()
+  for check in "${REQUIRED_CHECKS[@]}"; do
+    line=$(printf '%s\n' "$runs" | awk -v n="$check" '$1 == n' | head -1)
+    if [ -z "$line" ]; then
+      pending+=("$check (not started)")
+    elif [ "$(echo "$line" | awk '{print $2}')" != "completed" ]; then
+      pending+=("$check")
+    elif [ "$(echo "$line" | awk '{print $3}')" != "success" ]; then
+      fail "CI check '$check' is $(echo "$line" | awk '{print $3}') on ${sha:0:7}; not deploying." \
+           "See: https://github.com/$repo/commit/$sha/checks"
+    fi
+  done
+
+  if [ ${#pending[@]} -eq 0 ]; then
+    echo "pre-deploy: CI green on ${sha:0:7} (${REQUIRED_CHECKS[*]})."
+    exit 0
+  fi
+  if [ "$(date +%s)" -ge "$deadline" ]; then
+    fail "CI still not finished on ${sha:0:7} after $((WAIT_SECONDS / 60)) minutes: ${pending[*]}." \
+         "See: https://github.com/$repo/commit/$sha/checks"
+  fi
+  echo "pre-deploy: waiting for CI on ${sha:0:7}: ${pending[*]}…"
+  sleep "$INTERVAL"
+done
