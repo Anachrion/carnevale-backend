@@ -25,12 +25,10 @@ CatalogSnapshot.import
 puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile.count} profiles, #{Catalog::Weapon.count} weapons, #{Catalog::SpecialRule.count} special rules"
 
 # ── Spell pools ────────────────────────────────────────────────────────────────
-# The one-time backfill migration only sees profiles that already existed when it ran — a fresh
-# install has none yet, since the catalog is imported above, *after* migrations run. Call it again
-# here; it's idempotent (skips any profile that already has a pool), so this is a no-op on a
-# database where the migration already did the work against real data.
-require Rails.root.join("lib/spell_pool_backfill")
-puts "Backfilled #{SpellPoolBackfill.call} standard spell pools."
+# Imported with the profiles: the snapshot carries every pool as production has it. The one-time
+# SpellPoolBackfill (lib/spell_pool_backfill.rb, still used by its migration) is no longer run here:
+# it gives a standard pool to any mage without one, so it would add a pool to a profile production
+# deliberately left without (CARNEVALEB-84).
 
 # The exception profiles (non-standard spell pools and grants, flexible Leaders, companions,
 # transformation pairs) are no longer configured here: the snapshot above carries them, as edited in
