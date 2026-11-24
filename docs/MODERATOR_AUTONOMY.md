@@ -79,7 +79,8 @@ only references. `db/catalog/` is no longer a backup but the development seed, r
 See `docs/DATA_AND_BACKUPS.md`.
 
 - The snapshot now carries everything the backoffice edits, the glossary and spells included
-  (CARNEVALEB-84). The seed's rake tasks retire once `db/catalog/` is refreshed from production.
+  (CARNEVALEB-84), and `db/catalog/` was refreshed from production on 2026-11-24, so the seed's
+  exception rake tasks are gone.
 
 ### E. Pitfalls for a non-technical author
 

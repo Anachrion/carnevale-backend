@@ -1,6 +1,7 @@
 # ── Rulebook data ──────────────────────────────────────────────────────────────
-# Hand-authored, and rightly so: the backoffice cannot edit any of it, so git is where it is
-# written and where it belongs. Abilities come first — Profile and Weapon validate their abilities
+# Hand-authored. Scenarios, equipment and agendas live only here. Abilities and spells are the
+# genesis data: the backoffice edits them since CARNEVALEB-86, and the catalog snapshot below
+# carries those edits on top. Abilities come first — Profile and Weapon validate their abilities
 # against that glossary, so importing the catalog before they exist fails every record.
 %w[abilities spells scenarios equipment agendas].each { |f| load File.join(__dir__, "seeds", "#{f}.rb") }
 
@@ -31,26 +32,9 @@ puts "Total: #{Catalog::CardReference.count} card references, #{Catalog::Profile
 require Rails.root.join("lib/spell_pool_backfill")
 puts "Backfilled #{SpellPoolBackfill.call} standard spell pools."
 
-# The ~10 profiles whose spell pools/grants aren't the standard shape (Doctor of the Firmament,
-# Seamstress, Apprentice Doctor, …) — see lib/tasks/spell_pool_exceptions.rake. Idempotent, same
-# reasoning as the backfill above: always safe to (re-)run against a fresh install.
-if defined?(Rake) && Rake::Task.task_defined?("spell_pools:configure_exceptions")
-  Rake::Task["spell_pools:configure_exceptions"].invoke
-end
-
-# The Leaders that may be hired alongside another Leader (The Duke, Prince of Thieves, Sopracomito,
-# La Signora) — flag them so the gang builder keeps offering them; see lib/tasks/leader_exceptions.rake.
-# Idempotent, same reasoning as the spell-pool exceptions above.
-if defined?(Rake) && Rake::Task.task_defined?("leaders:configure_exceptions")
-  Rake::Task["leaders:configure_exceptions"].invoke
-end
-
-# The models that can only arrive as another model's companion (the Emissary of Mother Hydra's
-# Tentacles) and the Emissary's auto-included companions + paid upgrade; see
-# lib/tasks/companions.rake. Idempotent, same reasoning as the exceptions above.
-if defined?(Rake) && Rake::Task.task_defined?("companions:configure_exceptions")
-  Rake::Task["companions:configure_exceptions"].invoke
-end
+# The exception profiles (non-standard spell pools and grants, flexible Leaders, companions,
+# transformation pairs) are no longer configured here: the snapshot above carries them, as edited in
+# the backoffice (CARNEVALEB-84). The rake tasks that once set them by hard-coded name are gone.
 
 # ── Version card images ────────────────────────────────────────────────────────
 # Bump internal_version for any card whose images changed (no-op when public/cards is empty),
