@@ -95,13 +95,18 @@ RSpec.describe CatalogSnapshot do
       emissary = create(:profile, faction: "guild", name: "Emissary", companion_upgrade_ducats: 12)
       create(:card_reference, profile: emissary, identifier: "guild-emissary")
       emissary.replace_companions!([ { companion_profile_id: tentacle.id, base_quantity: 1, upgraded_quantity: 2 } ])
+
+      beast = create(:profile, faction: "strigoi", name: "The Beast Within", recruitable: false)
+      create(:card_reference, profile: beast, identifier: "strigoi-the-beast-within")
+      yune = create(:profile, faction: "strigoi", name: "Yune Lobravym", transforms_into: beast)
+      create(:card_reference, profile: yune, identifier: "strigoi-yune-lobravym")
     end
 
     def wipe_catalog!
       [ Catalog::ProfileCompanion, Catalog::ProfileGrantedSpell, Catalog::ProfileSpellPoolDiscipline,
         Catalog::ProfileSpellPool, Catalog::ProfileWeapon, Catalog::ProfileSpecialRule, Catalog::CardReference,
         Catalog::Illustration ].each(&:delete_all)
-      Catalog::Profile.update_all(flexible_leader_with_id: nil)
+      Catalog::Profile.update_all(flexible_leader_with_id: nil, transforms_into_id: nil)
       [ Catalog::Profile, Catalog::Weapon, Catalog::SpecialRule, Catalog::Ability, Catalog::Spell ].each(&:delete_all)
     end
 
@@ -133,6 +138,7 @@ RSpec.describe CatalogSnapshot do
         .to eq([ "Waves of Force", "Dagonite Baptism", "all_cantrips" ])
       expect(Catalog::Profile.find_by!(name: "Apprentice Doctor").profile_spell_pools.sole.mentor_derived).to be(true)
       expect(Catalog::Profile.find_by!(name: "La Signora").flexible_leader_with.name).to eq("Il Capitano")
+      expect(Catalog::Profile.find_by!(name: "Yune Lobravym").transforms_into.name).to eq("The Beast Within")
       expect(Catalog::Profile.find_by!(name: "Maw Tentacle").recruitable).to be(false)
       emissary = Catalog::Profile.find_by!(name: "Emissary")
       expect(emissary.companion_upgrade_ducats).to eq(12)
@@ -172,7 +178,7 @@ RSpec.describe CatalogSnapshot do
       build_exceptions!
       described_class.export(dir: dir)
       profiles = YAML.safe_load(dir.join("profiles.yml").read)
-      profiles.each { |p| p.except!("spell_pools", "granted_spells", "companions", "flexible_leader_with", *described_class::PROFILE_FLAGS) }
+      profiles.each { |p| p.except!("spell_pools", "granted_spells", "companions", "flexible_leader_with", "transforms_into", *described_class::PROFILE_FLAGS) }
       dir.join("profiles.yml").write(profiles.to_yaml)
 
       described_class.import(dir: dir)
@@ -180,6 +186,7 @@ RSpec.describe CatalogSnapshot do
       expect(Catalog::Profile.find_by!(name: "Tarot Reader").profile_spell_pools.count).to eq(3)
       expect(Catalog::Profile.find_by!(name: "Emissary").profile_companions.count).to eq(1)
       expect(Catalog::Profile.find_by!(name: "Maw Tentacle").recruitable).to be(false)
+      expect(Catalog::Profile.find_by!(name: "Yune Lobravym").transforms_into.name).to eq("The Beast Within")
     end
   end
 

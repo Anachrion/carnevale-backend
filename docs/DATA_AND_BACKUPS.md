@@ -109,7 +109,7 @@ there is no freshness requirement, because it is not a backup.
 **What it carries**: everything the backoffice can edit (CARNEVALEB-84): the ability glossary
 (`abilities.yml`), the spells (`spells.yml`), weapons, special rules, and per profile its stats,
 keywords, abilities, advanced options (recruitable, flexible Leader and partner, distinct
-Discipline per copy, companion upgrade cost), spell pools, granted spells, companions, card
+Discipline per copy, companion upgrade cost, transformation form), spell pools, granted spells, companions, card
 references and illustrations. References between records are portable: rules by stable key,
 spells by discipline and name, profiles by their anchor identifier. Only render bookkeeping and
 player data stay out.
