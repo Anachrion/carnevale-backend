@@ -63,6 +63,14 @@ RSpec.describe Catalog::CardReference do
       expect(reference).to be_stale
     end
 
+    # Nothing about a transformation pair is printed on the card (CARNEVALEB-85).
+    it "stays fresh when the profile is paired with its transformation form" do
+      render!
+      profile.update!(transforms_into: create(:profile, name: "The Beast Within"))
+
+      expect(reference.reload).not_to be_stale
+    end
+
     it "is stale when the images exist but nothing was recorded about their sources" do
       File.binwrite(reference.front_path, "front-png")
       File.binwrite(reference.back_path, "back-png")

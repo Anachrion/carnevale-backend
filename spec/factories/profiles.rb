@@ -51,12 +51,15 @@ end
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
 #  flexible_leader_with_id      :bigint
+#  transforms_into_id           :bigint
 #
 # Indexes
 #
 #  index_profiles_on_flexible_leader_with_id  (flexible_leader_with_id)
+#  index_profiles_on_transforms_into_id       (transforms_into_id) UNIQUE
 #
 # Foreign Keys
 #
 #  fk_rails_...  (flexible_leader_with_id => profiles.id)
+#  fk_rails_...  (transforms_into_id => profiles.id)
 #

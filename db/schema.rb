@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_24_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -358,7 +358,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.datetime "updated_at", null: false
     t.string "version", default: "2.2.0", null: false
     t.integer "will_points", default: 0, null: false
+    t.bigint "transforms_into_id"
     t.index ["flexible_leader_with_id"], name: "index_profiles_on_flexible_leader_with_id"
+    t.index ["transforms_into_id"], name: "index_profiles_on_transforms_into_id", unique: true
   end
 
   create_table "refresh_tokens", force: :cascade do |t|
@@ -493,5 +495,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
   add_foreign_key "profile_weapons", "profiles"
   add_foreign_key "profile_weapons", "weapons"
   add_foreign_key "profiles", "profiles", column: "flexible_leader_with_id"
+  add_foreign_key "profiles", "profiles", column: "transforms_into_id"
   add_foreign_key "refresh_tokens", "users"
 end

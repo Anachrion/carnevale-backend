@@ -470,7 +470,7 @@ module Backoffice
       permitted = params.expect(profile: [
         :name, :faction, :version, :abilities_text, :keywords_text, :exclusive_weapons,
         # Advanced options (CARNEVALEB-84), once set only by rake tasks.
-        :recruitable, :flexible_leader, :flexible_leader_with_id, :distinct_discipline_per_copy, :companion_upgrade_ducats,
+        :recruitable, :flexible_leader, :flexible_leader_with_id, :transforms_into_id, :distinct_discipline_per_copy, :companion_upgrade_ducats,
         *Catalog::Profile::STATS,
         { weapon_ids: [], special_rule_ids: [] }
       ])

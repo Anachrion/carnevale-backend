@@ -43,6 +43,16 @@ module Catalog
     # Leaders (The Duke, Prince of Thieves, Sopracomito).
     belongs_to :flexible_leader_with, class_name: "Catalog::Profile", optional: true
 
+    # Violent Transformation (CARNEVALEB-85): a model that swaps between two printed cards mid-game.
+    # Stored once, on the form that is hired (Yune Lobravym -> The Beast Within), and read both ways
+    # through #transformation_partner. Not printed on either card, so it stays out of the card's
+    # render fingerprint (Catalog::CardReference#profile_source).
+    belongs_to :transforms_into, class_name: "Catalog::Profile", optional: true
+    has_one :transforms_from, class_name: "Catalog::Profile", foreign_key: :transforms_into_id,
+            inverse_of: :transforms_into, dependent: :nullify
+
+    validate :transformation_is_a_pair
+
     # Recompute the cached selection validity of every gang that hired this profile. Its ducats,
     # keywords and spell-affecting abilities feed ListValidationService, but a backoffice edit here
     # touches none of those gangs' own rows — so without this their cached selection_valid /
@@ -68,6 +78,19 @@ module Catalog
     validates_string_list :abilities, :keywords
     # Keywords stay free-form (Discipline (…), Leader); only abilities are held to the glossary.
     validates_ability_glossary :abilities, category: "character"
+
+    # The other form of a transforming model, whichever side of the pair this is, or nil.
+    def transformation_partner
+      transforms_into || transforms_from
+    end
+
+    # Every transformation pair, both ways, as { profile_id => partner_id }. One query, the same
+    # every time, so Rails' query cache answers it once per request however many gang entries ask
+    # (Gang::Entry#alternate_card_reference runs for each model of every serialized gang).
+    def self.transformation_partner_ids
+      pairs = where.not(transforms_into_id: nil).pluck(:id, :transforms_into_id).to_h
+      pairs.merge(pairs.invert)
+    end
 
     # Whether this profile can know spells at all — i.e. has at least one spell pool. Standard
     # mages get their one pool from the one-time backfill (CARNEVALEB-47); Apprentice Doctor's is
@@ -179,6 +202,22 @@ module Catalog
 
     private
 
+    # A pair, not a chain: one form transforms into another that transforms into nothing, and that
+    # form is no one else's (the unique index holds that last part too).
+    def transformation_is_a_pair
+      return if transforms_into_id.nil?
+
+      if transforms_into_id == id
+        errors.add(:transforms_into, "cannot be the profile itself")
+      elsif transforms_into&.transforms_into_id.present?
+        errors.add(:transforms_into, "already transforms into another profile; pick that pair's first form instead")
+      elsif persisted? && self.class.where(transforms_into_id: id).exists?
+        errors.add(:transforms_into, "cannot be set here: another profile already transforms into this one")
+      elsif self.class.where(transforms_into_id: transforms_into_id).where.not(id: id).exists?
+        errors.add(:transforms_into, "is already the other form of another profile")
+      end
+    end
+
     # A pool's eligible disciplines, made to match: rows no longer wanted go, missing ones are added.
     def sync_pool_disciplines(pool, wanted)
       pool.profile_spell_pool_disciplines.where.not(discipline: wanted).delete_all
@@ -237,12 +276,15 @@ end
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
 #  flexible_leader_with_id      :bigint
+#  transforms_into_id           :bigint
 #
 # Indexes
 #
 #  index_profiles_on_flexible_leader_with_id  (flexible_leader_with_id)
+#  index_profiles_on_transforms_into_id       (transforms_into_id) UNIQUE
 #
 # Foreign Keys
 #
 #  fk_rails_...  (flexible_leader_with_id => profiles.id)
+#  fk_rails_...  (transforms_into_id => profiles.id)
 #

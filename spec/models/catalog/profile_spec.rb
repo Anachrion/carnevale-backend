@@ -63,6 +63,43 @@ RSpec.describe Catalog::Profile, type: :model do
     end
   end
 
+  # Violent Transformation pairs, declared on the hired form (CARNEVALEB-85).
+  describe "transformation pairs" do
+    let(:beast) { create(:profile, name: "The Beast Within") }
+    let(:yune) { create(:profile, name: "Yune Lobravym", transforms_into: beast) }
+
+    it "reads the pair from either side" do
+      expect(yune.transformation_partner).to eq(beast)
+      expect(beast.transformation_partner).to eq(yune)
+      expect(create(:profile).transformation_partner).to be_nil
+      expect(described_class.transformation_partner_ids).to eq(yune.id => beast.id, beast.id => yune.id)
+    end
+
+    it "refuses the profile itself" do
+      yune.transforms_into = yune
+
+      expect(yune).not_to be_valid
+      expect(yune.errors[:transforms_into].join).to include("itself")
+    end
+
+    it "refuses a form already taken by another profile" do
+      yune
+      rival = build(:profile, transforms_into: beast)
+
+      expect(rival).not_to be_valid
+      expect(rival.errors[:transforms_into].join).to include("already the other form")
+    end
+
+    it "refuses a chain, from either end" do
+      yune
+      expect(build(:profile, transforms_into: yune)).not_to be_valid
+
+      beast.transforms_into = create(:profile)
+      expect(beast).not_to be_valid
+      expect(beast.errors[:transforms_into].join).to include("already transforms into this one")
+    end
+  end
+
   describe "#refresh_dependent_list_validity!" do
     # B-24: editing a profile in the backoffice touches no gang's own row, so a gang that hired it
     # keeps its stale cached validity until the owner next edits the list. This recomputes it now.
@@ -130,12 +167,15 @@ end
 #  created_at                   :datetime         not null
 #  updated_at                   :datetime         not null
 #  flexible_leader_with_id      :bigint
+#  transforms_into_id           :bigint
 #
 # Indexes
 #
 #  index_profiles_on_flexible_leader_with_id  (flexible_leader_with_id)
+#  index_profiles_on_transforms_into_id       (transforms_into_id) UNIQUE
 #
 # Foreign Keys
 #
 #  fk_rails_...  (flexible_leader_with_id => profiles.id)
+#  fk_rails_...  (transforms_into_id => profiles.id)
 #

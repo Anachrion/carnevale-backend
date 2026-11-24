@@ -30,8 +30,9 @@ class CatalogSnapshot
   RULE_COLUMNS = %w[name description spell_name spell_cost spell_difficulty spell_description].freeze
   ABILITY_COLUMNS = %w[category name description].freeze
   SPELL_COLUMNS = %w[discipline name cost difficulty description cantrip].freeze
-  # The advanced options (CARNEVALEB-84). flexible_leader_with is exported apart, as the partner's
-  # anchor identifier: ids are not portable.
+  # The advanced options (CARNEVALEB-84). flexible_leader_with and transforms_into are exported
+  # apart, as the other profile's anchor identifier: ids are not portable.
+  LINK_KEYS = %w[companions flexible_leader_with transforms_into].freeze
   PROFILE_FLAGS = %w[recruitable companion_upgrade_ducats flexible_leader distinct_discipline_per_copy].freeze
   POOL_COLUMNS = %w[of slot_count mage_slot_count unlimited grants_cantrip resets_each_round mentor_derived
                     distinct_from_other_pools].freeze
@@ -96,6 +97,7 @@ class CatalogSnapshot
       .includes(:card_references, { profile_weapons: :weapon }, { profile_special_rules: :special_rule },
                 { profile_spell_pools: :profile_spell_pool_disciplines }, { profile_granted_spells: :spell },
                 { profile_companions: { companion_profile: :card_references } }, { flexible_leader_with: :card_references },
+                { transforms_into: :card_references },
                 illustrations: { image_attachment: :blob })
       .order(:faction, :name, :id)
 
@@ -104,6 +106,7 @@ class CatalogSnapshot
         "keywords" => profile.keywords,
         "abilities" => profile.abilities,
         "flexible_leader_with" => profile.flexible_leader_with && profile_anchor(profile.flexible_leader_with),
+        "transforms_into" => profile.transforms_into && profile_anchor(profile.transforms_into),
         "weapons" => profile.profile_weapons.sort_by(&:position).map { |pw| @weapon_key[pw.weapon_id] },
         "special_rules" => profile.profile_special_rules.sort_by(&:position).map { |pr| @rule_key[pr.special_rule_id] },
         "spell_pools" => profile.profile_spell_pools.sort_by(&:position).map { |pool| exported_pool(pool) },
@@ -222,14 +225,17 @@ class CatalogSnapshot
     )
   end
 
-  # The second pass: companions and the flexible Leader partner, which name other profiles by
-  # their anchor identifier.
+  # The second pass: companions, the flexible Leader partner and the transformation form
+  # (CARNEVALEB-85), which name other profiles by their anchor identifier.
   def import_profile_links(data)
-    return unless data.key?("companions") || data.key?("flexible_leader_with")
+    return unless LINK_KEYS.any? { |key| data.key?(key) }
 
     profile = profile_by_anchor(data.fetch("card_references").map { |cr| cr.fetch("identifier") }.min)
     partner = data["flexible_leader_with"] && profile_by_anchor(data["flexible_leader_with"])
     profile.update!(flexible_leader_with: partner) if data.key?("flexible_leader_with")
+    if data.key?("transforms_into")
+      profile.update!(transforms_into: data["transforms_into"] && profile_by_anchor(data["transforms_into"]))
+    end
     return unless data.key?("companions")
 
     profile.replace_companions!(data["companions"].map do |row|

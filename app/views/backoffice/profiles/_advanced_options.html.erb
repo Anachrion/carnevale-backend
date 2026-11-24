@@ -5,7 +5,8 @@
   Locals: f (the profile form builder), profile, all_profiles.
 %>
 <% in_use = !profile.recruitable? || profile.flexible_leader? || profile.distinct_discipline_per_copy? ||
-            profile.profile_companions.any? || profile.companion_upgrade_ducats.to_i.positive? %>
+            profile.profile_companions.any? || profile.companion_upgrade_ducats.to_i.positive? ||
+            profile.transforms_into_id.present? || profile.transforms_from.present? %>
 <% leaders = all_profiles.select { |p| Array(p.keywords).include?("Leader") && p.id != profile.id } %>
 <details <%= "open" if in_use %> style="border:1px solid #e5e7eb;border-radius:8px;padding:10px;">
   <summary style="cursor:pointer;font-weight:600;">Advanced options
@@ -37,6 +38,25 @@
       <%= f.check_box :distinct_discipline_per_copy %>
       <%= f.label :distinct_discipline_per_copy, "Each copy picks a different Discipline" %>
       <div style="color:#6b7280;font-size:13px;">When several copies are hired, no two may choose the same Discipline (Romani).</div>
+    </div>
+
+    <div>
+      <% if (hired_form = profile.persisted? && profile.transforms_from) %>
+        <span style="font-weight:600;font-size:14px;">Transformation</span>
+        <div style="font-size:13px;">
+          This is the other form of <%= link_to hired_form.name, edit_backoffice_profile_path(hired_form) %>,
+          whose model can transform into it mid-game. The pair is set on that card.
+        </div>
+      <% else %>
+        <%= f.label :transforms_into_id, "Transforms into" %>
+        <%= f.collection_select :transforms_into_id, all_profiles.reject { |p| p.id == profile.id }, :id, :name,
+              { include_blank: "nothing" }, style: "padding:4px;" %>
+        <div style="color:#6b7280;font-size:13px;">
+          The model can swap to this other printed card during a game and back (Yune Lobravym into
+          The Beast Within). The gang still pays for this card. The other form is usually not
+          hireable on its own: untick “Can be hired” on its card.
+        </div>
+      <% end %>
     </div>
 
     <div class="js-companions-editor">

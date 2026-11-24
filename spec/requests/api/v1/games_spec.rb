@@ -1334,12 +1334,14 @@ RSpec.describe "Api::V1::Games", type: :request do
 
   # Violent Transformation (Yune Lobravym ⇄ The Beast Within).
   describe "PATCH /api/v1/games/:id/entries/:list_entry_id/transform" do
-    # Re-key the host's model as Yune and give the catalog her Beast, so the pairing resolves.
+    # Re-key the host's model as Yune and give the catalog her Beast, paired on her profile.
     def make_transformable(host_entry_id)
-      Gang::Entry.find(host_entry_id).entry.update!(identifier: "strigoi-yune-lobravym", name: "Yune Lobravym")
+      yune_card = Gang::Entry.find(host_entry_id).entry
+      yune_card.update!(identifier: "strigoi-yune-lobravym", name: "Yune Lobravym")
       beast = create(:profile, name: "The Beast Within", faction: "strigoi", ducats: 0, recruitable: false,
                                life_points: 10, will_points: 3, command_points: 1)
       create(:card_reference, profile: beast, identifier: "strigoi-the-beast-within", name: "The Beast Within")
+      yune_card.profile.update!(transforms_into: beast)
     end
 
     it "swaps the model to its other card and carries its lost points across" do

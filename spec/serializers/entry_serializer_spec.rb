@@ -105,6 +105,7 @@ RSpec.describe EntrySerializer do
                               keywords: [ "Hero", "Unique" ], abilities: [ "Mage (2)" ])
       beast = create(:profile, name: "The Beast Within", faction: "strigoi", ducats: 0,
                                recruitable: false, keywords: [ "Hero", "Unique" ], abilities: [ "Brave" ])
+      yune.update!(transforms_into: beast) # CARNEVALEB-85: the pair is declared on the hired form
       [ create(:card_reference, profile: yune, identifier: "strigoi-yune-lobravym", name: "Yune Lobravym"),
         create(:card_reference, profile: beast, identifier: "strigoi-the-beast-within", name: "The Beast Within") ]
     end

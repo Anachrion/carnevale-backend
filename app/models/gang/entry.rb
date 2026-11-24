@@ -58,17 +58,6 @@ module Gang
       entry.profile if entry.is_a?(Catalog::CardReference)
     end
 
-    # Violent Transformation: models that swap between two printed cards mid-game, keyed both ways
-    # by card identifier. The identifier rather than the profile name because it is the stable,
-    # globally unique key — a name is display text and can be re-worded.
-    #
-    # Hardcoded, per the same reasoning as companions:configure_exceptions: the pairing is not part
-    # of the catalog YAML round-trip, and one pair does not yet justify a self-referential column.
-    TRANSFORM_PAIRS = {
-      "strigoi-yune-lobravym"    => "strigoi-the-beast-within",
-      "strigoi-the-beast-within" => "strigoi-yune-lobravym"
-    }.freeze
-
     # The card this entry was hired as, or nil for equipment.
     def card_reference
       entry if entry.is_a?(Catalog::CardReference)
@@ -76,11 +65,15 @@ module Gang
 
     # The other face of a transforming model — Yune's Beast, or the Beast's Yune — or nil for
     # everything else. Both the in-game transform and the gang builder's card preview read this.
+    #
+    # The pairs are declared on the profiles (Catalog::Profile#transforms_into, CARNEVALEB-85). Read
+    # through the one cached query of transformation_partner_ids rather than the associations, which
+    # would cost two queries for every model of every gang serialized.
     def alternate_card_reference
-      identifier = TRANSFORM_PAIRS[card_reference&.identifier]
-      return nil unless identifier
+      return @alternate_card_reference if defined?(@alternate_card_reference)
 
-      @alternate_card_reference ||= Catalog::CardReference.find_by(identifier: identifier)
+      partner_id = card_reference && Catalog::Profile.transformation_partner_ids[card_reference.profile_id]
+      @alternate_card_reference = partner_id && Catalog::CardReference.where(profile_id: partner_id).order(:identifier).first
     end
 
     def transformable?

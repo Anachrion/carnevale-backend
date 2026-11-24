@@ -244,10 +244,14 @@ module Catalog
     private
 
     # Every profile column is printed somewhere on the card, so all of them count — as do the
-    # weapons and special rules in the order they are laid out.
+    # weapons and special rules in the order they are laid out. Except the links to other profiles
+    # added since, which print nothing: transforms_into_id (CARNEVALEB-85). Hashing it would also
+    # have marked every card out of date the day the column appeared.
+    NOT_PRINTED = %w[id created_at updated_at transforms_into_id].freeze
+
     def profile_source
       [
-        profile.attributes.except("id", "created_at", "updated_at"),
+        profile.attributes.except(*NOT_PRINTED),
         profile.profile_weapons.map { |pw| [ pw.position, pw.weapon.attributes.except("id", "created_at", "updated_at") ] },
         profile.profile_special_rules.map { |pr| [ pr.position, pr.special_rule.attributes.except("id", "created_at", "updated_at") ] }
       ]

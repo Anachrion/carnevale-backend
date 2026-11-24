@@ -52,7 +52,7 @@ granted by a developer, on purpose) and everything the form does not cover.
 
 ### B. Profile settings missing from the form
 
-**Mostly done** (CARNEVALEB-84). These were set by rake tasks that targeted hard-coded names;
+**Done** (CARNEVALEB-84, CARNEVALEB-85). These were set by rake tasks that targeted hard-coded names;
 they are now in the profile form's "Advanced options" and in the spell pool editor:
 
 | Setting | Now |
@@ -61,7 +61,7 @@ they are now in the profile form's "Advanced options" and in the spell pool edit
 | `flexible_leader`, `flexible_leader_with` | Advanced options |
 | `distinct_discipline_per_copy` | Advanced options |
 | `mage_slot_count` and `distinct_from_other_pools` on spell pools | Spell pool editor. Both were missing, so every save reset them |
-| Transformation pairs (Yune ⇄ The Beast Within) | Still the `TRANSFORM_PAIRS` constant, `app/models/gang/entry.rb` (CARNEVALEB-85) |
+| Transformation pairs (Yune ⇄ The Beast Within) | Advanced options, "Transforms into", on the hired form (CARNEVALEB-85) |
 
 ### C. Reference data that only lives in the seeds
 
@@ -124,8 +124,8 @@ Access itself needs no work: moderators are made admins from `kamal console`.
 ### Tier 2: cover every kind of card (medium)
 
 4. ~~Expose the settings from section B in an "Advanced options" part of the form, and add them
-   to `CatalogSnapshot`.~~ **Done** (CARNEVALEB-84). Moving `TRANSFORM_PAIRS` into the database
-   remains (CARNEVALEB-85).
+   to `CatalogSnapshot`.~~ **Done** (CARNEVALEB-84, and the transformation pairs in
+   CARNEVALEB-85).
 5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
    needed.
 6. ~~Guard the keywords the app acts on (Leader, Hero, Henchman…).~~ **Done** (CARNEVALEB-88): a

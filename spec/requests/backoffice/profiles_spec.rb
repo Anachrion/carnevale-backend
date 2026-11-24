@@ -569,6 +569,32 @@ RSpec.describe "Backoffice::Profiles", type: :request do
           .to eq([ [ tentacle, 1, 2 ] ])
       end
 
+      # CARNEVALEB-85: set on the hired form; the other form's editor says where the pair lives.
+      it "pairs a transformation, and points the other form's editor back at it" do
+        beast = create(:profile, name: "The Beast Within")
+
+        patch backoffice_profile_path(profile), params: valid_params(transforms_into_id: beast.id.to_s)
+        expect(profile.reload.transforms_into).to eq(beast)
+
+        get edit_backoffice_profile_path(beast)
+        expect(response.body).to include("This is the other form of")
+        expect(response.body).not_to include('name="profile[transforms_into_id]"')
+
+        patch backoffice_profile_path(profile), params: valid_params(transforms_into_id: "")
+        expect(profile.reload.transforms_into).to be_nil
+      end
+
+      it "refuses a transformation chain and says why" do
+        other = create(:profile, name: "Other")
+        create(:profile, name: "Taken", transforms_into: other)
+
+        patch backoffice_profile_path(profile), params: valid_params(transforms_into_id: other.id.to_s)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.body).to include("already the other form")
+        expect(profile.reload.transforms_into).to be_nil
+      end
+
       it "removes the companions when their rows are removed" do
         profile.replace_companions!([ { companion_profile_id: tentacle.id, base_quantity: 1, upgraded_quantity: 2 } ])
 
