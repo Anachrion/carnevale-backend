@@ -114,10 +114,10 @@ references and illustrations. References between records are portable: rules by 
 spells by discipline and name, profiles by their anchor identifier. Only render bookkeeping and
 player data stay out.
 
-Snapshots committed before CARNEVALEB-84 lack the pools, grants, companions and options, so
-`db/seeds.rb` still rebuilds them from the `spell_pools:`, `leaders:` and
-`companions:configure_exceptions` rake tasks until `db/catalog/` is refreshed from production;
-those tasks then retire.
+Since the snapshot of 2026-11-24 carries all of that, `db/seeds.rb` no longer runs the
+`spell_pools:`, `leaders:` and `companions:configure_exceptions` rake tasks that once set the
+exception profiles by hard-coded name; they are gone. A database seeded from scratch re-exports to
+files identical to `db/catalog/`, i.e. it reproduces production.
 
 #### Why the catalog is no longer backed up in git
 
