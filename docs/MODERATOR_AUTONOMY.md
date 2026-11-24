@@ -85,7 +85,8 @@ See `docs/DATA_AND_BACKUPS.md`.
 
 - **Keywords are free text**, yet the logic depends on them: `LeaderResolver` looks for exactly
   `"Leader"`. A typo silently breaks gang validation. Since CARNEVALEB-88 the editor asks for
-  confirmation before saving a keyword (or discipline name) that no other profile carries.
+  confirmation before saving a keyword (or discipline name) added in this edit that no other
+  profile carries; the profile's already-saved keywords never ask.
 - **Weapons and special rules are shared**: editing "Stiletto" changes every card that carries it.
   `cards_affected` exists but is not surfaced before saving.
 - **Saving is visible immediately**: the new stats (ducats, etc.) reach the API and gang validation
@@ -128,7 +129,8 @@ Access itself needs no work: moderators are made admins from `kamal console`.
 5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
    needed.
 6. ~~Guard the keywords the app acts on (Leader, Hero, Henchman…).~~ **Done** (CARNEVALEB-88): a
-   confirmation before saving a keyword no other profile carries, rather than a pick list, which
+   confirmation before saving a newly added keyword no other profile carries, rather than a pick
+   list, which
    would have reordered the keywords printed on the card.
 7. ~~Detect overflowing text in the preview.~~ **Dropped** (CARNEVALEB-89): the layout already fits
    the densest cards.
