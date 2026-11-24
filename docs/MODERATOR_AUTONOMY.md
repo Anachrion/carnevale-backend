@@ -130,8 +130,7 @@ Access itself needs no work: moderators are made admins from `kamal console`.
    needed.
 6. ~~Guard the keywords the app acts on (Leader, Hero, Henchman…).~~ **Done** (CARNEVALEB-88): a
    confirmation before saving a newly added keyword no other profile carries, rather than a pick
-   list, which
-   would have reordered the keywords printed on the card.
+   list, which would have reordered the keywords printed on the card.
 7. ~~Detect overflowing text in the preview.~~ **Dropped** (CARNEVALEB-89): the layout already fits
    the densest cards.
 
