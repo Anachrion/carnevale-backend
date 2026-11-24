@@ -79,6 +79,7 @@ class CatalogSnapshot
       profiles = read_yaml("profiles.yml")
       profiles.each { |data| import_profile(data, weapon_by_key, rule_by_key, tally) }
       # Companions and flexible Leader partners name other profiles, which now all exist.
+      clear_transformations(profiles)
       profiles.each { |data| import_profile_links(data) }
     end
 
@@ -223,6 +224,18 @@ class CatalogSnapshot
       spell_id: spell&.id,
       special_rule_id: row["special_rule"] && rule_by_key.fetch(row["special_rule"]).id
     )
+  end
+
+  # A pair can move between profiles from one snapshot to the next (C -> B here, A -> B in the
+  # snapshot). Assigned in file order, A would meet C still holding B and the uniqueness rule would
+  # fail the whole import, so every pair the snapshot speaks for is cleared first and set again in
+  # the links pass. Within the transaction, so a failed import still leaves them as they were.
+  def clear_transformations(profiles)
+    anchors = profiles.select { |data| data.key?("transforms_into") }
+                      .map { |data| data.fetch("card_references").map { |cr| cr.fetch("identifier") }.min }
+    ids = Catalog::CardReference.where(identifier: anchors).select(:profile_id)
+    Catalog::Profile.where(id: ids).or(Catalog::Profile.where(transforms_into_id: ids))
+                    .update_all(transforms_into_id: nil)
   end
 
   # The second pass: companions, the flexible Leader partner and the transformation form

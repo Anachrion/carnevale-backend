@@ -188,6 +188,30 @@ RSpec.describe CatalogSnapshot do
       expect(Catalog::Profile.find_by!(name: "Maw Tentacle").recruitable).to be(false)
       expect(Catalog::Profile.find_by!(name: "Yune Lobravym").transforms_into.name).to eq("The Beast Within")
     end
+
+    # Local C -> B, snapshot A -> B and C -> nil, with A first in the file: set in file order, A
+    # would meet C still holding B, and the uniqueness rule would fail the whole import.
+    it "imports a transformation form that moved to another profile, whatever the file order" do
+      build_exceptions!
+      described_class.export(dir: dir)
+      yune = Catalog::Profile.find_by!(name: "Yune Lobravym")
+      beast = yune.transforms_into
+      yune.update!(transforms_into: nil)
+      rival = create(:profile, faction: "strigoi", name: "Rival", transforms_into: beast)
+      create(:card_reference, profile: rival, identifier: "strigoi-rival")
+
+      # Rival goes last, after Yune: the order that used to fail.
+      profiles = YAML.safe_load(dir.join("profiles.yml").read)
+      rival_data = Marshal.load(Marshal.dump(profiles.find { |p| p["name"] == "Yune Lobravym" }))
+      rival_data.merge!("name" => "Rival", "transforms_into" => nil)
+      rival_data["card_references"].each { |cr| cr.merge!("identifier" => "strigoi-rival", "name" => "Rival") }
+      dir.join("profiles.yml").write((profiles << rival_data).to_yaml)
+
+      described_class.import(dir: dir)
+
+      expect(yune.reload.transforms_into).to eq(beast)
+      expect(rival.reload.transforms_into).to be_nil
+    end
   end
 
   it "is idempotent — a second import neither duplicates nor errors" do
