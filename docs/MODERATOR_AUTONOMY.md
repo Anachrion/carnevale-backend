@@ -138,8 +138,10 @@ Access itself needs no work: moderators are made admins from `kamal console`.
 
 8. A draft mode: changes only reach the API when published. This is the heaviest change, and not
    essential once the history (item 1) exists and out-of-date cards stay in sight (CARNEVALEB-95).
-9. A moderator guide inside the backoffice (the process from section 1, plus the pitfalls from
-   section E).
+9. ~~A moderator guide inside the backoffice (the process from section 1, plus the pitfalls from
+   section E).~~ **Done** (CARNEVALEB-91): the backoffice "Guide" tab
+   (`app/views/backoffice/guide/show.html.erb`). Keep its button and page names in step with the
+   screens.
 
 ### After tiers 1 and 2
 

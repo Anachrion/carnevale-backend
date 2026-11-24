@@ -1,0 +1,197 @@
+<% content_for :title, "Moderator guide" %>
+
+<%#
+  The moderator guide (CARNEVALEB-91). Written for people who are not developers: what to click,
+  in what order, and what to watch out for. Button and page names must match the screens, so
+  rename them here when they change. The developer-facing version is docs/MODERATOR_AUTONOMY.md.
+%>
+
+<div class="guide">
+  <h1>Moderator guide</h1>
+  <p>
+    How to correct a card, create a new one, publish it to the app, and undo a mistake, using
+    only this backoffice.
+  </p>
+
+  <ul>
+    <li><a href="#basics">Three things to know first</a></li>
+    <li><a href="#patch">Correct a card</a></li>
+    <li><a href="#create">Create a card</a></li>
+    <li><a href="#publish">Publish to the app</a></li>
+    <li><a href="#shared">Weapons, special rules, abilities and spells</a></li>
+    <li><a href="#undo">Find and undo a change</a></li>
+    <li><a href="#pitfalls">Pitfalls</a></li>
+    <li><a href="#developer">What still needs a developer</a></li>
+  </ul>
+
+  <h2 id="basics">Three things to know first</h2>
+  <ol>
+    <li>
+      <strong>Saving is live.</strong> As soon as you save a card, the app uses its new numbers:
+      players' gangs are checked against the new cost, keywords and rules straight away. Check the
+      preview before you save.
+    </li>
+    <li>
+      <strong>The card image is not.</strong> Players keep seeing the old picture of the card
+      until you <a href="#publish">publish</a> it. Until then, the
+      <%= link_to "Publish cards", publish_backoffice_profiles_path %> tab shows an orange count,
+      and the card's editor says its image is out of date.
+    </li>
+    <li>
+      <strong>Every change can be undone.</strong> Each save is recorded with who made it, and an
+      earlier version can be restored in one click (<a href="#undo">see below</a>). A mistake is
+      never permanent.
+    </li>
+  </ol>
+
+  <h2 id="patch">Correct a card</h2>
+  <ol>
+    <li>Open <%= link_to "Profiles", backoffice_profiles_path %>, find the model (search by name or filter by faction), and click it.</li>
+    <li>
+      Change what needs changing: stats, keywords, abilities, weapons, special rules, spells. The
+      card is redrawn live on the right as you type, front and back.
+    </li>
+    <li>Click <strong>Save profile</strong>.</li>
+    <li>Publish the new image: <strong>Open card →</strong>, then <strong>⇪ Render to catalog</strong>. See <a href="#publish">Publish to the app</a>.</li>
+  </ol>
+  <p>Good to know while editing:</p>
+  <ul>
+    <li><strong>Keywords and abilities</strong> go one per line, written exactly as on the printed card: <code>Leader</code>, <code>Discipline (Blood Rites)</code>, <code>Mage (2)</code>.</li>
+    <li>
+      <strong>An ability must exist in the glossary.</strong> If the save is refused because an
+      ability is unknown, the error offers a link to create it. Create it, then save the card again.
+    </li>
+    <li>
+      <strong>Weapons and special rules are picked from lists.</strong> The ✎ next to one opens its
+      own editor. Careful: it is shared with other cards (<a href="#shared">see below</a>).
+    </li>
+    <li>
+      <strong>Advanced options</strong> (collapsed, under the spells) are for the few unusual cards:
+      a model that cannot be hired on its own, a flexible Leader, companions that arrive with the
+      model, a model that transforms into another card. Each option explains itself; most cards
+      need none of them.
+    </li>
+  </ul>
+
+  <h2 id="create">Create a card</h2>
+  <ol>
+    <li>In <%= link_to "Profiles", backoffice_profiles_path %>, click <strong>+ New profile</strong>.</li>
+    <li>
+      Choose the faction and type the name. The <strong>Card identifier</strong> fills itself in
+      from them. Keep it unless it clashes with another card:
+      <strong>it can never be changed afterwards</strong>, because the app and the image files are
+      keyed by it.
+    </li>
+    <li>Tick <strong>A/B pair</strong> only for a model printed as two cards with the same stats and two different illustrations.</li>
+    <li>Fill in the rest as for a correction, then click <strong>Create profile and card</strong>.</li>
+    <li>
+      On the page that opens, under <strong>Illustrations</strong>, choose the art file (PNG, JPEG
+      or WebP) and click <strong>Upload art</strong>. An A/B pair has one slot per card.
+    </li>
+    <li>
+      Click <strong>Reposition / zoom →</strong> to frame the art in the circle: drag it, zoom it,
+      flip it if the figure should face the other way, then click <strong>Save</strong>.
+    </li>
+    <li>Check the card with <strong>Open card →</strong>, then click <strong>⇪ Render to catalog</strong> to publish it.</li>
+  </ol>
+  <div class="tip">
+    Players see a new model in the hire list as soon as it is created, even before its card is
+    published. To prepare a card quietly, untick <strong>Can be hired</strong> in Advanced options
+    until it is ready.
+  </div>
+
+  <h2 id="publish">Publish to the app</h2>
+  <p>Publishing draws the card's image and sends it to the app, which downloads it on its next sync.</p>
+  <h3>One card</h3>
+  <p>From its editor: <strong>Open card →</strong>, then <strong>⇪ Render to catalog</strong>. It takes a few seconds.</p>
+  <h3>Several cards</h3>
+  <p>
+    The <%= link_to "Publish cards", publish_backoffice_profiles_path %> page lists every card whose
+    image no longer matches its data (<strong>Out of date</strong>). Click
+    <strong>⇪ Render N profiles</strong> and keep the page open until it finishes; you can stop and
+    resume later. Publishing a card that turns out identical changes nothing, so it is always safe.
+  </p>
+  <p>
+    After editing a weapon or a special rule, every card that carries it is out of date: this is the
+    place to publish them all.
+  </p>
+  <h3>Printable sheets</h3>
+  <p>
+    The public <code>/cards</code> page offers a printable PDF per faction. Once you have published
+    your cards, click <strong>⎙ Rebuild printable sheets</strong> on the same page so the PDFs catch
+    up. It runs in the background.
+  </p>
+
+  <h2 id="shared">Weapons, special rules, abilities and spells</h2>
+  <p>
+    These are <strong>shared</strong>: one "Stiletto" is used by every card that carries it.
+    Editing it changes all of those cards at once, which is right for an errata and wrong for a
+    one-card exception.
+  </p>
+  <ul>
+    <li>Each one's editor lists the cards that carry it. Read the list before saving.</li>
+    <li>If only one card should differ, create a new weapon or rule instead, and pick it on that card.</li>
+    <li>
+      <%= link_to "Abilities", backoffice_abilities_path %> is the rulebook glossary: the names a card
+      may list. The rating (the 2 in "Acrobatic (2)") is written on the card, not here.
+    </li>
+    <li>
+      <%= link_to "Spells", backoffice_spells_path %> are grouped by Discipline. Each Discipline has
+      exactly one Cantrip.
+    </li>
+  </ul>
+  <p>Renaming an ability updates every card and weapon that lists it.</p>
+
+  <h2 id="undo">Find and undo a change</h2>
+  <ul>
+    <li>
+      <%= link_to "History", backoffice_history_path %> shows the latest changes across the catalog,
+      with who made them. Start here when a card looks wrong.
+    </li>
+    <li>
+      A card's own history is behind the <strong>History</strong> button of its editor: every
+      version, with what changed.
+    </li>
+    <li>
+      <strong>Restore this version</strong> puts the whole card back as it was after that change:
+      stats, weapons, rules and spells. On a weapon or a rule, <strong>Undo this change</strong>
+      puts it back as it was before.
+    </li>
+    <li>A restore is itself a change: it shows up in the history and can be undone too. Publish the card again afterwards.</li>
+  </ul>
+
+  <h2 id="pitfalls">Pitfalls</h2>
+  <ul>
+    <li>
+      <strong>Some keywords drive the rules.</strong> The app acts on <code>Leader</code>,
+      <code>Hero</code>, <code>Henchman</code>, <code>Unique</code> and <code>Doctor</code>: who leads
+      the gang, how many Heroes, one copy only, Apprentice Doctor's mentor. Spell them exactly. When a
+      keyword appears on no other card, saving asks for confirmation: that is usually a typo.
+    </li>
+    <li><strong>Shared records</strong>: see <a href="#shared">above</a>. Editing a weapon changes every card that has it.</li>
+    <li>
+      <strong>Text that does not fit is cut off.</strong> The card has a fixed size. Look at the
+      bottom of the preview after adding rules or long abilities; if the last line is missing,
+      shorten the text.
+    </li>
+    <li><strong>Saving is live; the image is not.</strong> Publish once the card is right, and watch for the orange count on <strong>Publish cards</strong>.</li>
+    <li>
+      <strong>Cards cannot be deleted.</strong> A card created by mistake can be hidden from the
+      hire list by unticking <strong>Can be hired</strong> in Advanced options.
+    </li>
+  </ul>
+
+  <h2 id="developer">What still needs a developer</h2>
+  <ul>
+    <li><strong>Giving or removing moderator access.</strong></li>
+    <li><strong>A new faction</strong>: the app itself has to be updated and released on the stores.</li>
+    <li><strong>A new spell Discipline.</strong></li>
+    <li>
+      <strong>A new mechanic the app must enforce.</strong> A rule that is only text on the card works
+      fine today. A rule the app has to apply during gang building or a game (like transformation or
+      companions once were) needs code.
+    </li>
+    <li><strong>Equipment, Agendas and Scenarios</strong>, which have no editor here.</li>
+    <li><strong>The look of the card itself</strong>: its layout, fonts and frame.</li>
+  </ul>
+</div>
