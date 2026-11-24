@@ -84,14 +84,16 @@ See `docs/DATA_AND_BACKUPS.md`.
 ### E. Pitfalls for a non-technical author
 
 - **Keywords are free text**, yet the logic depends on them: `LeaderResolver` looks for exactly
-  `"Leader"`. A typo silently breaks gang validation.
+  `"Leader"`. A typo silently breaks gang validation. Since CARNEVALEB-88 the editor asks for
+  confirmation before saving a keyword (or discipline name) that no other profile carries.
 - **Weapons and special rules are shared**: editing "Stiletto" changes every card that carries it.
   `cards_affected` exists but is not surfaced before saving.
 - **Saving is visible immediately**: the new stats (ducats, etc.) reach the API and gang validation
   as soon as they are saved, while the card image stays the old one until it is published. There is
-  no draft and no review.
+  no draft and no review. Since CARNEVALEB-95 the "Publish cards" tab counts the out-of-date cards
+  on every page, and the profile editor flags its own.
 - **Overlong text is clipped silently**: the card template is fixed-size and hides overflow. The
-  preview helps, but nothing flags it.
+  layout was tuned so that even the densest cards fit (Gethsemane), and the preview shows the rest.
 - **Profiles cannot be deleted**: a card created by mistake can only be made non-recruitable (and
   even that setting is not in the form).
 
@@ -125,14 +127,16 @@ Access itself needs no work: moderators are made admins from `kamal console`.
    remains (CARNEVALEB-85).
 5. Create and edit Abilities and Spells in the backoffice, then Equipment, Agendas and Scenarios if
    needed.
-6. Replace free-text keywords with a pick list for the ones the app acts on (Leader, Hero,
-   Henchman…).
-7. Detect overflowing text in the preview (a height comparison in JS) and flag it clearly.
+6. ~~Guard the keywords the app acts on (Leader, Hero, Henchman…).~~ **Done** (CARNEVALEB-88): a
+   confirmation before saving a keyword no other profile carries, rather than a pick list, which
+   would have reordered the keywords printed on the card.
+7. ~~Detect overflowing text in the preview.~~ **Dropped** (CARNEVALEB-89): the layout already fits
+   the densest cards.
 
 ### Tier 3: comfort and safety net (optional)
 
 8. A draft mode: changes only reach the API when published. This is the heaviest change, and not
-   essential once the history (item 1) exists.
+   essential once the history (item 1) exists and out-of-date cards stay in sight (CARNEVALEB-95).
 9. A moderator guide inside the backoffice (the process from section 1, plus the pitfalls from
    section E).
 

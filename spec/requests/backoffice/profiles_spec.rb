@@ -410,6 +410,18 @@ RSpec.describe "Backoffice::Profiles", type: :request do
       expect(response.body).to include(card_preview_backoffice_profile_path(profile))
     end
 
+    # CARNEVALEB-88: the keywords textarea carries what the typo check compares against.
+    it "gives the keyword typo check the other profiles' keywords" do
+      create(:profile, name: "Bombardier", keywords: [ "Hero", "Discipline (Divinity)" ])
+
+      get edit_backoffice_profile_path(profile)
+
+      area = Nokogiri::HTML(response.body).at_css("textarea[data-keyword-check]")
+      check = JSON.parse(area["data-keyword-check"])
+      expect(check["known_keywords"]).to include("Hero")
+      expect(check["known_disciplines"]).to include("Divinity")
+    end
+
     # Saving never re-renders the card, so until it is published the editor and the menu say so.
     describe "the out-of-date card reminder" do
       let(:images_dir) { Pathname(Dir.mktmpdir) }
