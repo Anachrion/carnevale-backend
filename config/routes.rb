@@ -161,6 +161,9 @@ Rails.application.routes.draw do
     # The catalog's change history across cards, weapons and special rules, and the revert of one
     # version (CARNEVALEB-81).
     get "history", to: "history#index", as: :history
+
+    # How to patch and create cards, for moderators who will never read docs/ (CARNEVALEB-91).
+    get "guide", to: "guide#show", as: :guide
     resources :versions, only: [] do
       member { post :revert }
     end

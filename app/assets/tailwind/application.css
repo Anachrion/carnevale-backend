@@ -25,6 +25,17 @@
   .btn-emerald { @apply border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800; }
   .btn:disabled { @apply cursor-not-allowed opacity-50; }
 
+  /* The moderator guide (CARNEVALEB-91): long-form prose, which Preflight leaves unstyled. */
+  .guide { @apply max-w-3xl text-[15px] leading-relaxed text-gray-800; }
+  .guide h2 { @apply mt-10 mb-3 border-b border-gray-200 pb-1 text-xl font-semibold text-gray-900; }
+  .guide h3 { @apply mt-6 mb-2 font-semibold text-gray-900; }
+  .guide p { @apply my-3; }
+  .guide ol { @apply my-3 list-decimal space-y-1.5 pl-6; }
+  .guide ul { @apply my-3 list-disc space-y-1.5 pl-6; }
+  .guide code { @apply rounded bg-gray-100 px-1 py-0.5 text-[13px]; }
+  .guide a { @apply text-indigo-700 underline; }
+  .guide .tip { @apply my-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-amber-200; }
+
   .toolbar { @apply my-4 flex flex-wrap items-center gap-3; }
   .count { @apply text-xs text-gray-400; }
 
