@@ -123,7 +123,8 @@
           <th><%= f.label :keywords_text, "Keywords" %></th>
           <td>
             <%= f.text_area :keywords_text, value: profile.keywords.join("\n"),
-                  rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;" %>
+                  rows: 4, style: "width:100%;max-width:420px;font-family:ui-monospace,monospace;",
+                  data: { keyword_check: keyword_check_data(profile, @all_profiles || []).to_json } %>
             <div style="color:#6b7280;font-size:13px;">One per line, e.g. <code>Discipline (Blood Rites)</code>.</div>
           </td>
         </tr>
@@ -203,6 +204,42 @@
 <% end %>
 
 <script>
+(function () {
+  // CARNEVALEB-88: before saving, ask when a keyword appears on no other profile. The app acts on
+  // some keywords (Leader, Hero, Unique…), so a typo there silently breaks gang validation; a
+  // genuinely new keyword is rare enough that confirming it costs nothing. A Discipline keyword is
+  // checked name by name, since a new combination of known disciplines is not a typo.
+  const form = document.getElementById('profile-form');
+  const area = form.querySelector('[data-keyword-check]');
+  if (!area) return;
+  const check = JSON.parse(area.dataset.keywordCheck);
+  const keywords = new Set(check.known_keywords);
+  const disciplines = new Set(check.known_disciplines);
+
+  form.addEventListener('submit', function (event) {
+    const unknown = [];
+    area.value.split('\n').map(function (line) { return line.trim(); }).filter(Boolean).forEach(function (keyword) {
+      const match = keyword.match(/^Discipline \((.+)\)$/);
+      if (match) {
+        match[1].split(',').map(function (name) { return name.trim(); }).forEach(function (name) {
+          if (!disciplines.has(name)) unknown.push('Discipline: ' + name);
+        });
+      } else if (!keywords.has(keyword)) {
+        unknown.push(keyword);
+      }
+    });
+    if (unknown.length === 0) return;
+
+    const message = 'These keywords appear on no other profile:\n\n  ' + unknown.join('\n  ') +
+      '\n\nA typo? The app relies on some keywords (Leader, Hero, Henchman, Unique, Doctor).' +
+      '\n\nOK saves anyway, Cancel lets you fix them.';
+    if (!window.confirm(message)) {
+      event.preventDefault();
+      area.focus();
+    }
+  });
+})();
+
 (function () {
   // Each face posts the form to card_preview, which assigns the values to the profile in memory
   // (without saving) and renders the card template. Debounced, because it redraws on every
