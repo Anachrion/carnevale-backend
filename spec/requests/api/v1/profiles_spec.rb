@@ -24,6 +24,18 @@ RSpec.describe "Api::V1::Profiles", type: :request do
       expect(body["card_references"].map { |c| c["identifier"] }).to include("guild-capodecina")
     end
 
+    # The app's Profile model declares version as a non-null string, and gives up on the whole
+    # catalog when one profile breaks it: paper_trail's own `version` accessor once shadowed the
+    # column and sent null for every profile, so players silently kept an old catalog.
+    it "sends every profile's edition, never null" do
+      profile.update_columns(version: "2.3.0")
+
+      get "/api/v1/profiles"
+
+      expect(JSON.parse(response.body).map { |p| p["version"] }).to all(be_a(String))
+      expect(JSON.parse(response.body).find { |p| p["name"] == "Capodecina" }["version"]).to eq("2.3.0")
+    end
+
     it "advertises a privately cacheable response and 304s when nothing changed" do
       get "/api/v1/profiles"
       expect(response.headers["Cache-Control"]).to include("private", "max-age")
