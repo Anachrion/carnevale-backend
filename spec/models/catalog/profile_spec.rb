@@ -63,6 +63,14 @@ RSpec.describe Catalog::Profile, type: :model do
     end
   end
 
+  # paper_trail names its own accessor `version` unless told otherwise, which shadowed this column.
+  it "reads its version column, the card's edition, not paper_trail's accessor" do
+    profile = create(:profile, version: "2.3.0")
+
+    expect(profile.version).to eq("2.3.0")
+    expect(described_class.find(profile.id).version).to eq("2.3.0")
+  end
+
   # Violent Transformation pairs, declared on the hired form (CARNEVALEB-85).
   describe "transformation pairs" do
     let(:beast) { create(:profile, name: "The Beast Within") }

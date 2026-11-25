@@ -9,7 +9,13 @@ module Catalog
     # inside #save — before the backoffice rewrites the weapons, rules and spells — and miss them.
     # Catalog::History writes each version explicitly once the whole card has been saved, with the
     # full card attached (Catalog::CardSnapshot).
-    has_paper_trail on: []
+    #
+    # `version:` renames paper_trail's own accessor (the version a reified record came from), which
+    # is called `version` by default and silently shadowed the profile's `version` column, the
+    # card's edition ("2.3.0"). From CARNEVALEB-81 until this fix, profile.version was nil: the API
+    # sent version: null, which the app (non-nullable field) could not parse, so every player kept
+    # the catalog cached on their device; and cards rendered in that window lost their footer.
+    has_paper_trail on: [], version: :paper_trail_version
 
     has_many :card_references, -> { order(:identifier) }, class_name: "Catalog::CardReference"
 
